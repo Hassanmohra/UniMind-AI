@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+
 /* =========================================================
    UniMind AI
    Arabic First / RTL
@@ -50,7 +52,6 @@
    ========================================================= */
 
 body.dark-mode {
-
     --bg: #0b0d18;
     --bg-soft: #111421;
     --card: #151827;
@@ -93,7 +94,7 @@ html {
 
 body {
     font-family:
-        "Segoe UI",
+        "Cairo",
         Tahoma,
         Arial,
         sans-serif;
@@ -101,7 +102,10 @@ body {
     background: var(--bg);
     color: var(--text);
 
-    line-height: 1.7;
+    line-height: 1.8;
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 
     transition:
         background var(--transition),
@@ -110,7 +114,9 @@ body {
 
 body,
 button,
-a {
+a,
+input,
+textarea {
     transition:
         background var(--transition),
         color var(--transition),
@@ -159,7 +165,7 @@ img {
     top: 0;
     z-index: 1000;
 
-    background: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 255, 255, 0.88);
 
     border-bottom: 1px solid var(--border);
 
@@ -171,7 +177,7 @@ img {
 }
 
 body.dark-mode .navbar {
-    background: rgba(11, 13, 24, 0.84);
+    background: rgba(11, 13, 24, 0.88);
 }
 
 .nav-container {
@@ -227,7 +233,7 @@ body.dark-mode .navbar {
     font-size: 20px;
     font-weight: 800;
 
-    letter-spacing: -0.5px;
+    letter-spacing: -0.3px;
 }
 
 .logo div span {
@@ -320,6 +326,7 @@ body.dark-mode .navbar {
 .theme-btn:hover,
 .language-btn:hover {
     border-color: var(--primary);
+
     transform: translateY(-2px);
 }
 
@@ -417,9 +424,9 @@ body.dark-mode .navbar {
     overflow: hidden;
 
     padding:
-        105px
+        100px
         0
-        100px;
+        95px;
 
     background:
         radial-gradient(
@@ -487,7 +494,7 @@ body.dark-mode .navbar {
 
     border: 1px solid rgba(108, 92, 231, 0.12);
 
-    padding: 7px 13px;
+    padding: 7px 14px;
 
     border-radius: 999px;
 
@@ -507,41 +514,61 @@ body.dark-mode .navbar {
         0 0 0 4px rgba(32, 180, 134, 0.12);
 }
 
-.hero h1 {
-    margin-top: 22px;
 
-    max-width: 650px;
+/* =========================================================
+   HERO TITLE — ARABIC
+   ========================================================= */
+
+.hero h1 {
+    margin-top: 24px;
+
+    max-width: 620px;
 
     font-size:
         clamp(
-            48px,
-            6vw,
-            78px
+            46px,
+            5vw,
+            70px
         );
 
-    line-height: 1.08;
+    line-height: 1.38;
 
-    letter-spacing: -3px;
+    letter-spacing: -1.5px;
 
-    font-weight: 850;
+    font-weight: 800;
+
+    word-spacing: 4px;
 }
 
 .hero h1 span {
     display: block;
 
+    margin-top: 2px;
+
     color: var(--primary);
 }
 
-.hero-description {
-    max-width: 610px;
 
-    margin-top: 25px;
+/* =========================================================
+   HERO DESCRIPTION — ARABIC
+   ========================================================= */
+
+.hero-description {
+    max-width: 570px;
+
+    margin-top: 23px;
 
     color: var(--text-secondary);
 
-    font-size: 17px;
+    font-size: 16px;
 
-    line-height: 2;
+    font-weight: 500;
+
+    line-height: 2.15;
+
+    letter-spacing: 0;
+
+    word-spacing: 2px;
 }
 
 .hero-buttons {
@@ -549,7 +576,7 @@ body.dark-mode .navbar {
 
     gap: 12px;
 
-    margin-top: 34px;
+    margin-top: 32px;
 }
 
 .hero-trust {
@@ -558,7 +585,7 @@ body.dark-mode .navbar {
 
     gap: 14px;
 
-    margin-top: 34px;
+    margin-top: 32px;
 }
 
 .avatars {
@@ -594,6 +621,7 @@ body.dark-mode .navbar {
     display: block;
 
     font-size: 13px;
+    font-weight: 700;
 }
 
 .hero-trust small {
@@ -684,6 +712,7 @@ body.dark-mode .navbar {
     display: block;
 
     font-size: 14px;
+    font-weight: 700;
 }
 
 .workspace-title small {
@@ -776,7 +805,9 @@ body.dark-mode .navbar {
 .ai-message p {
     color: var(--text-secondary);
 
-    line-height: 1.8;
+    line-height: 1.9;
+
+    font-size: 12px;
 }
 
 .ai-points {
@@ -807,7 +838,7 @@ body.dark-mode .navbar {
 
     margin: 0 18px 18px;
 
-    padding: 0 10px 0 10px;
+    padding: 0 10px;
 
     display: flex;
     align-items: center;
@@ -881,6 +912,7 @@ body.dark-mode .navbar {
     display: block;
 
     font-size: 11px;
+    font-weight: 700;
 }
 
 .floating-card small {
@@ -944,9 +976,11 @@ body.dark-mode .navbar {
             50px
         );
 
-    line-height: 1.2;
+    line-height: 1.35;
 
-    letter-spacing: -1.5px;
+    letter-spacing: -1px;
+
+    font-weight: 800;
 }
 
 .section-heading h2 span {
@@ -958,7 +992,9 @@ body.dark-mode .navbar {
 
     color: var(--text-secondary);
 
-    font-size: 15px;
+    font-size: 14px;
+
+    line-height: 2;
 }
 
 
@@ -1060,6 +1096,7 @@ body.dark-mode .navbar {
 
 .feature-card h3 {
     font-size: 17px;
+    font-weight: 700;
 }
 
 .feature-card p {
@@ -1069,7 +1106,7 @@ body.dark-mode .navbar {
 
     font-size: 13px;
 
-    line-height: 1.9;
+    line-height: 2;
 }
 
 .feature-card a {
@@ -1151,6 +1188,7 @@ body.dark-mode .navbar {
 
 .step h3 {
     font-size: 15px;
+    font-weight: 700;
 }
 
 .step p {
@@ -1159,6 +1197,8 @@ body.dark-mode .navbar {
     color: var(--text-secondary);
 
     font-size: 12px;
+
+    line-height: 1.9;
 }
 
 
@@ -1242,7 +1282,9 @@ body.dark-mode .navbar {
 
     font-size: 38px;
 
-    letter-spacing: -1.5px;
+    letter-spacing: -1px;
+
+    font-weight: 800;
 }
 
 .pricing-card h3 small {
@@ -1261,6 +1303,8 @@ body.dark-mode .navbar {
     color: var(--text-secondary);
 
     font-size: 12px;
+
+    line-height: 1.8;
 }
 
 .pricing-card ul {
@@ -1360,9 +1404,11 @@ body.dark-mode .navbar {
             44px
         );
 
-    line-height: 1.3;
+    line-height: 1.45;
 
-    letter-spacing: -1px;
+    letter-spacing: -0.5px;
+
+    font-weight: 800;
 
     z-index: 2;
 }
@@ -1375,6 +1421,8 @@ body.dark-mode .navbar {
     color: rgba(255, 255, 255, 0.76);
 
     font-size: 13px;
+
+    line-height: 2;
 
     z-index: 2;
 }
@@ -1478,6 +1526,10 @@ body.dark-mode .navbar {
         align-items: center;
     }
 
+    .hero h1 {
+        max-width: 750px;
+    }
+
     .hero-description {
         max-width: 680px;
     }
@@ -1502,7 +1554,9 @@ body.dark-mode .navbar {
 
     .pricing-grid {
         grid-template-columns: 1fr;
+
         max-width: 600px;
+
         margin-inline: auto;
     }
 
@@ -1563,27 +1617,39 @@ body.dark-mode .navbar {
 
     .hero {
         padding:
-            75px
+            70px
             0
-            70px;
+            65px;
     }
 
     .hero h1 {
-        font-size: 46px;
+        max-width: 100%;
 
-        letter-spacing: -2px;
+        font-size: 42px;
+
+        line-height: 1.4;
+
+        letter-spacing: -1px;
+
+        word-spacing: 2px;
     }
 
     .hero-description {
+        max-width: 100%;
+
+        margin-top: 20px;
+
         font-size: 14px;
 
-        line-height: 1.9;
+        line-height: 2.05;
     }
 
     .hero-buttons {
         width: 100%;
 
         flex-direction: column;
+
+        margin-top: 28px;
     }
 
     .hero-buttons a {
@@ -1623,11 +1689,15 @@ body.dark-mode .navbar {
     }
 
     .section-heading h2 {
-        font-size: 34px;
+        font-size: 32px;
+
+        line-height: 1.4;
     }
 
     .section-heading p {
         font-size: 13px;
+
+        line-height: 2;
     }
 
     .features-grid {
@@ -1653,7 +1723,9 @@ body.dark-mode .navbar {
     }
 
     .cta-box h2 {
-        font-size: 30px;
+        font-size: 29px;
+
+        line-height: 1.5;
     }
 
     .footer-content {
