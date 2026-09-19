@@ -1,3 +1,4 @@
+alert("UniMind JavaScript يعمل ✅");
 /* =========================================================
    UniMind AI
    Main JavaScript
