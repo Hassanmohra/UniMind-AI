@@ -1,1052 +1,1052 @@
-document.addEventListener("DOMContentLoaded", function () {
+// ============================================================
+// UniMind AI - Main Application
+// Real AI Chat powered by Supabase Edge Functions + OpenAI
+// ============================================================
 
-    /* =====================================================
-       THEME
-    ===================================================== */
+document.addEventListener("DOMContentLoaded", () => {
+  "use strict";
 
-    const themeToggle =
-        document.getElementById("themeToggle");
+  // ==========================================================
+  // CONFIGURATION
+  // ==========================================================
 
-    if (themeToggle) {
+  const API_URL =
+    "https://yzsfublvnwknjnayfosm.supabase.co/functions/v1/unimind-chat";
 
-        const savedTheme =
-            localStorage.getItem("unimind-theme");
+  // ==========================================================
+  // DOM ELEMENTS
+  // ==========================================================
 
-        if (savedTheme === "dark") {
+  const featureCards = document.querySelectorAll(".feature-card");
 
-            document.body.classList.add("dark-mode");
-            themeToggle.textContent = "🌙";
+  // ==========================================================
+  // FEATURE CARD HANDLERS
+  // ==========================================================
 
-        } else {
+  featureCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      const title =
+        card.querySelector("h3")?.textContent?.trim() || "";
 
-            themeToggle.textContent = "☀️";
+      const description =
+        card.querySelector("p")?.textContent?.trim() || "";
 
-        }
+      // Study Assistant → open real AI chat
+      if (
+        title.toLowerCase().includes("study") ||
+        title.toLowerCase().includes("assistant") ||
+        title.includes("المساعد")
+      ) {
+        openChat();
+        return;
+      }
 
-        themeToggle.addEventListener("click", function () {
+      // Other features
+      showFeatureMessage(title, description);
+    });
+  });
 
-            document.body.classList.toggle("dark-mode");
+  // ==========================================================
+  // SHOW FEATURE MESSAGE
+  // ==========================================================
 
-            const isDark =
-                document.body.classList.contains("dark-mode");
+  function showFeatureMessage(title, description) {
+    const existing = document.querySelector(".unimind-feature-toast");
 
-            localStorage.setItem(
-                "unimind-theme",
-                isDark ? "dark" : "light"
-            );
-
-            themeToggle.textContent =
-                isDark ? "🌙" : "☀️";
-
-        });
-
+    if (existing) {
+      existing.remove();
     }
 
+    const toast = document.createElement("div");
 
-    /* =====================================================
-       FEATURE LINKS
-    ===================================================== */
+    toast.className = "unimind-feature-toast";
 
-    const featureLinks =
-        document.querySelectorAll(".feature-card a");
+    toast.innerHTML = `
+      <div class="unimind-toast-icon">✨</div>
 
+      <div class="unimind-toast-content">
+        <strong>${escapeHTML(title)}</strong>
+        <span>
+          ${escapeHTML(
+            description ||
+              "هذه الميزة ستكون متاحة قريبًا في UniMind AI."
+          )}
+        </span>
+      </div>
 
-    featureLinks.forEach(function (link) {
+      <button class="unimind-toast-close" aria-label="Close">
+        ×
+      </button>
+    `;
 
-        link.addEventListener("click", function (event) {
+    document.body.appendChild(toast);
 
-            event.preventDefault();
-
-            const card =
-                link.closest(".feature-card");
-
-            if (!card) return;
-
-            const title =
-                card.querySelector("h3")?.textContent || "";
-
-
-            if (title.includes("مساعد الدراسة")) {
-
-                openStudyAssistant();
-
-            }
-
-        });
-
+    requestAnimationFrame(() => {
+      toast.classList.add("show");
     });
 
+    const closeButton =
+      toast.querySelector(".unimind-toast-close");
 
-    /* =====================================================
-       STUDY ASSISTANT
-    ===================================================== */
+    closeButton?.addEventListener("click", () => {
+      toast.classList.remove("show");
 
-    function openStudyAssistant() {
+      setTimeout(() => {
+        toast.remove();
+      }, 300);
+    });
 
-        const oldModal =
-            document.querySelector(".unimind-chat-overlay");
+    setTimeout(() => {
+      if (document.body.contains(toast)) {
+        toast.classList.remove("show");
 
-        if (oldModal) {
-            oldModal.remove();
-        }
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      }
+    }, 4500);
+  }
 
+  // ==========================================================
+  // OPEN CHAT
+  // ==========================================================
 
-        const overlay =
-            document.createElement("div");
+  function openChat() {
+    let modal = document.getElementById("unimind-chat-modal");
 
-        overlay.className =
-            "unimind-chat-overlay";
+    if (!modal) {
+      modal = createChatModal();
+      document.body.appendChild(modal);
+    }
 
+    modal.classList.add("active");
+    document.body.classList.add("unimind-chat-open");
 
-        overlay.style.cssText = `
-            position:fixed;
-            inset:0;
-            z-index:99999;
-            background:rgba(8,12,30,.75);
-            backdrop-filter:blur(10px);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            padding:18px;
-            direction:rtl;
-        `;
+    const textarea =
+      modal.querySelector("#unimind-chat-input");
 
+    setTimeout(() => {
+      textarea?.focus();
+    }, 250);
+  }
 
-        overlay.innerHTML = `
+  // ==========================================================
+  // CREATE CHAT MODAL
+  // ==========================================================
 
-        <div style="
-            width:100%;
-            max-width:880px;
-            height:min(780px,92vh);
-            background:#fff;
-            border-radius:28px;
-            overflow:hidden;
-            display:flex;
-            flex-direction:column;
-            box-shadow:0 30px 100px rgba(0,0,0,.35);
-        ">
+  function createChatModal() {
+    const modal = document.createElement("div");
 
-            <!-- HEADER -->
+    modal.id = "unimind-chat-modal";
+    modal.className = "unimind-chat-modal";
 
-            <div style="
-                padding:17px 20px;
-                border-bottom:1px solid #ececf3;
-                display:flex;
-                align-items:center;
-                justify-content:space-between;
-                background:#fff;
-            ">
+    modal.innerHTML = `
+      <div class="unimind-chat-overlay"></div>
 
-                <div style="
-                    display:flex;
-                    align-items:center;
-                    gap:12px;
-                ">
+      <div class="unimind-chat-window">
 
-                    <div style="
-                        width:46px;
-                        height:46px;
-                        border-radius:15px;
-                        background:linear-gradient(135deg,#6c4cff,#8b76ff);
-                        color:white;
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        font-size:22px;
-                        box-shadow:0 8px 25px rgba(108,76,255,.25);
-                    ">
-                        ✦
-                    </div>
+        <!-- HEADER -->
+        <div class="unimind-chat-header">
 
+          <div class="unimind-chat-brand">
 
-                    <div>
-
-                        <strong style="
-                            display:block;
-                            font-size:17px;
-                        ">
-                            UniMind AI
-                        </strong>
-
-                        <div style="
-                            display:flex;
-                            align-items:center;
-                            gap:6px;
-                            margin-top:3px;
-                        ">
-
-                            <span style="
-                                width:7px;
-                                height:7px;
-                                border-radius:50%;
-                                background:#22c55e;
-                            "></span>
-
-                            <span style="
-                                color:#777;
-                                font-size:12px;
-                            ">
-                                مساعد الدراسة الذكي
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div style="
-                    display:flex;
-                    align-items:center;
-                    gap:8px;
-                ">
-
-                    <button
-                        id="newUniMindChat"
-                        title="محادثة جديدة"
-                        style="
-                            width:40px;
-                            height:40px;
-                            border:0;
-                            border-radius:12px;
-                            background:#f3f3f7;
-                            color:#555;
-                            cursor:pointer;
-                            font-size:18px;
-                        "
-                    >
-                        ↻
-                    </button>
-
-
-                    <button
-                        id="clearUniMindChat"
-                        title="مسح المحادثة"
-                        style="
-                            width:40px;
-                            height:40px;
-                            border:0;
-                            border-radius:12px;
-                            background:#f3f3f7;
-                            color:#555;
-                            cursor:pointer;
-                            font-size:17px;
-                        "
-                    >
-                        🗑
-                    </button>
-
-
-                    <button
-                        id="closeUniMindChat"
-                        style="
-                            width:40px;
-                            height:40px;
-                            border:0;
-                            border-radius:12px;
-                            background:#f3f3f7;
-                            color:#555;
-                            font-size:24px;
-                            cursor:pointer;
-                        "
-                    >
-                        ×
-                    </button>
-
-                </div>
-
+            <div class="unimind-ai-avatar">
+              <span>✦</span>
             </div>
 
+            <div>
+              <div class="unimind-ai-name">
+                UniMind AI
+              </div>
 
-            <!-- CHAT -->
+              <div class="unimind-ai-status">
+                <span class="status-dot"></span>
+                AI Assistant Online
+              </div>
+            </div>
 
-            <div
-                id="unimindChatMessages"
-                style="
-                    flex:1;
-                    overflow-y:auto;
-                    padding:28px;
-                    background:#fafaff;
-                "
+          </div>
+
+          <div class="unimind-chat-actions">
+
+            <button
+              class="chat-action-btn"
+              id="unimind-new-chat"
+              title="New chat"
+              aria-label="New chat"
             >
+              ＋
+            </button>
 
-                <div
-                    id="unimindWelcome"
-                    style="
-                        max-width:650px;
-                        margin:30px auto;
-                        text-align:center;
-                    "
-                >
+            <button
+              class="chat-action-btn"
+              id="unimind-clear-chat"
+              title="Clear chat"
+              aria-label="Clear chat"
+            >
+              ⌫
+            </button>
 
-                    <div style="
-                        width:76px;
-                        height:76px;
-                        margin:0 auto 18px;
-                        border-radius:24px;
-                        background:linear-gradient(135deg,#6c4cff,#8b76ff);
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        color:white;
-                        font-size:34px;
-                        box-shadow:0 15px 35px rgba(108,76,255,.22);
-                    ">
-                        ✦
-                    </div>
+            <button
+              class="chat-action-btn close"
+              id="unimind-close-chat"
+              title="Close"
+              aria-label="Close"
+            >
+              ×
+            </button>
 
-
-                    <h2 style="
-                        margin:0 0 10px;
-                        font-size:27px;
-                    ">
-                        كيف يمكنني مساعدتك؟
-                    </h2>
-
-
-                    <p style="
-                        margin:0 auto;
-                        color:#777;
-                        line-height:1.9;
-                        font-size:14px;
-                        max-width:550px;
-                    ">
-                        اسأل UniMind AI عن أي موضوع جامعي،
-                        أو اطلب شرحًا، أو مثالًا، أو مساعدة في فهم محاضرتك.
-                    </p>
-
-
-                    <div style="
-                        display:grid;
-                        grid-template-columns:repeat(2,1fr);
-                        gap:12px;
-                        margin-top:28px;
-                    ">
-
-                        <button class="unimind-suggestion">
-                            📚 اشرح لي موضوعًا بطريقة بسيطة
-                        </button>
-
-                        <button class="unimind-suggestion">
-                            📝 اختبرني في مادة دراسية
-                        </button>
-
-                        <button class="unimind-suggestion">
-                            💡 أعطني مثالًا عمليًا
-                        </button>
-
-                        <button class="unimind-suggestion">
-                            🧠 ساعدني في فهم المحاضرة
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- INPUT -->
-
-            <div style="
-                padding:18px 20px 20px;
-                background:#fff;
-                border-top:1px solid #ececf3;
-            ">
-
-                <div style="
-                    display:flex;
-                    align-items:flex-end;
-                    gap:10px;
-                    padding:8px;
-                    background:#f6f6fa;
-                    border:1px solid #e5e5ed;
-                    border-radius:18px;
-                ">
-
-                    <textarea
-                        id="unimindChatInput"
-                        rows="1"
-                        placeholder="اكتب سؤالك هنا..."
-                        style="
-                            flex:1;
-                            resize:none;
-                            border:0;
-                            outline:0;
-                            background:transparent;
-                            padding:12px;
-                            font-family:inherit;
-                            font-size:15px;
-                            line-height:1.6;
-                            direction:rtl;
-                            max-height:120px;
-                        "
-                    ></textarea>
-
-
-                    <button
-                        id="unimindSendButton"
-                        title="إرسال"
-                        style="
-                            width:48px;
-                            height:48px;
-                            flex-shrink:0;
-                            border:0;
-                            border-radius:14px;
-                            background:linear-gradient(135deg,#6c4cff,#8b76ff);
-                            color:white;
-                            font-size:20px;
-                            cursor:pointer;
-                        "
-                    >
-                        ↑
-                    </button>
-
-                </div>
-
-
-                <div style="
-                    text-align:center;
-                    margin-top:8px;
-                    color:#999;
-                    font-size:11px;
-                ">
-                    UniMind AI • مساعد الدراسة الذكي
-                </div>
-
-            </div>
+          </div>
 
         </div>
-        `;
 
+        <!-- MESSAGES -->
+        <div
+          class="unimind-chat-messages"
+          id="unimind-chat-messages"
+        >
 
-        document.body.appendChild(overlay);
+          <div
+            class="unimind-welcome"
+            id="unimind-welcome"
+          >
 
+            <div class="welcome-icon">
+              ✦
+            </div>
 
-        /* =================================================
-           ELEMENTS
-        ================================================= */
+            <h2>
+              How can I help you today?
+            </h2>
 
-        const messages =
-            document.getElementById("unimindChatMessages");
+            <p>
+              Ask me about lectures, programming,
+              university subjects, exams, research,
+              or anything you're studying.
+            </p>
 
-        const input =
-            document.getElementById("unimindChatInput");
+            <div class="suggestion-grid">
 
-        const sendButton =
-            document.getElementById("unimindSendButton");
+              <button
+                class="suggestion-btn"
+                data-message="Explain this lecture to me in a simple way."
+              >
+                <span>📚</span>
+                Explain a lecture
+              </button>
 
+              <button
+                class="suggestion-btn"
+                data-message="Create a study plan for my upcoming exams."
+              >
+                <span>📅</span>
+                Create study plan
+              </button>
 
-        /* =================================================
-           CLOSE
-        ================================================= */
+              <button
+                class="suggestion-btn"
+                data-message="Give me a short quiz to test my knowledge."
+              >
+                <span>🧠</span>
+                Test my knowledge
+              </button>
 
-        document
-            .getElementById("closeUniMindChat")
-            .addEventListener("click", function () {
+              <button
+                class="suggestion-btn"
+                data-message="Explain a difficult programming concept with examples."
+              >
+                <span>💻</span>
+                Explain programming
+              </button>
 
-                overlay.remove();
+            </div>
 
-            });
+          </div>
 
+        </div>
 
-        overlay.addEventListener("click", function (event) {
+        <!-- INPUT -->
+        <div class="unimind-chat-input-area">
 
-            if (event.target === overlay) {
-                overlay.remove();
-            }
+          <div class="unimind-input-wrapper">
 
+            <textarea
+              id="unimind-chat-input"
+              placeholder="Ask UniMind AI anything..."
+              rows="1"
+              maxlength="5000"
+            ></textarea>
+
+            <button
+              id="unimind-send-btn"
+              class="unimind-send-btn"
+              aria-label="Send message"
+              title="Send message"
+            >
+              ➤
+            </button>
+
+          </div>
+
+          <div class="unimind-input-footer">
+            <span>
+              UniMind AI can make mistakes. Verify important information.
+            </span>
+
+            <span>
+              Enter ↵ to send
+            </span>
+          </div>
+
+        </div>
+
+      </div>
+    `;
+
+    initializeChat(modal);
+
+    return modal;
+  }
+
+  // ==========================================================
+  // INITIALIZE CHAT
+  // ==========================================================
+
+  function initializeChat(modal) {
+    const overlay =
+      modal.querySelector(".unimind-chat-overlay");
+
+    const closeButton =
+      modal.querySelector("#unimind-close-chat");
+
+    const newChatButton =
+      modal.querySelector("#unimind-new-chat");
+
+    const clearChatButton =
+      modal.querySelector("#unimind-clear-chat");
+
+    const sendButton =
+      modal.querySelector("#unimind-send-btn");
+
+    const textarea =
+      modal.querySelector("#unimind-chat-input");
+
+    const messages =
+      modal.querySelector("#unimind-chat-messages");
+
+    // Close modal
+    overlay?.addEventListener("click", closeChat);
+
+    closeButton?.addEventListener("click", closeChat);
+
+    // New chat
+    newChatButton?.addEventListener("click", () => {
+      resetChat(messages);
+      textarea?.focus();
+    });
+
+    // Clear chat
+    clearChatButton?.addEventListener("click", () => {
+      resetChat(messages);
+      textarea?.focus();
+    });
+
+    // Send
+    sendButton?.addEventListener("click", () => {
+      sendMessage(modal);
+    });
+
+    // Enter to send
+    textarea?.addEventListener("keydown", (event) => {
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey
+      ) {
+        event.preventDefault();
+        sendMessage(modal);
+      }
+    });
+
+    // Auto resize textarea
+    textarea?.addEventListener("input", () => {
+      textarea.style.height = "auto";
+
+      textarea.style.height =
+        Math.min(textarea.scrollHeight, 150) + "px";
+    });
+
+    // Suggestions
+    modal
+      .querySelectorAll(".suggestion-btn")
+      .forEach((button) => {
+        button.addEventListener("click", () => {
+          const message =
+            button.dataset.message || "";
+
+          if (!message) return;
+
+          textarea.value = message;
+
+          textarea.dispatchEvent(
+            new Event("input")
+          );
+
+          sendMessage(modal);
         });
-
-
-        /* =================================================
-           NEW CHAT
-        ================================================= */
-
-        document
-            .getElementById("newUniMindChat")
-            .addEventListener("click", function () {
-
-                resetChat();
-
-            });
-
-
-        /* =================================================
-           CLEAR CHAT
-        ================================================= */
-
-        document
-            .getElementById("clearUniMindChat")
-            .addEventListener("click", function () {
-
-                if (
-                    confirm(
-                        "هل تريد مسح المحادثة الحالية؟"
-                    )
-                ) {
-
-                    resetChat();
-
-                }
-
-            });
-
-
-        /* =================================================
-           RESET CHAT
-        ================================================= */
-
-        function resetChat() {
-
-            messages.innerHTML = `
-
-                <div
-                    id="unimindWelcome"
-                    style="
-                        max-width:650px;
-                        margin:30px auto;
-                        text-align:center;
-                    "
-                >
-
-                    <div style="
-                        width:76px;
-                        height:76px;
-                        margin:0 auto 18px;
-                        border-radius:24px;
-                        background:linear-gradient(135deg,#6c4cff,#8b76ff);
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        color:white;
-                        font-size:34px;
-                    ">
-                        ✦
-                    </div>
-
-                    <h2 style="
-                        margin:0 0 10px;
-                        font-size:27px;
-                    ">
-                        كيف يمكنني مساعدتك؟
-                    </h2>
-
-                    <p style="
-                        margin:0 auto;
-                        color:#777;
-                        line-height:1.9;
-                        font-size:14px;
-                    ">
-                        ابدأ محادثة جديدة مع UniMind AI.
-                    </p>
-
-                </div>
-
-            `;
-
-            input.value = "";
-
-            input.style.height = "auto";
-
-            input.focus();
-
-        }
-
-
-        /* =================================================
-           SUGGESTIONS
-        ================================================= */
-
-        const suggestions =
-            overlay.querySelectorAll(".unimind-suggestion");
-
-
-        suggestions.forEach(function (button) {
-
-            button.style.cssText += `
-                border:1px solid #e6e6ef;
-                background:#fff;
-                border-radius:15px;
-                padding:15px;
-                cursor:pointer;
-                font-family:inherit;
-                font-size:13px;
-                color:#444;
-                text-align:right;
-                transition:.2s;
-            `;
-
-
-            button.addEventListener(
-                "mouseenter",
-                function () {
-
-                    button.style.transform =
-                        "translateY(-2px)";
-
-                    button.style.borderColor =
-                        "#6c4cff";
-
-                }
-            );
-
-
-            button.addEventListener(
-                "mouseleave",
-                function () {
-
-                    button.style.transform =
-                        "translateY(0)";
-
-                    button.style.borderColor =
-                        "#e6e6ef";
-
-                }
-            );
-
-
-            button.addEventListener(
-                "click",
-                function () {
-
-                    input.value =
-                        button.textContent.trim();
-
-                    input.focus();
-
-                }
-            );
-
-        });
-
-
-        /* =================================================
-           AUTO RESIZE
-        ================================================= */
-
-        input.addEventListener(
-            "input",
-            function () {
-
-                input.style.height = "auto";
-
-                input.style.height =
-                    Math.min(
-                        input.scrollHeight,
-                        120
-                    ) + "px";
-
-            }
-        );
-
-
-        /* =================================================
-           SEND MESSAGE
-        ================================================= */
-
-        function sendMessage() {
-
-            const question =
-                input.value.trim();
-
-            if (!question) {
-
-                input.focus();
-
-                return;
-
-            }
-
-
-            const welcome =
-                document.getElementById("unimindWelcome");
-
-            if (welcome) {
-                welcome.remove();
-            }
-
-
-            /* USER */
-
-            const userMessage =
-                document.createElement("div");
-
-
-            userMessage.style.cssText = `
-                display:flex;
-                justify-content:flex-start;
-                margin:16px 0;
-            `;
-
-
-            userMessage.innerHTML = `
-
-                <div style="
-                    max-width:76%;
-                    background:linear-gradient(135deg,#6c4cff,#8068ff);
-                    color:white;
-                    padding:13px 17px;
-                    border-radius:18px 18px 4px 18px;
-                    line-height:1.8;
-                    font-size:14px;
-                    box-shadow:0 8px 20px rgba(108,76,255,.12);
-                ">
-                    ${escapeHTML(question)}
-                </div>
-
-            `;
-
-
-            messages.appendChild(userMessage);
-
-
-            input.value = "";
-
-            input.style.height = "auto";
-
-            scrollChat();
-
-
-            /* THINKING */
-
-            const thinking =
-                document.createElement("div");
-
-
-            thinking.style.cssText = `
-                display:flex;
-                justify-content:flex-end;
-                margin:16px 0;
-            `;
-
-
-            thinking.innerHTML = `
-
-                <div style="
-                    max-width:76%;
-                    background:#fff;
-                    border:1px solid #e8e8ef;
-                    color:#777;
-                    padding:13px 17px;
-                    border-radius:18px 18px 18px 4px;
-                    font-size:14px;
-                ">
-                    <span>✦</span>
-                    UniMind يفكر...
-                </div>
-
-            `;
-
-
-            messages.appendChild(thinking);
-
-            scrollChat();
-
-
-            /* DEMO RESPONSE */
-
-            setTimeout(function () {
-
-                thinking.remove();
-
-
-                createAssistantMessage(
-                    "فهمت سؤالك 👌\n\nهذه نسخة تجريبية من واجهة UniMind AI. سنقوم لاحقًا بربطها بنموذج ذكاء اصطناعي حقيقي حتى تحصل على إجابات مخصصة لسؤالك."
-                );
-
-
-            }, 900);
-
-        }
-
-
-        /* =================================================
-           CREATE AI MESSAGE
-        ================================================= */
-
-        function createAssistantMessage(text) {
-
-            const wrapper =
-                document.createElement("div");
-
-
-            wrapper.style.cssText = `
-                display:flex;
-                justify-content:flex-end;
-                margin:16px 0;
-            `;
-
+      });
+  }
+
+  // ==========================================================
+  // CLOSE CHAT
+  // ==========================================================
+
+  function closeChat() {
+    const modal =
+      document.getElementById("unimind-chat-modal");
+
+    if (!modal) return;
+
+    modal.classList.remove("active");
+
+    document.body.classList.remove(
+      "unimind-chat-open"
+    );
+  }
+
+  // ==========================================================
+  // RESET CHAT
+  // ==========================================================
+
+  function resetChat(messagesContainer) {
+    if (!messagesContainer) return;
+
+    messagesContainer.innerHTML = `
+      <div
+        class="unimind-welcome"
+        id="unimind-welcome"
+      >
+
+        <div class="welcome-icon">
+          ✦
+        </div>
+
+        <h2>
+          How can I help you today?
+        </h2>
+
+        <p>
+          Ask me about lectures, programming,
+          university subjects, exams, research,
+          or anything you're studying.
+        </p>
+
+        <div class="suggestion-grid">
+
+          <button
+            class="suggestion-btn"
+            data-message="Explain this lecture to me in a simple way."
+          >
+            <span>📚</span>
+            Explain a lecture
+          </button>
+
+          <button
+            class="suggestion-btn"
+            data-message="Create a study plan for my upcoming exams."
+          >
+            <span>📅</span>
+            Create study plan
+          </button>
+
+          <button
+            class="suggestion-btn"
+            data-message="Give me a short quiz to test my knowledge."
+          >
+            <span>🧠</span>
+            Test my knowledge
+          </button>
+
+          <button
+            class="suggestion-btn"
+            data-message="Explain a difficult programming concept with examples."
+          >
+            <span>💻</span>
+            Explain programming
+          </button>
+
+        </div>
+
+      </div>
+    `;
+
+    const modal =
+      document.getElementById("unimind-chat-modal");
+
+    if (modal) {
+      modal
+        .querySelectorAll(".suggestion-btn")
+        .forEach((button) => {
+          button.addEventListener("click", () => {
+            const textarea =
+              modal.querySelector(
+                "#unimind-chat-input"
+              );
 
             const message =
-                document.createElement("div");
+              button.dataset.message || "";
 
+            if (!textarea || !message) return;
 
-            message.style.cssText = `
-                max-width:82%;
-                background:#fff;
-                border:1px solid #e8e8ef;
-                color:#333;
-                padding:16px 18px;
-                border-radius:18px 18px 18px 4px;
-                line-height:1.9;
-                font-size:14px;
-                box-shadow:0 5px 20px rgba(0,0,0,.03);
-            `;
+            textarea.value = message;
 
-
-            const safeText =
-                escapeHTML(text)
-                    .replace(/\n/g, "<br>");
-
-
-            message.innerHTML = `
-
-                <div style="
-                    font-weight:700;
-                    margin-bottom:10px;
-                    color:#6c4cff;
-                ">
-                    ✦ UniMind AI
-                </div>
-
-                <div>
-                    ${safeText}
-                </div>
-
-
-                <div style="
-                    display:flex;
-                    gap:7px;
-                    margin-top:14px;
-                    padding-top:12px;
-                    border-top:1px solid #f0f0f4;
-                ">
-
-                    <button
-                        class="ai-action copy-answer"
-                        title="نسخ الإجابة"
-                    >
-                        📋
-                    </button>
-
-                    <button
-                        class="ai-action like-answer"
-                        title="إجابة مفيدة"
-                    >
-                        👍
-                    </button>
-
-                    <button
-                        class="ai-action dislike-answer"
-                        title="الإجابة غير مفيدة"
-                    >
-                        👎
-                    </button>
-
-                    <button
-                        class="ai-action regenerate-answer"
-                        title="إعادة التوليد"
-                    >
-                        🔄
-                    </button>
-
-                </div>
-
-            `;
-
-
-            wrapper.appendChild(message);
-
-            messages.appendChild(wrapper);
-
-
-            /* ACTION BUTTONS */
-
-            const actionButtons =
-                message.querySelectorAll(".ai-action");
-
-
-            actionButtons.forEach(function (button) {
-
-                button.style.cssText += `
-                    border:0;
-                    background:#f5f5f8;
-                    border-radius:9px;
-                    padding:7px 10px;
-                    cursor:pointer;
-                    font-size:13px;
-                `;
-
-            });
-
-
-            /* COPY */
-
-            message
-                .querySelector(".copy-answer")
-                .addEventListener(
-                    "click",
-                    function () {
-
-                        navigator.clipboard
-                            .writeText(text)
-                            .then(function () {
-
-                                this.textContent = "✓";
-
-                                setTimeout(
-                                    () => {
-                                        this.textContent = "📋";
-                                    },
-                                    1200
-                                );
-
-                            }.bind(this));
-
-                    }
-                );
-
-
-            /* LIKE */
-
-            message
-                .querySelector(".like-answer")
-                .addEventListener(
-                    "click",
-                    function () {
-
-                        this.textContent = "💜";
-
-                    }
-                );
-
-
-            /* DISLIKE */
-
-            message
-                .querySelector(".dislike-answer")
-                .addEventListener(
-                    "click",
-                    function () {
-
-                        this.textContent = "✓";
-
-                    }
-                );
-
-
-            /* REGENERATE */
-
-            message
-                .querySelector(".regenerate-answer")
-                .addEventListener(
-                    "click",
-                    function () {
-
-                        const old =
-                            this.textContent;
-
-                        this.textContent =
-                            "⏳";
-
-                        setTimeout(
-                            function () {
-
-                                this.textContent =
-                                    old;
-
-                            }.bind(this),
-                            1000
-                        );
-
-                    }
-                );
-
-
-            scrollChat();
-
-        }
-
-
-        /* =================================================
-           ENTER
-        ================================================= */
-
-        input.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key === "Enter" &&
-                    !event.shiftKey
-                ) {
-
-                    event.preventDefault();
-
-                    sendMessage();
-
-                }
-
-            }
-        );
-
-
-        /* =================================================
-           SEND BUTTON
-        ================================================= */
-
-        sendButton.addEventListener(
-            "click",
-            sendMessage
-        );
-
-
-        /* =================================================
-           SCROLL
-        ================================================= */
-
-        function scrollChat() {
-
-            setTimeout(
-                function () {
-
-                    messages.scrollTo({
-                        top:messages.scrollHeight,
-                        behavior:"smooth"
-                    });
-
-                },
-                50
+            textarea.dispatchEvent(
+              new Event("input")
             );
 
+            sendMessage(modal);
+          });
+        });
+    }
+  }
+
+  // ==========================================================
+  // SEND MESSAGE
+  // ==========================================================
+
+  async function sendMessage(modal) {
+    const textarea =
+      modal.querySelector("#unimind-chat-input");
+
+    const sendButton =
+      modal.querySelector("#unimind-send-btn");
+
+    const messages =
+      modal.querySelector("#unimind-chat-messages");
+
+    if (!textarea || !messages) return;
+
+    const message =
+      textarea.value.trim();
+
+    if (!message) return;
+
+    // Disable input while processing
+    textarea.disabled = true;
+
+    if (sendButton) {
+      sendButton.disabled = true;
+      sendButton.innerHTML = "…";
+    }
+
+    // Remove welcome screen
+    const welcome =
+      messages.querySelector(
+        "#unimind-welcome"
+      );
+
+    if (welcome) {
+      welcome.remove();
+    }
+
+    // Add user message
+    addUserMessage(
+      messages,
+      message
+    );
+
+    // Clear input
+    textarea.value = "";
+    textarea.style.height = "auto";
+
+    // Show thinking indicator
+    const thinking =
+      addThinkingMessage(messages);
+
+    scrollMessagesToBottom(messages);
+
+    try {
+      const reply =
+        await callUniMindAI(message);
+
+      // Remove thinking indicator
+      thinking?.remove();
+
+      // Add assistant response
+      addAssistantMessage(
+        messages,
+        reply
+      );
+
+    } catch (error) {
+      console.error(
+        "UniMind AI Error:",
+        error
+      );
+
+      thinking?.remove();
+
+      addErrorMessage(
+        messages,
+        getReadableError(error)
+      );
+
+    } finally {
+      textarea.disabled = false;
+
+      if (sendButton) {
+        sendButton.disabled = false;
+        sendButton.innerHTML = "➤";
+      }
+
+      textarea.focus();
+
+      scrollMessagesToBottom(messages);
+    }
+  }
+
+  // ==========================================================
+  // CALL SUPABASE EDGE FUNCTION
+  // ==========================================================
+
+  async function callUniMindAI(message) {
+    const response =
+      await fetch(API_URL, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          message: message
+        })
+      });
+
+    let data = null;
+
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(
+        "تعذر قراءة استجابة الخادم."
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error ||
+          `Server error: ${response.status}`
+      );
+    }
+
+    if (
+      !data ||
+      typeof data.reply !== "string"
+    ) {
+      throw new Error(
+        "لم تصل إجابة صحيحة من UniMind AI."
+      );
+    }
+
+    return data.reply;
+  }
+
+  // ==========================================================
+  // USER MESSAGE
+  // ==========================================================
+
+  function addUserMessage(
+    container,
+    message
+  ) {
+    const messageElement =
+      document.createElement("div");
+
+    messageElement.className =
+      "unimind-message user-message";
+
+    messageElement.innerHTML = `
+      <div class="message-content">
+        ${formatText(message)}
+      </div>
+    `;
+
+    container.appendChild(
+      messageElement
+    );
+  }
+
+  // ==========================================================
+  // THINKING MESSAGE
+  // ==========================================================
+
+  function addThinkingMessage(
+    container
+  ) {
+    const messageElement =
+      document.createElement("div");
+
+    messageElement.className =
+      "unimind-message assistant-message thinking-message";
+
+    messageElement.innerHTML = `
+      <div class="message-avatar">
+        ✦
+      </div>
+
+      <div class="message-content thinking-content">
+        <span class="thinking-label">
+          UniMind AI is thinking
+        </span>
+
+        <div class="thinking-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(
+      messageElement
+    );
+
+    return messageElement;
+  }
+
+  // ==========================================================
+  // ASSISTANT MESSAGE
+  // ==========================================================
+
+  function addAssistantMessage(
+    container,
+    message
+  ) {
+    const messageElement =
+      document.createElement("div");
+
+    messageElement.className =
+      "unimind-message assistant-message";
+
+    const messageId =
+      "msg-" +
+      Date.now() +
+      "-" +
+      Math.random()
+        .toString(36)
+        .substring(2, 8);
+
+    messageElement.dataset.messageId =
+      messageId;
+
+    messageElement.innerHTML = `
+      <div class="message-avatar">
+        ✦
+      </div>
+
+      <div class="assistant-message-body">
+
+        <div class="message-content">
+          ${formatAIResponse(message)}
+        </div>
+
+        <div class="message-tools">
+
+          <button
+            class="message-tool copy-btn"
+            title="Copy answer"
+          >
+            Copy
+          </button>
+
+          <button
+            class="message-tool like-btn"
+            title="Helpful"
+          >
+            👍
+          </button>
+
+          <button
+            class="message-tool dislike-btn"
+            title="Not helpful"
+          >
+            👎
+          </button>
+
+        </div>
+
+      </div>
+    `;
+
+    container.appendChild(
+      messageElement
+    );
+
+    // Copy
+    const copyButton =
+      messageElement.querySelector(
+        ".copy-btn"
+      );
+
+    copyButton?.addEventListener(
+      "click",
+      async () => {
+        try {
+          await navigator.clipboard.writeText(
+            message
+          );
+
+          copyButton.textContent =
+            "Copied ✓";
+
+          setTimeout(() => {
+            copyButton.textContent =
+              "Copy";
+          }, 1800);
+
+        } catch {
+          copyButton.textContent =
+            "Copy failed";
         }
+      }
+    );
 
+    // Like
+    const likeButton =
+      messageElement.querySelector(
+        ".like-btn"
+      );
 
-        /* =================================================
-           FOCUS
-        ================================================= */
+    likeButton?.addEventListener(
+      "click",
+      () => {
+        likeButton.classList.toggle(
+          "selected"
+        );
+      }
+    );
 
-        input.focus();
+    // Dislike
+    const dislikeButton =
+      messageElement.querySelector(
+        ".dislike-btn"
+      );
 
+    dislikeButton?.addEventListener(
+      "click",
+      () => {
+        dislikeButton.classList.toggle(
+          "selected"
+        );
+      }
+    );
+  }
+
+  // ==========================================================
+  // ERROR MESSAGE
+  // ==========================================================
+
+  function addErrorMessage(
+    container,
+    message
+  ) {
+    const messageElement =
+      document.createElement("div");
+
+    messageElement.className =
+      "unimind-message assistant-message error-message";
+
+    messageElement.innerHTML = `
+      <div class="message-avatar">
+        !
+      </div>
+
+      <div class="message-content">
+        <strong>حدث خطأ</strong>
+        <br>
+        ${escapeHTML(message)}
+      </div>
+    `;
+
+    container.appendChild(
+      messageElement
+    );
+  }
+
+  // ==========================================================
+  // READABLE ERROR
+  // ==========================================================
+
+  function getReadableError(error) {
+    const message =
+      error?.message || "";
+
+    if (
+      message.includes(
+        "Failed to fetch"
+      )
+    ) {
+      return "تعذر الاتصال بخدمة UniMind AI. تأكد من نشر Edge Function وأن الاتصال بالإنترنت يعمل.";
     }
 
-
-    /* =====================================================
-       SECURITY
-    ===================================================== */
-
-    function escapeHTML(text) {
-
-        const div =
-            document.createElement("div");
-
-        div.textContent =
-            text;
-
-        return div.innerHTML;
-
+    if (
+      message.includes(
+        "OPENAI_API_KEY"
+      )
+    ) {
+      return "مفتاح OpenAI غير مضبوط بشكل صحيح في Supabase.";
     }
+
+    if (
+      message.includes(
+        "401"
+      )
+    ) {
+      return "تعذر المصادقة مع خدمة الذكاء الاصطناعي.";
+    }
+
+    if (
+      message.includes(
+        "429"
+      )
+    ) {
+      return "تم الوصول إلى حد الاستخدام الحالي. حاول مرة أخرى لاحقًا.";
+    }
+
+    return message ||
+      "حدث خطأ غير متوقع. حاول مرة أخرى.";
+  }
+
+  // ==========================================================
+  // FORMAT AI RESPONSE
+  // ==========================================================
+
+  function formatAIResponse(text) {
+    if (!text) return "";
+
+    let safe =
+      escapeHTML(text);
+
+    // Bold
+    safe = safe.replace(
+      /\*\*(.*?)\*\*/g,
+      "<strong>$1</strong>"
+    );
+
+    // Inline code
+    safe = safe.replace(
+      /`([^`]+)`/g,
+      "<code>$1</code>"
+    );
+
+    // Headings
+    safe = safe.replace(
+      /^### (.*)$/gm,
+      "<h4>$1</h4>"
+    );
+
+    safe = safe.replace(
+      /^## (.*)$/gm,
+      "<h3>$1</h3>"
+    );
+
+    // Unordered lists
+    safe = safe.replace(
+      /^\s*[-•]\s+(.*)$/gm,
+      "<li>$1</li>"
+    );
+
+    safe = safe.replace(
+      /(<li>.*<\/li>)/gs,
+      "<ul>$1</ul>"
+    );
+
+    // Paragraphs / line breaks
+    safe = safe.replace(
+      /\n\n+/g,
+      "</p><p>"
+    );
+
+    safe = safe.replace(
+      /\n/g,
+      "<br>"
+    );
+
+    return `<p>${safe}</p>`;
+  }
+
+  // ==========================================================
+  // FORMAT USER TEXT
+  // ==========================================================
+
+  function formatText(text) {
+    return escapeHTML(
+      text
+    ).replace(
+      /\n/g,
+      "<br>"
+    );
+  }
+
+  // ==========================================================
+  // ESCAPE HTML
+  // ==========================================================
+
+  function escapeHTML(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // ==========================================================
+  // SCROLL CHAT
+  // ==========================================================
+
+  function scrollMessagesToBottom(
+    container
+  ) {
+    requestAnimationFrame(() => {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth"
+      });
+    });
+  }
+
+  // ==========================================================
+  // ESC KEY
+  // ==========================================================
+
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (
+        event.key === "Escape"
+      ) {
+        closeChat();
+      }
+    }
+  );
+
+  // ==========================================================
+  // GLOBAL CHAT BUTTON SUPPORT
+  // ==========================================================
+
+  document
+    .querySelectorAll(
+      "[data-open-chat], .open-chat, #start-learning, #try-demo"
+    )
+    .forEach((button) => {
+      button.addEventListener(
+        "click",
+        (event) => {
+          event.preventDefault();
+          openChat();
+        }
+      );
+    });
 
 });
