@@ -1,6 +1,6 @@
 // ============================================================
 // UniMind AI - Main Application
-// Real AI Chat powered by Supabase Edge Functions + OpenAI
+// Real AI Chat powered by Supabase Edge Functions + Gemini
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -24,14 +24,19 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================
 
   featureCards.forEach((card) => {
-    card.addEventListener("click", () => {
+    card.addEventListener("click", (event) => {
+      // If the user clicked a button/link inside the card,
+      // let that button's own handler deal with it.
+      if (event.target.closest("button, a")) {
+        return;
+      }
+
       const title =
         card.querySelector("h3")?.textContent?.trim() || "";
 
       const description =
         card.querySelector("p")?.textContent?.trim() || "";
 
-      // Study Assistant → open real AI chat
       if (
         title.toLowerCase().includes("study") ||
         title.toLowerCase().includes("assistant") ||
@@ -41,7 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Other features
       showFeatureMessage(title, description);
     });
   });
@@ -51,7 +55,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================
 
   function showFeatureMessage(title, description) {
-    const existing = document.querySelector(".unimind-feature-toast");
+    const existing = document.querySelector(
+      ".unimind-feature-toast"
+    );
 
     if (existing) {
       existing.remove();
@@ -66,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <div class="unimind-toast-content">
         <strong>${escapeHTML(title)}</strong>
+
         <span>
           ${escapeHTML(
             description ||
@@ -74,7 +81,11 @@ document.addEventListener("DOMContentLoaded", () => {
         </span>
       </div>
 
-      <button class="unimind-toast-close" aria-label="Close">
+      <button
+        class="unimind-toast-close"
+        aria-label="Close"
+        type="button"
+      >
         ×
       </button>
     `;
@@ -112,7 +123,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================
 
   function openChat() {
-    let modal = document.getElementById("unimind-chat-modal");
+    let modal =
+      document.getElementById("unimind-chat-modal");
 
     if (!modal) {
       modal = createChatModal();
@@ -120,7 +132,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     modal.classList.add("active");
-    document.body.classList.add("unimind-chat-open");
+
+    document.body.classList.add(
+      "unimind-chat-open"
+    );
 
     const textarea =
       modal.querySelector("#unimind-chat-input");
@@ -143,9 +158,13 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.innerHTML = `
       <div class="unimind-chat-overlay"></div>
 
-      <div class="unimind-chat-window">
+      <div
+        class="unimind-chat-window"
+        role="dialog"
+        aria-modal="true"
+        aria-label="UniMind AI"
+      >
 
-        <!-- HEADER -->
         <div class="unimind-chat-header">
 
           <div class="unimind-chat-brand">
@@ -170,6 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="unimind-chat-actions">
 
             <button
+              type="button"
               class="chat-action-btn"
               id="unimind-new-chat"
               title="New chat"
@@ -179,6 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
 
             <button
+              type="button"
               class="chat-action-btn"
               id="unimind-clear-chat"
               title="Clear chat"
@@ -188,6 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
 
             <button
+              type="button"
               class="chat-action-btn close"
               id="unimind-close-chat"
               title="Close"
@@ -200,7 +222,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         </div>
 
-        <!-- MESSAGES -->
         <div
           class="unimind-chat-messages"
           id="unimind-chat-messages"
@@ -228,6 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="suggestion-grid">
 
               <button
+                type="button"
                 class="suggestion-btn"
                 data-message="Explain this lecture to me in a simple way."
               >
@@ -236,6 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </button>
 
               <button
+                type="button"
                 class="suggestion-btn"
                 data-message="Create a study plan for my upcoming exams."
               >
@@ -244,6 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </button>
 
               <button
+                type="button"
                 class="suggestion-btn"
                 data-message="Give me a short quiz to test my knowledge."
               >
@@ -252,6 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </button>
 
               <button
+                type="button"
                 class="suggestion-btn"
                 data-message="Explain a difficult programming concept with examples."
               >
@@ -265,7 +290,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         </div>
 
-        <!-- INPUT -->
         <div class="unimind-chat-input-area">
 
           <div class="unimind-input-wrapper">
@@ -278,6 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ></textarea>
 
             <button
+              type="button"
               id="unimind-send-btn"
               class="unimind-send-btn"
               aria-label="Send message"
@@ -334,65 +359,100 @@ document.addEventListener("DOMContentLoaded", () => {
     const messages =
       modal.querySelector("#unimind-chat-messages");
 
-    // Close modal
-    overlay?.addEventListener("click", closeChat);
+    overlay?.addEventListener(
+      "click",
+      closeChat
+    );
 
-    closeButton?.addEventListener("click", closeChat);
+    closeButton?.addEventListener(
+      "click",
+      closeChat
+    );
 
-    // New chat
-    newChatButton?.addEventListener("click", () => {
-      resetChat(messages);
-      textarea?.focus();
-    });
+    newChatButton?.addEventListener(
+      "click",
+      () => {
+        resetChat(messages);
+        textarea?.focus();
+      }
+    );
 
-    // Clear chat
-    clearChatButton?.addEventListener("click", () => {
-      resetChat(messages);
-      textarea?.focus();
-    });
+    clearChatButton?.addEventListener(
+      "click",
+      () => {
+        resetChat(messages);
+        textarea?.focus();
+      }
+    );
 
-    // Send
-    sendButton?.addEventListener("click", () => {
-      sendMessage(modal);
-    });
-
-    // Enter to send
-    textarea?.addEventListener("keydown", (event) => {
-      if (
-        event.key === "Enter" &&
-        !event.shiftKey
-      ) {
-        event.preventDefault();
+    sendButton?.addEventListener(
+      "click",
+      () => {
         sendMessage(modal);
       }
-    });
+    );
 
-    // Auto resize textarea
-    textarea?.addEventListener("input", () => {
-      textarea.style.height = "auto";
+    textarea?.addEventListener(
+      "keydown",
+      (event) => {
+        if (
+          event.key === "Enter" &&
+          !event.shiftKey
+        ) {
+          event.preventDefault();
+          sendMessage(modal);
+        }
+      }
+    );
 
-      textarea.style.height =
-        Math.min(textarea.scrollHeight, 150) + "px";
-    });
+    textarea?.addEventListener(
+      "input",
+      () => {
+        textarea.style.height = "auto";
 
-    // Suggestions
+        textarea.style.height =
+          Math.min(
+            textarea.scrollHeight,
+            150
+          ) + "px";
+      }
+    );
+
+    attachSuggestionHandlers(modal);
+  }
+
+  // ==========================================================
+  // SUGGESTIONS
+  // ==========================================================
+
+  function attachSuggestionHandlers(modal) {
     modal
       .querySelectorAll(".suggestion-btn")
       .forEach((button) => {
-        button.addEventListener("click", () => {
-          const message =
-            button.dataset.message || "";
+        button.addEventListener(
+          "click",
+          () => {
+            const textarea =
+              modal.querySelector(
+                "#unimind-chat-input"
+              );
 
-          if (!message) return;
+            const message =
+              button.dataset.message || "";
 
-          textarea.value = message;
+            if (!textarea || !message) {
+              return;
+            }
 
-          textarea.dispatchEvent(
-            new Event("input")
-          );
+            textarea.value = message;
 
-          sendMessage(modal);
-        });
+            textarea.dispatchEvent(
+              new Event("input")
+            );
+
+            sendMessage(modal);
+          }
+        );
       });
   }
 
@@ -402,7 +462,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function closeChat() {
     const modal =
-      document.getElementById("unimind-chat-modal");
+      document.getElementById(
+        "unimind-chat-modal"
+      );
 
     if (!modal) return;
 
@@ -443,6 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="suggestion-grid">
 
           <button
+            type="button"
             class="suggestion-btn"
             data-message="Explain this lecture to me in a simple way."
           >
@@ -451,6 +514,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
 
           <button
+            type="button"
             class="suggestion-btn"
             data-message="Create a study plan for my upcoming exams."
           >
@@ -459,6 +523,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
 
           <button
+            type="button"
             class="suggestion-btn"
             data-message="Give me a short quiz to test my knowledge."
           >
@@ -467,6 +532,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
 
           <button
+            type="button"
             class="suggestion-btn"
             data-message="Explain a difficult programming concept with examples."
           >
@@ -480,32 +546,12 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     const modal =
-      document.getElementById("unimind-chat-modal");
+      document.getElementById(
+        "unimind-chat-modal"
+      );
 
     if (modal) {
-      modal
-        .querySelectorAll(".suggestion-btn")
-        .forEach((button) => {
-          button.addEventListener("click", () => {
-            const textarea =
-              modal.querySelector(
-                "#unimind-chat-input"
-              );
-
-            const message =
-              button.dataset.message || "";
-
-            if (!textarea || !message) return;
-
-            textarea.value = message;
-
-            textarea.dispatchEvent(
-              new Event("input")
-            );
-
-            sendMessage(modal);
-          });
-        });
+      attachSuggestionHandlers(modal);
     }
   }
 
@@ -515,22 +561,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function sendMessage(modal) {
     const textarea =
-      modal.querySelector("#unimind-chat-input");
+      modal.querySelector(
+        "#unimind-chat-input"
+      );
 
     const sendButton =
-      modal.querySelector("#unimind-send-btn");
+      modal.querySelector(
+        "#unimind-send-btn"
+      );
 
     const messages =
-      modal.querySelector("#unimind-chat-messages");
+      modal.querySelector(
+        "#unimind-chat-messages"
+      );
 
-    if (!textarea || !messages) return;
+    if (!textarea || !messages) {
+      return;
+    }
 
     const message =
       textarea.value.trim();
 
-    if (!message) return;
+    if (!message) {
+      return;
+    }
 
-    // Disable input while processing
     textarea.disabled = true;
 
     if (sendButton) {
@@ -538,7 +593,6 @@ document.addEventListener("DOMContentLoaded", () => {
       sendButton.innerHTML = "…";
     }
 
-    // Remove welcome screen
     const welcome =
       messages.querySelector(
         "#unimind-welcome"
@@ -548,30 +602,31 @@ document.addEventListener("DOMContentLoaded", () => {
       welcome.remove();
     }
 
-    // Add user message
     addUserMessage(
       messages,
       message
     );
 
-    // Clear input
     textarea.value = "";
     textarea.style.height = "auto";
 
-    // Show thinking indicator
     const thinking =
-      addThinkingMessage(messages);
+      addThinkingMessage(
+        messages
+      );
 
-    scrollMessagesToBottom(messages);
+    scrollMessagesToBottom(
+      messages
+    );
 
     try {
       const reply =
-        await callUniMindAI(message);
+        await callUniMindAI(
+          message
+        );
 
-      // Remove thinking indicator
       thinking?.remove();
 
-      // Add assistant response
       addAssistantMessage(
         messages,
         reply
@@ -587,7 +642,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       addErrorMessage(
         messages,
-        getReadableError(error)
+        getReadableError(
+          error
+        )
       );
 
     } finally {
@@ -600,7 +657,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       textarea.focus();
 
-      scrollMessagesToBottom(messages);
+      scrollMessagesToBottom(
+        messages
+      );
     }
   }
 
@@ -609,46 +668,67 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================
 
   async function callUniMindAI(message) {
-    const response =
-      await fetch(API_URL, {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
-          message: message
-        })
-      });
-
-    let data = null;
+    let response;
 
     try {
-      data = await response.json();
-    } catch {
+      response = await fetch(
+        API_URL,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            message: message
+          })
+        }
+      );
+    } catch (networkError) {
       throw new Error(
-        "تعذر قراءة استجابة الخادم."
+        "NETWORK_ERROR"
       );
     }
 
+    let data = null;
+
+    const responseText =
+      await response.text();
+
+    try {
+      data =
+        responseText
+          ? JSON.parse(responseText)
+          : null;
+    } catch {
+      data = null;
+    }
+
     if (!response.ok) {
-      throw new Error(
+      const serverMessage =
+        data?.details ||
         data?.error ||
-          `Server error: ${response.status}`
+        responseText ||
+        `HTTP ${response.status}`;
+
+      throw new Error(
+        `HTTP_${response.status}: ${serverMessage}`
       );
     }
 
     if (
       !data ||
-      typeof data.reply !== "string"
+      typeof data.reply !== "string" ||
+      !data.reply.trim()
     ) {
       throw new Error(
-        "لم تصل إجابة صحيحة من UniMind AI."
+        "INVALID_RESPONSE"
       );
     }
 
-    return data.reply;
+    return data.reply.trim();
   }
 
   // ==========================================================
@@ -695,6 +775,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
 
       <div class="message-content thinking-content">
+
         <span class="thinking-label">
           UniMind AI is thinking
         </span>
@@ -704,6 +785,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <span></span>
           <span></span>
         </div>
+
       </div>
     `;
 
@@ -753,6 +835,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="message-tools">
 
           <button
+            type="button"
             class="message-tool copy-btn"
             title="Copy answer"
           >
@@ -760,6 +843,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
 
           <button
+            type="button"
             class="message-tool like-btn"
             title="Helpful"
           >
@@ -767,6 +851,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
 
           <button
+            type="button"
             class="message-tool dislike-btn"
             title="Not helpful"
           >
@@ -782,7 +867,6 @@ document.addEventListener("DOMContentLoaded", () => {
       messageElement
     );
 
-    // Copy
     const copyButton =
       messageElement.querySelector(
         ".copy-btn"
@@ -811,7 +895,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     );
 
-    // Like
     const likeButton =
       messageElement.querySelector(
         ".like-btn"
@@ -826,7 +909,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     );
 
-    // Dislike
     const dislikeButton =
       messageElement.querySelector(
         ".dislike-btn"
@@ -862,9 +944,13 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
 
       <div class="message-content">
+
         <strong>حدث خطأ</strong>
+
         <br>
+
         ${escapeHTML(message)}
+
       </div>
     `;
 
@@ -882,39 +968,58 @@ document.addEventListener("DOMContentLoaded", () => {
       error?.message || "";
 
     if (
-      message.includes(
-        "Failed to fetch"
-      )
+      message === "NETWORK_ERROR"
     ) {
-      return "تعذر الاتصال بخدمة UniMind AI. تأكد من نشر Edge Function وأن الاتصال بالإنترنت يعمل.";
+      return "تعذر الاتصال بخدمة UniMind AI. تأكد من اتصال الإنترنت وأن Edge Function منشورة بشكل صحيح.";
     }
 
     if (
-      message.includes(
-        "OPENAI_API_KEY"
-      )
+      message.includes("HTTP_401")
     ) {
-      return "مفتاح OpenAI غير مضبوط بشكل صحيح في Supabase.";
+      return "الخدمة رفضت الطلب بسبب المصادقة. تحقق من إعدادات Supabase Edge Function.";
     }
 
     if (
-      message.includes(
-        "401"
-      )
+      message.includes("HTTP_403")
     ) {
-      return "تعذر المصادقة مع خدمة الذكاء الاصطناعي.";
+      return "تم رفض الوصول إلى خدمة الذكاء الاصطناعي.";
     }
 
     if (
-      message.includes(
-        "429"
-      )
+      message.includes("HTTP_404")
     ) {
-      return "تم الوصول إلى حد الاستخدام الحالي. حاول مرة أخرى لاحقًا.";
+      return "لم يتم العثور على خدمة UniMind AI. تحقق من رابط Edge Function.";
     }
 
-    return message ||
-      "حدث خطأ غير متوقع. حاول مرة أخرى.";
+    if (
+      message.includes("HTTP_429")
+    ) {
+      return "تم الوصول إلى حد الاستخدام الحالي لـ Gemini. حاول مرة أخرى لاحقًا.";
+    }
+
+    if (
+      message.includes("GEMINI_API_KEY")
+    ) {
+      return "مفتاح Gemini غير مضبوط بشكل صحيح في Supabase Secrets.";
+    }
+
+    if (
+      message.includes("Gemini API Error")
+    ) {
+      return "حدث خطأ في خدمة Gemini. تفاصيل الخطأ: " +
+        message;
+    }
+
+    if (
+      message.includes("INVALID_RESPONSE")
+    ) {
+      return "تم الاتصال بالخدمة، لكن لم تصل إجابة صحيحة من Gemini.";
+    }
+
+    return (
+      message ||
+      "حدث خطأ غير متوقع. حاول مرة أخرى."
+    );
   }
 
   // ==========================================================
@@ -927,19 +1032,16 @@ document.addEventListener("DOMContentLoaded", () => {
     let safe =
       escapeHTML(text);
 
-    // Bold
     safe = safe.replace(
       /\*\*(.*?)\*\*/g,
       "<strong>$1</strong>"
     );
 
-    // Inline code
     safe = safe.replace(
       /`([^`]+)`/g,
       "<code>$1</code>"
     );
 
-    // Headings
     safe = safe.replace(
       /^### (.*)$/gm,
       "<h4>$1</h4>"
@@ -950,7 +1052,6 @@ document.addEventListener("DOMContentLoaded", () => {
       "<h3>$1</h3>"
     );
 
-    // Unordered lists
     safe = safe.replace(
       /^\s*[-•]\s+(.*)$/gm,
       "<li>$1</li>"
@@ -961,7 +1062,6 @@ document.addEventListener("DOMContentLoaded", () => {
       "<ul>$1</ul>"
     );
 
-    // Paragraphs / line breaks
     safe = safe.replace(
       /\n\n+/g,
       "</p><p>"
@@ -994,11 +1094,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function escapeHTML(value) {
     return String(value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+      .replace(
+        /</g,
+        "&lt;"
+      )
+      .replace(
+        />/g,
+        "&gt;"
+      )
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+      .replace(
+        /'/g,
+        "&#039;"
+      );
   }
 
   // ==========================================================
@@ -1044,6 +1159,8 @@ document.addEventListener("DOMContentLoaded", () => {
         "click",
         (event) => {
           event.preventDefault();
+          event.stopPropagation();
+
           openChat();
         }
       );
