@@ -1,3 +1,4 @@
+```javascript
 // ============================================================
 // UniMind AI - Main Application
 // Real AI Chat powered by Supabase Edge Functions + Gemini
@@ -13,11 +14,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const API_URL =
     "https://yzsfublvnwknjnayfosm.supabase.co/functions/v1/unimind-chat";
 
+  // Store the page position before opening chat
+  let savedScrollY = 0;
+
   // ==========================================================
   // DOM ELEMENTS
   // ==========================================================
 
-  const featureCards = document.querySelectorAll(".feature-card");
+  const featureCards =
+    document.querySelectorAll(".feature-card");
 
   // ==========================================================
   // FEATURE CARD HANDLERS
@@ -25,8 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   featureCards.forEach((card) => {
     card.addEventListener("click", (event) => {
-      // If the user clicked a button/link inside the card,
-      // let that button's own handler deal with it.
+
       if (event.target.closest("button, a")) {
         return;
       }
@@ -55,30 +59,36 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================
 
   function showFeatureMessage(title, description) {
-    const existing = document.querySelector(
-      ".unimind-feature-toast"
-    );
+
+    const existing =
+      document.querySelector(".unimind-feature-toast");
 
     if (existing) {
       existing.remove();
     }
 
-    const toast = document.createElement("div");
+    const toast =
+      document.createElement("div");
 
-    toast.className = "unimind-feature-toast";
+    toast.className =
+      "unimind-feature-toast";
 
     toast.innerHTML = `
       <div class="unimind-toast-icon">✨</div>
 
       <div class="unimind-toast-content">
-        <strong>${escapeHTML(title)}</strong>
+
+        <strong>
+          ${escapeHTML(title)}
+        </strong>
 
         <span>
           ${escapeHTML(
             description ||
-              "هذه الميزة ستكون متاحة قريبًا في UniMind AI."
+            "هذه الميزة ستكون متاحة قريبًا في UniMind AI."
           )}
         </span>
+
       </div>
 
       <button
@@ -100,22 +110,93 @@ document.addEventListener("DOMContentLoaded", () => {
       toast.querySelector(".unimind-toast-close");
 
     closeButton?.addEventListener("click", () => {
+
       toast.classList.remove("show");
 
       setTimeout(() => {
         toast.remove();
       }, 300);
+
     });
 
     setTimeout(() => {
+
       if (document.body.contains(toast)) {
+
         toast.classList.remove("show");
 
         setTimeout(() => {
           toast.remove();
         }, 300);
+
       }
+
     }, 4500);
+  }
+
+  // ==========================================================
+  // LOCK PAGE SCROLL
+  // ==========================================================
+
+  function lockPageScroll() {
+
+    savedScrollY =
+      window.scrollY ||
+      window.pageYOffset ||
+      0;
+
+    document.body.dataset.unimindScrollY =
+      String(savedScrollY);
+
+    document.body.style.position = "fixed";
+    document.body.style.top =
+      `-${savedScrollY}px`;
+
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+
+    document.documentElement.classList.add(
+      "unimind-modal-open"
+    );
+
+    document.body.classList.add(
+      "unimind-chat-open"
+    );
+  }
+
+  // ==========================================================
+  // UNLOCK PAGE SCROLL
+  // ==========================================================
+
+  function unlockPageScroll() {
+
+    const storedScroll =
+      parseInt(
+        document.body.dataset.unimindScrollY || "0",
+        10
+      );
+
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.width = "";
+
+    document.documentElement.classList.remove(
+      "unimind-modal-open"
+    );
+
+    document.body.classList.remove(
+      "unimind-chat-open"
+    );
+
+    window.scrollTo(
+      0,
+      storedScroll
+    );
+
+    delete document.body.dataset.unimindScrollY;
   }
 
   // ==========================================================
@@ -123,39 +204,74 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================
 
   function openChat() {
+
     let modal =
-      document.getElementById("unimind-chat-modal");
+      document.getElementById(
+        "unimind-chat-modal"
+      );
 
     if (!modal) {
+
       modal = createChatModal();
+
       document.body.appendChild(modal);
     }
 
+    // Save current position before showing modal
+    lockPageScroll();
+
+    // Force modal to behave as a viewport overlay
+    modal.style.position = "fixed";
+    modal.style.inset = "0";
+    modal.style.width = "100%";
+    modal.style.height = "100%";
+    modal.style.zIndex = "99999";
+
     modal.classList.add("active");
 
-    document.body.classList.add(
-      "unimind-chat-open"
-    );
-
     const textarea =
-      modal.querySelector("#unimind-chat-input");
+      modal.querySelector(
+        "#unimind-chat-input"
+      );
 
+    // Focus without moving the page
     setTimeout(() => {
-      textarea?.focus();
+
+      try {
+
+        textarea?.focus({
+          preventScroll: true
+        });
+
+      } catch {
+
+        textarea?.focus();
+
+      }
+
     }, 250);
   }
+
+  // Make openChat available to inline HTML handlers
+  window.openChat = openChat;
 
   // ==========================================================
   // CREATE CHAT MODAL
   // ==========================================================
 
   function createChatModal() {
-    const modal = document.createElement("div");
 
-    modal.id = "unimind-chat-modal";
-    modal.className = "unimind-chat-modal";
+    const modal =
+      document.createElement("div");
+
+    modal.id =
+      "unimind-chat-modal";
+
+    modal.className =
+      "unimind-chat-modal";
 
     modal.innerHTML = `
+
       <div class="unimind-chat-overlay"></div>
 
       <div
@@ -174,14 +290,19 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
 
             <div>
+
               <div class="unimind-ai-name">
                 UniMind AI
               </div>
 
               <div class="unimind-ai-status">
+
                 <span class="status-dot"></span>
+
                 AI Assistant Online
+
               </div>
+
             </div>
 
           </div>
@@ -221,6 +342,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
 
         </div>
+
 
         <div
           class="unimind-chat-messages"
@@ -290,6 +412,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         </div>
 
+
         <div class="unimind-chat-input-area">
 
           <div class="unimind-input-wrapper">
@@ -314,6 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
 
           <div class="unimind-input-footer">
+
             <span>
               UniMind AI can make mistakes. Verify important information.
             </span>
@@ -321,6 +445,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <span>
               Enter ↵ to send
             </span>
+
           </div>
 
         </div>
@@ -338,26 +463,41 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================
 
   function initializeChat(modal) {
+
     const overlay =
-      modal.querySelector(".unimind-chat-overlay");
+      modal.querySelector(
+        ".unimind-chat-overlay"
+      );
 
     const closeButton =
-      modal.querySelector("#unimind-close-chat");
+      modal.querySelector(
+        "#unimind-close-chat"
+      );
 
     const newChatButton =
-      modal.querySelector("#unimind-new-chat");
+      modal.querySelector(
+        "#unimind-new-chat"
+      );
 
     const clearChatButton =
-      modal.querySelector("#unimind-clear-chat");
+      modal.querySelector(
+        "#unimind-clear-chat"
+      );
 
     const sendButton =
-      modal.querySelector("#unimind-send-btn");
+      modal.querySelector(
+        "#unimind-send-btn"
+      );
 
     const textarea =
-      modal.querySelector("#unimind-chat-input");
+      modal.querySelector(
+        "#unimind-chat-input"
+      );
 
     const messages =
-      modal.querySelector("#unimind-chat-messages");
+      modal.querySelector(
+        "#unimind-chat-messages"
+      );
 
     overlay?.addEventListener(
       "click",
@@ -372,16 +512,34 @@ document.addEventListener("DOMContentLoaded", () => {
     newChatButton?.addEventListener(
       "click",
       () => {
+
         resetChat(messages);
-        textarea?.focus();
+
+        try {
+          textarea?.focus({
+            preventScroll: true
+          });
+        } catch {
+          textarea?.focus();
+        }
+
       }
     );
 
     clearChatButton?.addEventListener(
       "click",
       () => {
+
         resetChat(messages);
-        textarea?.focus();
+
+        try {
+          textarea?.focus({
+            preventScroll: true
+          });
+        } catch {
+          textarea?.focus();
+        }
+
       }
     );
 
@@ -395,19 +553,24 @@ document.addEventListener("DOMContentLoaded", () => {
     textarea?.addEventListener(
       "keydown",
       (event) => {
+
         if (
           event.key === "Enter" &&
           !event.shiftKey
         ) {
+
           event.preventDefault();
+
           sendMessage(modal);
         }
+
       }
     );
 
     textarea?.addEventListener(
       "input",
       () => {
+
         textarea.style.height = "auto";
 
         textarea.style.height =
@@ -415,6 +578,7 @@ document.addEventListener("DOMContentLoaded", () => {
             textarea.scrollHeight,
             150
           ) + "px";
+
       }
     );
 
@@ -426,12 +590,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================
 
   function attachSuggestionHandlers(modal) {
+
     modal
-      .querySelectorAll(".suggestion-btn")
+      .querySelectorAll(
+        ".suggestion-btn"
+      )
       .forEach((button) => {
+
         button.addEventListener(
           "click",
           () => {
+
             const textarea =
               modal.querySelector(
                 "#unimind-chat-input"
@@ -440,11 +609,15 @@ document.addEventListener("DOMContentLoaded", () => {
             const message =
               button.dataset.message || "";
 
-            if (!textarea || !message) {
+            if (
+              !textarea ||
+              !message
+            ) {
               return;
             }
 
-            textarea.value = message;
+            textarea.value =
+              message;
 
             textarea.dispatchEvent(
               new Event("input")
@@ -453,6 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
             sendMessage(modal);
           }
         );
+
       });
   }
 
@@ -461,28 +635,37 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================
 
   function closeChat() {
+
     const modal =
       document.getElementById(
         "unimind-chat-modal"
       );
 
-    if (!modal) return;
+    if (!modal) {
+      return;
+    }
 
-    modal.classList.remove("active");
-
-    document.body.classList.remove(
-      "unimind-chat-open"
+    modal.classList.remove(
+      "active"
     );
+
+    unlockPageScroll();
   }
 
   // ==========================================================
   // RESET CHAT
   // ==========================================================
 
-  function resetChat(messagesContainer) {
-    if (!messagesContainer) return;
+  function resetChat(
+    messagesContainer
+  ) {
+
+    if (!messagesContainer) {
+      return;
+    }
 
     messagesContainer.innerHTML = `
+
       <div
         class="unimind-welcome"
         id="unimind-welcome"
@@ -560,6 +743,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================
 
   async function sendMessage(modal) {
+
     const textarea =
       modal.querySelector(
         "#unimind-chat-input"
@@ -575,7 +759,10 @@ document.addEventListener("DOMContentLoaded", () => {
         "#unimind-chat-messages"
       );
 
-    if (!textarea || !messages) {
+    if (
+      !textarea ||
+      !messages
+    ) {
       return;
     }
 
@@ -589,8 +776,10 @@ document.addEventListener("DOMContentLoaded", () => {
     textarea.disabled = true;
 
     if (sendButton) {
+
       sendButton.disabled = true;
       sendButton.innerHTML = "…";
+
     }
 
     const welcome =
@@ -620,6 +809,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     try {
+
       const reply =
         await callUniMindAI(
           message
@@ -633,6 +823,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
     } catch (error) {
+
       console.error(
         "UniMind AI Error:",
         error
@@ -648,14 +839,27 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
     } finally {
+
       textarea.disabled = false;
 
       if (sendButton) {
+
         sendButton.disabled = false;
         sendButton.innerHTML = "➤";
+
       }
 
-      textarea.focus();
+      try {
+
+        textarea.focus({
+          preventScroll: true
+        });
+
+      } catch {
+
+        textarea.focus();
+
+      }
 
       scrollMessagesToBottom(
         messages
@@ -667,26 +871,33 @@ document.addEventListener("DOMContentLoaded", () => {
   // CALL SUPABASE EDGE FUNCTION
   // ==========================================================
 
-  async function callUniMindAI(message) {
+  async function callUniMindAI(
+    message
+  ) {
+
     let response;
 
     try {
-      response = await fetch(
-        API_URL,
-        {
-          method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
+      response =
+        await fetch(
+          API_URL,
+          {
+            method: "POST",
 
-          body: JSON.stringify({
-            message: message
-          })
-        }
-      );
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body: JSON.stringify({
+              message: message
+            })
+          }
+        );
+
     } catch (networkError) {
+
       throw new Error(
         "NETWORK_ERROR"
       );
@@ -698,15 +909,19 @@ document.addEventListener("DOMContentLoaded", () => {
       await response.text();
 
     try {
+
       data =
         responseText
           ? JSON.parse(responseText)
           : null;
+
     } catch {
+
       data = null;
     }
 
     if (!response.ok) {
+
       const serverMessage =
         data?.details ||
         data?.error ||
@@ -723,6 +938,7 @@ document.addEventListener("DOMContentLoaded", () => {
       typeof data.reply !== "string" ||
       !data.reply.trim()
     ) {
+
       throw new Error(
         "INVALID_RESPONSE"
       );
@@ -739,6 +955,7 @@ document.addEventListener("DOMContentLoaded", () => {
     container,
     message
   ) {
+
     const messageElement =
       document.createElement("div");
 
@@ -763,6 +980,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function addThinkingMessage(
     container
   ) {
+
     const messageElement =
       document.createElement("div");
 
@@ -781,9 +999,11 @@ document.addEventListener("DOMContentLoaded", () => {
         </span>
 
         <div class="thinking-dots">
+
           <span></span>
           <span></span>
           <span></span>
+
         </div>
 
       </div>
@@ -804,6 +1024,7 @@ document.addEventListener("DOMContentLoaded", () => {
     container,
     message
   ) {
+
     const messageElement =
       document.createElement("div");
 
@@ -822,6 +1043,7 @@ document.addEventListener("DOMContentLoaded", () => {
       messageId;
 
     messageElement.innerHTML = `
+
       <div class="message-avatar">
         ✦
       </div>
@@ -875,7 +1097,9 @@ document.addEventListener("DOMContentLoaded", () => {
     copyButton?.addEventListener(
       "click",
       async () => {
+
         try {
+
           await navigator.clipboard.writeText(
             message
           );
@@ -884,13 +1108,17 @@ document.addEventListener("DOMContentLoaded", () => {
             "Copied ✓";
 
           setTimeout(() => {
+
             copyButton.textContent =
               "Copy";
+
           }, 1800);
 
         } catch {
+
           copyButton.textContent =
             "Copy failed";
+
         }
       }
     );
@@ -903,9 +1131,11 @@ document.addEventListener("DOMContentLoaded", () => {
     likeButton?.addEventListener(
       "click",
       () => {
+
         likeButton.classList.toggle(
           "selected"
         );
+
       }
     );
 
@@ -917,9 +1147,11 @@ document.addEventListener("DOMContentLoaded", () => {
     dislikeButton?.addEventListener(
       "click",
       () => {
+
         dislikeButton.classList.toggle(
           "selected"
         );
+
       }
     );
   }
@@ -932,6 +1164,7 @@ document.addEventListener("DOMContentLoaded", () => {
     container,
     message
   ) {
+
     const messageElement =
       document.createElement("div");
 
@@ -939,13 +1172,16 @@ document.addEventListener("DOMContentLoaded", () => {
       "unimind-message assistant-message error-message";
 
     messageElement.innerHTML = `
+
       <div class="message-avatar">
         !
       </div>
 
       <div class="message-content">
 
-        <strong>حدث خطأ</strong>
+        <strong>
+          حدث خطأ
+        </strong>
 
         <br>
 
@@ -963,57 +1199,103 @@ document.addEventListener("DOMContentLoaded", () => {
   // READABLE ERROR
   // ==========================================================
 
-  function getReadableError(error) {
+  function getReadableError(
+    error
+  ) {
+
     const message =
       error?.message || "";
 
     if (
-      message === "NETWORK_ERROR"
+      message ===
+      "NETWORK_ERROR"
     ) {
+
       return "تعذر الاتصال بخدمة UniMind AI. تأكد من اتصال الإنترنت وأن Edge Function منشورة بشكل صحيح.";
+
     }
 
     if (
-      message.includes("HTTP_401")
+      message.includes(
+        "HTTP_401"
+      )
     ) {
+
       return "الخدمة رفضت الطلب بسبب المصادقة. تحقق من إعدادات Supabase Edge Function.";
+
     }
 
     if (
-      message.includes("HTTP_403")
+      message.includes(
+        "HTTP_403"
+      )
     ) {
+
       return "تم رفض الوصول إلى خدمة الذكاء الاصطناعي.";
+
     }
 
     if (
-      message.includes("HTTP_404")
+      message.includes(
+        "HTTP_404"
+      )
     ) {
+
       return "لم يتم العثور على خدمة UniMind AI. تحقق من رابط Edge Function.";
+
     }
 
     if (
-      message.includes("HTTP_429")
+      message.includes(
+        "HTTP_429"
+      )
     ) {
+
       return "تم الوصول إلى حد الاستخدام الحالي لـ Gemini. حاول مرة أخرى لاحقًا.";
+
     }
 
     if (
-      message.includes("GEMINI_API_KEY")
+      message.includes(
+        "HTTP_503"
+      )
     ) {
+
+      return "خدمة Gemini مشغولة حاليًا بسبب ارتفاع الطلب. حاول مرة أخرى بعد قليل.";
+
+    }
+
+    if (
+      message.includes(
+        "GEMINI_API_KEY"
+      )
+    ) {
+
       return "مفتاح Gemini غير مضبوط بشكل صحيح في Supabase Secrets.";
+
     }
 
     if (
-      message.includes("Gemini API Error")
+      message.includes(
+        "Gemini API Error"
+      )
     ) {
-      return "حدث خطأ في خدمة Gemini. تفاصيل الخطأ: " +
-        message;
+
+      return (
+        "حدث خطأ في خدمة Gemini. تفاصيل الخطأ: " +
+        message
+      );
+
     }
 
     if (
-      message.includes("INVALID_RESPONSE")
+      message.includes(
+        "INVALID_RESPONSE"
+      )
     ) {
+
       return "تم الاتصال بالخدمة، لكن لم تصل إجابة صحيحة من Gemini.";
+
     }
 
     return (
@@ -1026,51 +1308,64 @@ document.addEventListener("DOMContentLoaded", () => {
   // FORMAT AI RESPONSE
   // ==========================================================
 
-  function formatAIResponse(text) {
-    if (!text) return "";
+  function formatAIResponse(
+    text
+  ) {
+
+    if (!text) {
+      return "";
+    }
 
     let safe =
       escapeHTML(text);
 
-    safe = safe.replace(
-      /\*\*(.*?)\*\*/g,
-      "<strong>$1</strong>"
-    );
+    safe =
+      safe.replace(
+        /\*\*(.*?)\*\*/g,
+        "<strong>$1</strong>"
+      );
 
-    safe = safe.replace(
-      /`([^`]+)`/g,
-      "<code>$1</code>"
-    );
+    safe =
+      safe.replace(
+        /`([^`]+)`/g,
+        "<code>$1</code>"
+      );
 
-    safe = safe.replace(
-      /^### (.*)$/gm,
-      "<h4>$1</h4>"
-    );
+    safe =
+      safe.replace(
+        /^### (.*)$/gm,
+        "<h4>$1</h4>"
+      );
 
-    safe = safe.replace(
-      /^## (.*)$/gm,
-      "<h3>$1</h3>"
-    );
+    safe =
+      safe.replace(
+        /^## (.*)$/gm,
+        "<h3>$1</h3>"
+      );
 
-    safe = safe.replace(
-      /^\s*[-•]\s+(.*)$/gm,
-      "<li>$1</li>"
-    );
+    safe =
+      safe.replace(
+        /^\s*[-•]\s+(.*)$/gm,
+        "<li>$1</li>"
+      );
 
-    safe = safe.replace(
-      /(<li>.*<\/li>)/gs,
-      "<ul>$1</ul>"
-    );
+    safe =
+      safe.replace(
+        /(<li>.*<\/li>)/gs,
+        "<ul>$1</ul>"
+      );
 
-    safe = safe.replace(
-      /\n\n+/g,
-      "</p><p>"
-    );
+    safe =
+      safe.replace(
+        /\n\n+/g,
+        "</p><p>"
+      );
 
-    safe = safe.replace(
-      /\n/g,
-      "<br>"
-    );
+    safe =
+      safe.replace(
+        /\n/g,
+        "<br>"
+      );
 
     return `<p>${safe}</p>`;
   }
@@ -1079,7 +1374,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // FORMAT USER TEXT
   // ==========================================================
 
-  function formatText(text) {
+  function formatText(
+    text
+  ) {
+
     return escapeHTML(
       text
     ).replace(
@@ -1092,7 +1390,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // ESCAPE HTML
   // ==========================================================
 
-  function escapeHTML(value) {
+  function escapeHTML(
+    value
+  ) {
+
     return String(value)
       .replace(
         /&/g,
@@ -1117,17 +1418,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ==========================================================
-  // SCROLL CHAT
+  // SCROLL CHAT MESSAGES ONLY
   // ==========================================================
 
   function scrollMessagesToBottom(
     container
   ) {
+
     requestAnimationFrame(() => {
+
       container.scrollTo({
         top: container.scrollHeight,
         behavior: "smooth"
       });
+
     });
   }
 
@@ -1138,11 +1442,15 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener(
     "keydown",
     (event) => {
+
       if (
         event.key === "Escape"
       ) {
+
         closeChat();
+
       }
+
     }
   );
 
@@ -1155,15 +1463,20 @@ document.addEventListener("DOMContentLoaded", () => {
       "[data-open-chat], .open-chat, #start-learning, #try-demo"
     )
     .forEach((button) => {
+
       button.addEventListener(
         "click",
         (event) => {
+
           event.preventDefault();
           event.stopPropagation();
 
           openChat();
+
         }
       );
+
     });
 
 });
+```
