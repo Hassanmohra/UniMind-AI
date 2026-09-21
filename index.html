@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 
@@ -55,6 +56,7 @@
             <div class="nav-actions">
 
                 <button
+                    type="button"
                     class="theme-btn"
                     id="themeToggle"
                     aria-label="تغيير المظهر"
@@ -64,6 +66,7 @@
 
 
                 <button
+                    type="button"
                     class="language-btn"
                     id="languageToggle"
                 >
@@ -303,7 +306,10 @@
                             </span>
 
 
-                            <button>
+                            <button
+                                type="button"
+                                aria-label="إرسال"
+                            >
                                 ↑
                             </button>
 
@@ -426,6 +432,7 @@
                         <button
                             type="button"
                             class="open-chat"
+                            onclick="event.preventDefault(); event.stopPropagation(); openChat();"
                         >
                             اكتشف المزيد ←
                         </button>
@@ -455,7 +462,10 @@
                         </p>
 
 
-                        <a href="#">
+                        <a
+                            href="#"
+                            onclick="event.preventDefault();"
+                        >
                             جرّب الآن ←
                         </a>
 
@@ -484,7 +494,10 @@
                         </p>
 
 
-                        <a href="#">
+                        <a
+                            href="#"
+                            onclick="event.preventDefault();"
+                        >
                             إنشاء اختبار ←
                         </a>
 
@@ -513,7 +526,10 @@
                         </p>
 
 
-                        <a href="#">
+                        <a
+                            href="#"
+                            onclick="event.preventDefault();"
+                        >
                             إنشاء بطاقات ←
                         </a>
 
@@ -542,7 +558,10 @@
                         </p>
 
 
-                        <a href="#">
+                        <a
+                            href="#"
+                            onclick="event.preventDefault();"
+                        >
                             خطط دراستك ←
                         </a>
 
@@ -571,7 +590,10 @@
                         </p>
 
 
-                        <a href="#">
+                        <a
+                            href="#"
+                            onclick="event.preventDefault();"
+                        >
                             أنشئ CV ←
                         </a>
 
@@ -814,6 +836,7 @@
                         <a
                             href="#"
                             class="secondary-btn full-btn"
+                            onclick="event.preventDefault();"
                         >
                             ابدأ مجانًا
                         </a>
@@ -877,6 +900,7 @@
                         <a
                             href="#"
                             class="primary-btn full-btn"
+                            onclick="event.preventDefault();"
                         >
                             ابدأ الآن
                         </a>
@@ -935,6 +959,7 @@
                         <a
                             href="#"
                             class="secondary-btn full-btn"
+                            onclick="event.preventDefault();"
                         >
                             اختر Pro
                         </a>
@@ -988,6 +1013,7 @@
                     <a
                         href="#"
                         class="primary-btn"
+                        onclick="event.preventDefault(); openChat();"
                     >
 
                         ابدأ مجانًا
@@ -1019,6 +1045,7 @@
                 <a
                     href="#"
                     class="logo"
+                    onclick="event.preventDefault();"
                 >
 
                     <span class="logo-icon">
@@ -1062,11 +1089,17 @@
                     الأسعار
                 </a>
 
-                <a href="#">
+                <a
+                    href="#"
+                    onclick="event.preventDefault();"
+                >
                     الخصوصية
                 </a>
 
-                <a href="#">
+                <a
+                    href="#"
+                    onclick="event.preventDefault();"
+                >
                     الشروط
                 </a>
 
@@ -1093,8 +1126,9 @@
 
     <!-- ================= JAVASCRIPT ================= -->
 
-    <script src="js/app.js?v=3"></script>
+    <script src="js/app.js?v=4"></script>
 
 </body>
 
 </html>
+```
