@@ -1,1482 +1,1266 @@
-```javascript
-// ============================================================
-// UniMind AI - Main Application
-// Real AI Chat powered by Supabase Edge Functions + Gemini
-// ============================================================
-
 document.addEventListener("DOMContentLoaded", () => {
-  "use strict";
 
-  // ==========================================================
-  // CONFIGURATION
-  // ==========================================================
+    /* =========================================================
+       UniMind AI
+       Main Application
+    ========================================================= */
 
-  const API_URL =
-    "https://yzsfublvnwknjnayfosm.supabase.co/functions/v1/unimind-chat";
+    const API_URL =
+        "https://yzsfublvnwknjnayfosm.supabase.co/functions/v1/unimind-chat";
 
-  // Store the page position before opening chat
-  let savedScrollY = 0;
+    let savedScrollY = 0;
 
-  // ==========================================================
-  // DOM ELEMENTS
-  // ==========================================================
 
-  const featureCards =
-    document.querySelectorAll(".feature-card");
+    /* =========================================================
+       PAGE SCROLL LOCK
+    ========================================================= */
 
-  // ==========================================================
-  // FEATURE CARD HANDLERS
-  // ==========================================================
+    function lockPageScroll() {
 
-  featureCards.forEach((card) => {
-    card.addEventListener("click", (event) => {
+        savedScrollY =
+            window.scrollY ||
+            window.pageYOffset ||
+            0;
 
-      if (event.target.closest("button, a")) {
-        return;
-      }
+        document.body.dataset.unimindScrollY =
+            String(savedScrollY);
 
-      const title =
-        card.querySelector("h3")?.textContent?.trim() || "";
+        document.body.style.position = "fixed";
+        document.body.style.top =
+            `-${savedScrollY}px`;
 
-      const description =
-        card.querySelector("p")?.textContent?.trim() || "";
+        document.body.style.left = "0";
+        document.body.style.right = "0";
+        document.body.style.width = "100%";
 
-      if (
-        title.toLowerCase().includes("study") ||
-        title.toLowerCase().includes("assistant") ||
-        title.includes("المساعد")
-      ) {
-        openChat();
-        return;
-      }
+        document.documentElement.classList.add(
+            "unimind-modal-open"
+        );
 
-      showFeatureMessage(title, description);
-    });
-  });
-
-  // ==========================================================
-  // SHOW FEATURE MESSAGE
-  // ==========================================================
-
-  function showFeatureMessage(title, description) {
-
-    const existing =
-      document.querySelector(".unimind-feature-toast");
-
-    if (existing) {
-      existing.remove();
+        document.body.classList.add(
+            "unimind-chat-open"
+        );
     }
 
-    const toast =
-      document.createElement("div");
 
-    toast.className =
-      "unimind-feature-toast";
+    function unlockPageScroll() {
 
-    toast.innerHTML = `
-      <div class="unimind-toast-icon">✨</div>
-
-      <div class="unimind-toast-content">
-
-        <strong>
-          ${escapeHTML(title)}
-        </strong>
-
-        <span>
-          ${escapeHTML(
-            description ||
-            "هذه الميزة ستكون متاحة قريبًا في UniMind AI."
-          )}
-        </span>
-
-      </div>
-
-      <button
-        class="unimind-toast-close"
-        aria-label="Close"
-        type="button"
-      >
-        ×
-      </button>
-    `;
-
-    document.body.appendChild(toast);
-
-    requestAnimationFrame(() => {
-      toast.classList.add("show");
-    });
-
-    const closeButton =
-      toast.querySelector(".unimind-toast-close");
-
-    closeButton?.addEventListener("click", () => {
-
-      toast.classList.remove("show");
-
-      setTimeout(() => {
-        toast.remove();
-      }, 300);
-
-    });
-
-    setTimeout(() => {
-
-      if (document.body.contains(toast)) {
-
-        toast.classList.remove("show");
-
-        setTimeout(() => {
-          toast.remove();
-        }, 300);
-
-      }
-
-    }, 4500);
-  }
-
-  // ==========================================================
-  // LOCK PAGE SCROLL
-  // ==========================================================
-
-  function lockPageScroll() {
-
-    savedScrollY =
-      window.scrollY ||
-      window.pageYOffset ||
-      0;
-
-    document.body.dataset.unimindScrollY =
-      String(savedScrollY);
-
-    document.body.style.position = "fixed";
-    document.body.style.top =
-      `-${savedScrollY}px`;
-
-    document.body.style.left = "0";
-    document.body.style.right = "0";
-    document.body.style.width = "100%";
-
-    document.documentElement.classList.add(
-      "unimind-modal-open"
-    );
-
-    document.body.classList.add(
-      "unimind-chat-open"
-    );
-  }
-
-  // ==========================================================
-  // UNLOCK PAGE SCROLL
-  // ==========================================================
-
-  function unlockPageScroll() {
-
-    const storedScroll =
-      parseInt(
-        document.body.dataset.unimindScrollY || "0",
-        10
-      );
-
-    document.body.style.position = "";
-    document.body.style.top = "";
-    document.body.style.left = "";
-    document.body.style.right = "";
-    document.body.style.width = "";
-
-    document.documentElement.classList.remove(
-      "unimind-modal-open"
-    );
-
-    document.body.classList.remove(
-      "unimind-chat-open"
-    );
-
-    window.scrollTo(
-      0,
-      storedScroll
-    );
-
-    delete document.body.dataset.unimindScrollY;
-  }
-
-  // ==========================================================
-  // OPEN CHAT
-  // ==========================================================
-
-  function openChat() {
-
-    let modal =
-      document.getElementById(
-        "unimind-chat-modal"
-      );
-
-    if (!modal) {
-
-      modal = createChatModal();
-
-      document.body.appendChild(modal);
-    }
-
-    // Save current position before showing modal
-    lockPageScroll();
-
-    // Force modal to behave as a viewport overlay
-    modal.style.position = "fixed";
-    modal.style.inset = "0";
-    modal.style.width = "100%";
-    modal.style.height = "100%";
-    modal.style.zIndex = "99999";
-
-    modal.classList.add("active");
-
-    const textarea =
-      modal.querySelector(
-        "#unimind-chat-input"
-      );
-
-    // Focus without moving the page
-    setTimeout(() => {
-
-      try {
-
-        textarea?.focus({
-          preventScroll: true
-        });
-
-      } catch {
-
-        textarea?.focus();
-
-      }
-
-    }, 250);
-  }
-
-  // Make openChat available to inline HTML handlers
-  window.openChat = openChat;
-
-  // ==========================================================
-  // CREATE CHAT MODAL
-  // ==========================================================
-
-  function createChatModal() {
-
-    const modal =
-      document.createElement("div");
-
-    modal.id =
-      "unimind-chat-modal";
-
-    modal.className =
-      "unimind-chat-modal";
-
-    modal.innerHTML = `
-
-      <div class="unimind-chat-overlay"></div>
-
-      <div
-        class="unimind-chat-window"
-        role="dialog"
-        aria-modal="true"
-        aria-label="UniMind AI"
-      >
-
-        <div class="unimind-chat-header">
-
-          <div class="unimind-chat-brand">
-
-            <div class="unimind-ai-avatar">
-              <span>✦</span>
-            </div>
-
-            <div>
-
-              <div class="unimind-ai-name">
-                UniMind AI
-              </div>
-
-              <div class="unimind-ai-status">
-
-                <span class="status-dot"></span>
-
-                AI Assistant Online
-
-              </div>
-
-            </div>
-
-          </div>
-
-          <div class="unimind-chat-actions">
-
-            <button
-              type="button"
-              class="chat-action-btn"
-              id="unimind-new-chat"
-              title="New chat"
-              aria-label="New chat"
-            >
-              ＋
-            </button>
-
-            <button
-              type="button"
-              class="chat-action-btn"
-              id="unimind-clear-chat"
-              title="Clear chat"
-              aria-label="Clear chat"
-            >
-              ⌫
-            </button>
-
-            <button
-              type="button"
-              class="chat-action-btn close"
-              id="unimind-close-chat"
-              title="Close"
-              aria-label="Close"
-            >
-              ×
-            </button>
-
-          </div>
-
-        </div>
-
-
-        <div
-          class="unimind-chat-messages"
-          id="unimind-chat-messages"
-        >
-
-          <div
-            class="unimind-welcome"
-            id="unimind-welcome"
-          >
-
-            <div class="welcome-icon">
-              ✦
-            </div>
-
-            <h2>
-              How can I help you today?
-            </h2>
-
-            <p>
-              Ask me about lectures, programming,
-              university subjects, exams, research,
-              or anything you're studying.
-            </p>
-
-            <div class="suggestion-grid">
-
-              <button
-                type="button"
-                class="suggestion-btn"
-                data-message="Explain this lecture to me in a simple way."
-              >
-                <span>📚</span>
-                Explain a lecture
-              </button>
-
-              <button
-                type="button"
-                class="suggestion-btn"
-                data-message="Create a study plan for my upcoming exams."
-              >
-                <span>📅</span>
-                Create study plan
-              </button>
-
-              <button
-                type="button"
-                class="suggestion-btn"
-                data-message="Give me a short quiz to test my knowledge."
-              >
-                <span>🧠</span>
-                Test my knowledge
-              </button>
-
-              <button
-                type="button"
-                class="suggestion-btn"
-                data-message="Explain a difficult programming concept with examples."
-              >
-                <span>💻</span>
-                Explain programming
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <div class="unimind-chat-input-area">
-
-          <div class="unimind-input-wrapper">
-
-            <textarea
-              id="unimind-chat-input"
-              placeholder="Ask UniMind AI anything..."
-              rows="1"
-              maxlength="5000"
-            ></textarea>
-
-            <button
-              type="button"
-              id="unimind-send-btn"
-              class="unimind-send-btn"
-              aria-label="Send message"
-              title="Send message"
-            >
-              ➤
-            </button>
-
-          </div>
-
-          <div class="unimind-input-footer">
-
-            <span>
-              UniMind AI can make mistakes. Verify important information.
-            </span>
-
-            <span>
-              Enter ↵ to send
-            </span>
-
-          </div>
-
-        </div>
-
-      </div>
-    `;
-
-    initializeChat(modal);
-
-    return modal;
-  }
-
-  // ==========================================================
-  // INITIALIZE CHAT
-  // ==========================================================
-
-  function initializeChat(modal) {
-
-    const overlay =
-      modal.querySelector(
-        ".unimind-chat-overlay"
-      );
-
-    const closeButton =
-      modal.querySelector(
-        "#unimind-close-chat"
-      );
-
-    const newChatButton =
-      modal.querySelector(
-        "#unimind-new-chat"
-      );
-
-    const clearChatButton =
-      modal.querySelector(
-        "#unimind-clear-chat"
-      );
-
-    const sendButton =
-      modal.querySelector(
-        "#unimind-send-btn"
-      );
-
-    const textarea =
-      modal.querySelector(
-        "#unimind-chat-input"
-      );
-
-    const messages =
-      modal.querySelector(
-        "#unimind-chat-messages"
-      );
-
-    overlay?.addEventListener(
-      "click",
-      closeChat
-    );
-
-    closeButton?.addEventListener(
-      "click",
-      closeChat
-    );
-
-    newChatButton?.addEventListener(
-      "click",
-      () => {
-
-        resetChat(messages);
-
-        try {
-          textarea?.focus({
-            preventScroll: true
-          });
-        } catch {
-          textarea?.focus();
-        }
-
-      }
-    );
-
-    clearChatButton?.addEventListener(
-      "click",
-      () => {
-
-        resetChat(messages);
-
-        try {
-          textarea?.focus({
-            preventScroll: true
-          });
-        } catch {
-          textarea?.focus();
-        }
-
-      }
-    );
-
-    sendButton?.addEventListener(
-      "click",
-      () => {
-        sendMessage(modal);
-      }
-    );
-
-    textarea?.addEventListener(
-      "keydown",
-      (event) => {
-
-        if (
-          event.key === "Enter" &&
-          !event.shiftKey
-        ) {
-
-          event.preventDefault();
-
-          sendMessage(modal);
-        }
-
-      }
-    );
-
-    textarea?.addEventListener(
-      "input",
-      () => {
-
-        textarea.style.height = "auto";
-
-        textarea.style.height =
-          Math.min(
-            textarea.scrollHeight,
-            150
-          ) + "px";
-
-      }
-    );
-
-    attachSuggestionHandlers(modal);
-  }
-
-  // ==========================================================
-  // SUGGESTIONS
-  // ==========================================================
-
-  function attachSuggestionHandlers(modal) {
-
-    modal
-      .querySelectorAll(
-        ".suggestion-btn"
-      )
-      .forEach((button) => {
-
-        button.addEventListener(
-          "click",
-          () => {
-
-            const textarea =
-              modal.querySelector(
-                "#unimind-chat-input"
-              );
-
-            const message =
-              button.dataset.message || "";
-
-            if (
-              !textarea ||
-              !message
-            ) {
-              return;
-            }
-
-            textarea.value =
-              message;
-
-            textarea.dispatchEvent(
-              new Event("input")
+        const stored =
+            Number(
+                document.body.dataset.unimindScrollY || 0
             );
 
-            sendMessage(modal);
-          }
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        document.body.style.width = "";
+
+        delete document.body.dataset.unimindScrollY;
+
+        document.documentElement.classList.remove(
+            "unimind-modal-open"
         );
 
-      });
-  }
-
-  // ==========================================================
-  // CLOSE CHAT
-  // ==========================================================
-
-  function closeChat() {
-
-    const modal =
-      document.getElementById(
-        "unimind-chat-modal"
-      );
-
-    if (!modal) {
-      return;
-    }
-
-    modal.classList.remove(
-      "active"
-    );
-
-    unlockPageScroll();
-  }
-
-  // ==========================================================
-  // RESET CHAT
-  // ==========================================================
-
-  function resetChat(
-    messagesContainer
-  ) {
-
-    if (!messagesContainer) {
-      return;
-    }
-
-    messagesContainer.innerHTML = `
-
-      <div
-        class="unimind-welcome"
-        id="unimind-welcome"
-      >
-
-        <div class="welcome-icon">
-          ✦
-        </div>
-
-        <h2>
-          How can I help you today?
-        </h2>
-
-        <p>
-          Ask me about lectures, programming,
-          university subjects, exams, research,
-          or anything you're studying.
-        </p>
-
-        <div class="suggestion-grid">
-
-          <button
-            type="button"
-            class="suggestion-btn"
-            data-message="Explain this lecture to me in a simple way."
-          >
-            <span>📚</span>
-            Explain a lecture
-          </button>
-
-          <button
-            type="button"
-            class="suggestion-btn"
-            data-message="Create a study plan for my upcoming exams."
-          >
-            <span>📅</span>
-            Create study plan
-          </button>
-
-          <button
-            type="button"
-            class="suggestion-btn"
-            data-message="Give me a short quiz to test my knowledge."
-          >
-            <span>🧠</span>
-            Test my knowledge
-          </button>
-
-          <button
-            type="button"
-            class="suggestion-btn"
-            data-message="Explain a difficult programming concept with examples."
-          >
-            <span>💻</span>
-            Explain programming
-          </button>
-
-        </div>
-
-      </div>
-    `;
-
-    const modal =
-      document.getElementById(
-        "unimind-chat-modal"
-      );
-
-    if (modal) {
-      attachSuggestionHandlers(modal);
-    }
-  }
-
-  // ==========================================================
-  // SEND MESSAGE
-  // ==========================================================
-
-  async function sendMessage(modal) {
-
-    const textarea =
-      modal.querySelector(
-        "#unimind-chat-input"
-      );
-
-    const sendButton =
-      modal.querySelector(
-        "#unimind-send-btn"
-      );
-
-    const messages =
-      modal.querySelector(
-        "#unimind-chat-messages"
-      );
-
-    if (
-      !textarea ||
-      !messages
-    ) {
-      return;
-    }
-
-    const message =
-      textarea.value.trim();
-
-    if (!message) {
-      return;
-    }
-
-    textarea.disabled = true;
-
-    if (sendButton) {
-
-      sendButton.disabled = true;
-      sendButton.innerHTML = "…";
-
-    }
-
-    const welcome =
-      messages.querySelector(
-        "#unimind-welcome"
-      );
-
-    if (welcome) {
-      welcome.remove();
-    }
-
-    addUserMessage(
-      messages,
-      message
-    );
-
-    textarea.value = "";
-    textarea.style.height = "auto";
-
-    const thinking =
-      addThinkingMessage(
-        messages
-      );
-
-    scrollMessagesToBottom(
-      messages
-    );
-
-    try {
-
-      const reply =
-        await callUniMindAI(
-          message
+        document.body.classList.remove(
+            "unimind-chat-open"
         );
 
-      thinking?.remove();
-
-      addAssistantMessage(
-        messages,
-        reply
-      );
-
-    } catch (error) {
-
-      console.error(
-        "UniMind AI Error:",
-        error
-      );
-
-      thinking?.remove();
-
-      addErrorMessage(
-        messages,
-        getReadableError(
-          error
-        )
-      );
-
-    } finally {
-
-      textarea.disabled = false;
-
-      if (sendButton) {
-
-        sendButton.disabled = false;
-        sendButton.innerHTML = "➤";
-
-      }
-
-      try {
-
-        textarea.focus({
-          preventScroll: true
-        });
-
-      } catch {
-
-        textarea.focus();
-
-      }
-
-      scrollMessagesToBottom(
-        messages
-      );
+        window.scrollTo(
+            0,
+            stored
+        );
     }
-  }
 
-  // ==========================================================
-  // CALL SUPABASE EDGE FUNCTION
-  // ==========================================================
 
-  async function callUniMindAI(
-    message
-  ) {
+    /* =========================================================
+       CREATE CHAT MODAL
+    ========================================================= */
 
-    let response;
+    function createChatModal() {
 
-    try {
+        const modal =
+            document.createElement("div");
 
-      response =
-        await fetch(
-          API_URL,
-          {
-            method: "POST",
+        modal.id =
+            "unimind-chat-modal";
 
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
+        modal.className =
+            "unimind-chat-modal";
 
-            body: JSON.stringify({
-              message: message
-            })
-          }
+
+        modal.innerHTML = `
+
+            <div
+                class="unimind-chat-overlay"
+                id="unimind-chat-overlay"
+            ></div>
+
+            <div
+                class="unimind-chat-window"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="unimind-chat-title"
+            >
+
+                <div class="unimind-chat-header">
+
+                    <div class="unimind-chat-brand">
+
+                        <div class="unimind-chat-logo">
+                            ✦
+                        </div>
+
+                        <div>
+
+                            <strong id="unimind-chat-title">
+                                UniMind AI
+                            </strong>
+
+                            <span>
+                                AI Assistant Online
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="unimind-chat-actions">
+
+                        <button
+                            type="button"
+                            id="unimind-chat-new"
+                            aria-label="محادثة جديدة"
+                        >
+                            ＋
+                        </button>
+
+                        <button
+                            type="button"
+                            id="unimind-chat-close"
+                            aria-label="إغلاق"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="unimind-chat-messages"
+                    id="unimind-chat-messages"
+                >
+
+                    <div class="unimind-welcome-message">
+
+                        <div class="unimind-welcome-icon">
+                            ✦
+                        </div>
+
+                        <h2>
+                            كيف يمكنني مساعدتك اليوم؟
+                        </h2>
+
+                        <p>
+                            اسألني عن المحاضرات، البرمجة،
+                            المواد الجامعية، الاختبارات،
+                            الأبحاث أو أي موضوع تدرسه.
+                        </p>
+
+                    </div>
+
+
+                    <div class="unimind-suggestions">
+
+                        <button
+                            type="button"
+                            data-suggestion="اشرح لي هذه المحاضرة بطريقة بسيطة"
+                        >
+                            📚 اشرح محاضرة
+                        </button>
+
+                        <button
+                            type="button"
+                            data-suggestion="أنشئ لي خطة دراسية لهذا الأسبوع"
+                        >
+                            📅 أنشئ خطة دراسة
+                        </button>
+
+                        <button
+                            type="button"
+                            data-suggestion="اختبرني في موضوع جامعي"
+                        >
+                            🧠 اختبر معلوماتي
+                        </button>
+
+                        <button
+                            type="button"
+                            data-suggestion="اشرح لي مفهومًا في البرمجة"
+                        >
+                            💻 اشرح البرمجة
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="unimind-chat-input-area">
+
+                    <textarea
+                        id="unimind-chat-input"
+                        placeholder="اكتب سؤالك هنا..."
+                        rows="1"
+                    ></textarea>
+
+                    <button
+                        type="button"
+                        id="unimind-chat-send"
+                        aria-label="إرسال"
+                    >
+                        ➤
+                    </button>
+
+                </div>
+
+
+                <div class="unimind-chat-footer">
+
+                    UniMind AI يمكن أن يخطئ.
+                    تحقق من المعلومات المهمة.
+
+                    <span>
+                        اضغط Enter للإرسال
+                    </span>
+
+                </div>
+
+            </div>
+        `;
+
+        return modal;
+    }
+
+
+    /* =========================================================
+       OPEN CHAT
+    ========================================================= */
+
+    function openChat() {
+
+        let modal =
+            document.getElementById(
+                "unimind-chat-modal"
+            );
+
+
+        if (!modal) {
+
+            modal =
+                createChatModal();
+
+            document.body.appendChild(
+                modal
+            );
+
+            initializeChat(modal);
+        }
+
+
+        /* مهم جدًا:
+           ثبّت النافذة على الشاشة */
+        modal.style.position = "fixed";
+        modal.style.top = "0";
+        modal.style.left = "0";
+        modal.style.right = "0";
+        modal.style.bottom = "0";
+        modal.style.width = "100vw";
+        modal.style.height = "100vh";
+        modal.style.zIndex = "999999";
+
+
+        lockPageScroll();
+
+
+        /* افتح النافذة */
+        modal.classList.add("active");
+
+
+        const input =
+            modal.querySelector(
+                "#unimind-chat-input"
+            );
+
+
+        /* التركيز بدون تحريك الصفحة */
+        setTimeout(() => {
+
+            try {
+
+                input?.focus({
+                    preventScroll: true
+                });
+
+            } catch {
+
+                input?.focus();
+
+            }
+
+        }, 150);
+    }
+
+
+    /* =========================================================
+       CLOSE CHAT
+    ========================================================= */
+
+    function closeChat() {
+
+        const modal =
+            document.getElementById(
+                "unimind-chat-modal"
+            );
+
+
+        if (!modal) {
+            return;
+        }
+
+
+        modal.classList.remove(
+            "active"
         );
 
-    } catch (networkError) {
 
-      throw new Error(
-        "NETWORK_ERROR"
-      );
+        unlockPageScroll();
     }
 
-    let data = null;
 
-    const responseText =
-      await response.text();
+    /* =========================================================
+       INITIALIZE CHAT
+    ========================================================= */
 
-    try {
+    function initializeChat(modal) {
 
-      data =
-        responseText
-          ? JSON.parse(responseText)
-          : null;
+        const closeButton =
+            modal.querySelector(
+                "#unimind-chat-close"
+            );
 
-    } catch {
+        const newButton =
+            modal.querySelector(
+                "#unimind-chat-new"
+            );
 
-      data = null;
+        const overlay =
+            modal.querySelector(
+                "#unimind-chat-overlay"
+            );
+
+        const sendButton =
+            modal.querySelector(
+                "#unimind-chat-send"
+            );
+
+        const input =
+            modal.querySelector(
+                "#unimind-chat-input"
+            );
+
+
+        /* CLOSE */
+
+        closeButton?.addEventListener(
+            "click",
+            (event) => {
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                closeChat();
+            }
+        );
+
+
+        overlay?.addEventListener(
+            "click",
+            (event) => {
+
+                event.preventDefault();
+
+                closeChat();
+            }
+        );
+
+
+        /* NEW CHAT */
+
+        newButton?.addEventListener(
+            "click",
+            () => {
+
+                const messages =
+                    modal.querySelector(
+                        "#unimind-chat-messages"
+                    );
+
+                if (!messages) {
+                    return;
+                }
+
+                messages.innerHTML = `
+
+                    <div class="unimind-welcome-message">
+
+                        <div class="unimind-welcome-icon">
+                            ✦
+                        </div>
+
+                        <h2>
+                            كيف يمكنني مساعدتك اليوم؟
+                        </h2>
+
+                        <p>
+                            اسألني عن المحاضرات،
+                            البرمجة، المواد الجامعية،
+                            الاختبارات أو الأبحاث.
+                        </p>
+
+                    </div>
+
+
+                    <div class="unimind-suggestions">
+
+                        <button
+                            type="button"
+                            data-suggestion="اشرح لي هذه المحاضرة بطريقة بسيطة"
+                        >
+                            📚 اشرح محاضرة
+                        </button>
+
+                        <button
+                            type="button"
+                            data-suggestion="أنشئ لي خطة دراسية لهذا الأسبوع"
+                        >
+                            📅 أنشئ خطة دراسة
+                        </button>
+
+                        <button
+                            type="button"
+                            data-suggestion="اختبرني في موضوع جامعي"
+                        >
+                            🧠 اختبر معلوماتي
+                        </button>
+
+                        <button
+                            type="button"
+                            data-suggestion="اشرح لي مفهومًا في البرمجة"
+                        >
+                            💻 اشرح البرمجة
+                        </button>
+
+                    </div>
+                `;
+
+                initializeSuggestions(
+                    modal
+                );
+            }
+        );
+
+
+        /* SEND */
+
+        sendButton?.addEventListener(
+            "click",
+            () => {
+
+                sendMessage(modal);
+
+            }
+        );
+
+
+        /* ENTER */
+
+        input?.addEventListener(
+            "keydown",
+            (event) => {
+
+                if (
+                    event.key === "Enter" &&
+                    !event.shiftKey
+                ) {
+
+                    event.preventDefault();
+
+                    sendMessage(modal);
+                }
+            }
+        );
+
+
+        /* AUTO RESIZE */
+
+        input?.addEventListener(
+            "input",
+            () => {
+
+                input.style.height = "auto";
+
+                input.style.height =
+                    Math.min(
+                        input.scrollHeight,
+                        140
+                    ) + "px";
+            }
+        );
+
+
+        initializeSuggestions(
+            modal
+        );
     }
 
-    if (!response.ok) {
 
-      const serverMessage =
-        data?.details ||
-        data?.error ||
-        responseText ||
-        `HTTP ${response.status}`;
+    /* =========================================================
+       SUGGESTIONS
+    ========================================================= */
 
-      throw new Error(
-        `HTTP_${response.status}: ${serverMessage}`
-      );
+    function initializeSuggestions(modal) {
+
+        modal
+            .querySelectorAll(
+                "[data-suggestion]"
+            )
+            .forEach((button) => {
+
+                button.onclick = () => {
+
+                    const input =
+                        modal.querySelector(
+                            "#unimind-chat-input"
+                        );
+
+                    if (!input) {
+                        return;
+                    }
+
+                    input.value =
+                        button.dataset.suggestion || "";
+
+                    input.dispatchEvent(
+                        new Event(
+                            "input"
+                        )
+                    );
+
+                    input.focus();
+
+                };
+
+            });
     }
 
-    if (
-      !data ||
-      typeof data.reply !== "string" ||
-      !data.reply.trim()
-    ) {
 
-      throw new Error(
-        "INVALID_RESPONSE"
-      );
-    }
+    /* =========================================================
+       SEND MESSAGE
+    ========================================================= */
 
-    return data.reply.trim();
-  }
+    async function sendMessage(modal) {
 
-  // ==========================================================
-  // USER MESSAGE
-  // ==========================================================
+        const input =
+            modal.querySelector(
+                "#unimind-chat-input"
+            );
 
-  function addUserMessage(
-    container,
-    message
-  ) {
+        const messages =
+            modal.querySelector(
+                "#unimind-chat-messages"
+            );
 
-    const messageElement =
-      document.createElement("div");
 
-    messageElement.className =
-      "unimind-message user-message";
+        if (!input || !messages) {
+            return;
+        }
 
-    messageElement.innerHTML = `
-      <div class="message-content">
-        ${formatText(message)}
-      </div>
-    `;
 
-    container.appendChild(
-      messageElement
-    );
-  }
+        const message =
+            input.value.trim();
 
-  // ==========================================================
-  // THINKING MESSAGE
-  // ==========================================================
 
-  function addThinkingMessage(
-    container
-  ) {
+        if (!message) {
+            return;
+        }
 
-    const messageElement =
-      document.createElement("div");
 
-    messageElement.className =
-      "unimind-message assistant-message thinking-message";
+        addUserMessage(
+            messages,
+            message
+        );
 
-    messageElement.innerHTML = `
-      <div class="message-avatar">
-        ✦
-      </div>
 
-      <div class="message-content thinking-content">
+        input.value = "";
+        input.style.height = "auto";
 
-        <span class="thinking-label">
-          UniMind AI is thinking
-        </span>
 
-        <div class="thinking-dots">
+        const loading =
+            addLoadingMessage(
+                messages
+            );
 
-          <span></span>
-          <span></span>
-          <span></span>
 
-        </div>
+        scrollMessagesToBottom(
+            messages
+        );
 
-      </div>
-    `;
-
-    container.appendChild(
-      messageElement
-    );
-
-    return messageElement;
-  }
-
-  // ==========================================================
-  // ASSISTANT MESSAGE
-  // ==========================================================
-
-  function addAssistantMessage(
-    container,
-    message
-  ) {
-
-    const messageElement =
-      document.createElement("div");
-
-    messageElement.className =
-      "unimind-message assistant-message";
-
-    const messageId =
-      "msg-" +
-      Date.now() +
-      "-" +
-      Math.random()
-        .toString(36)
-        .substring(2, 8);
-
-    messageElement.dataset.messageId =
-      messageId;
-
-    messageElement.innerHTML = `
-
-      <div class="message-avatar">
-        ✦
-      </div>
-
-      <div class="assistant-message-body">
-
-        <div class="message-content">
-          ${formatAIResponse(message)}
-        </div>
-
-        <div class="message-tools">
-
-          <button
-            type="button"
-            class="message-tool copy-btn"
-            title="Copy answer"
-          >
-            Copy
-          </button>
-
-          <button
-            type="button"
-            class="message-tool like-btn"
-            title="Helpful"
-          >
-            👍
-          </button>
-
-          <button
-            type="button"
-            class="message-tool dislike-btn"
-            title="Not helpful"
-          >
-            👎
-          </button>
-
-        </div>
-
-      </div>
-    `;
-
-    container.appendChild(
-      messageElement
-    );
-
-    const copyButton =
-      messageElement.querySelector(
-        ".copy-btn"
-      );
-
-    copyButton?.addEventListener(
-      "click",
-      async () => {
 
         try {
 
-          await navigator.clipboard.writeText(
-            message
-          );
+            const reply =
+                await callUniMindAI(
+                    message
+                );
 
-          copyButton.textContent =
-            "Copied ✓";
 
-          setTimeout(() => {
+            loading.remove();
 
-            copyButton.textContent =
-              "Copy";
 
-          }, 1800);
+            addAIMessage(
+                messages,
+                reply
+            );
 
-        } catch {
 
-          copyButton.textContent =
-            "Copy failed";
+        } catch (error) {
+
+            loading.remove();
+
+
+            addAIMessage(
+                messages,
+                getReadableError(
+                    error
+                )
+            );
 
         }
-      }
-    );
 
-    const likeButton =
-      messageElement.querySelector(
-        ".like-btn"
-      );
 
-    likeButton?.addEventListener(
-      "click",
-      () => {
+        scrollMessagesToBottom(
+            messages
+        );
+    }
 
-        likeButton.classList.toggle(
-          "selected"
+
+    /* =========================================================
+       USER MESSAGE
+    ========================================================= */
+
+    function addUserMessage(
+        container,
+        text
+    ) {
+
+        const element =
+            document.createElement(
+                "div"
+            );
+
+        element.className =
+            "unimind-message unimind-user-message";
+
+
+        element.innerHTML = `
+            <div class="unimind-message-content">
+                ${escapeHTML(text)}
+            </div>
+        `;
+
+
+        container.appendChild(
+            element
+        );
+    }
+
+
+    /* =========================================================
+       LOADING
+    ========================================================= */
+
+    function addLoadingMessage(
+        container
+    ) {
+
+        const element =
+            document.createElement(
+                "div"
+            );
+
+        element.className =
+            "unimind-message unimind-ai-message unimind-loading";
+
+
+        element.innerHTML = `
+
+            <div class="unimind-message-header">
+
+                <span>
+                    ✦
+                </span>
+
+                UniMind AI
+
+            </div>
+
+            <div class="unimind-loading-dots">
+
+                <span></span>
+                <span></span>
+                <span></span>
+
+            </div>
+        `;
+
+
+        container.appendChild(
+            element
         );
 
-      }
-    );
 
-    const dislikeButton =
-      messageElement.querySelector(
-        ".dislike-btn"
-      );
+        return element;
+    }
 
-    dislikeButton?.addEventListener(
-      "click",
-      () => {
 
-        dislikeButton.classList.toggle(
-          "selected"
+    /* =========================================================
+       AI MESSAGE
+    ========================================================= */
+
+    function addAIMessage(
+        container,
+        text
+    ) {
+
+        const element =
+            document.createElement(
+                "div"
+            );
+
+        element.className =
+            "unimind-message unimind-ai-message";
+
+
+        element.innerHTML = `
+
+            <div class="unimind-message-header">
+
+                <span>
+                    ✦
+                </span>
+
+                UniMind AI
+
+            </div>
+
+            <div class="unimind-message-content">
+
+                ${formatAIResponse(text)}
+
+            </div>
+        `;
+
+
+        container.appendChild(
+            element
         );
-
-      }
-    );
-  }
-
-  // ==========================================================
-  // ERROR MESSAGE
-  // ==========================================================
-
-  function addErrorMessage(
-    container,
-    message
-  ) {
-
-    const messageElement =
-      document.createElement("div");
-
-    messageElement.className =
-      "unimind-message assistant-message error-message";
-
-    messageElement.innerHTML = `
-
-      <div class="message-avatar">
-        !
-      </div>
-
-      <div class="message-content">
-
-        <strong>
-          حدث خطأ
-        </strong>
-
-        <br>
-
-        ${escapeHTML(message)}
-
-      </div>
-    `;
-
-    container.appendChild(
-      messageElement
-    );
-  }
-
-  // ==========================================================
-  // READABLE ERROR
-  // ==========================================================
-
-  function getReadableError(
-    error
-  ) {
-
-    const message =
-      error?.message || "";
-
-    if (
-      message ===
-      "NETWORK_ERROR"
-    ) {
-
-      return "تعذر الاتصال بخدمة UniMind AI. تأكد من اتصال الإنترنت وأن Edge Function منشورة بشكل صحيح.";
-
     }
 
-    if (
-      message.includes(
-        "HTTP_401"
-      )
-    ) {
 
-      return "الخدمة رفضت الطلب بسبب المصادقة. تحقق من إعدادات Supabase Edge Function.";
+    /* =========================================================
+       CALL GEMINI THROUGH SUPABASE
+    ========================================================= */
 
-    }
-
-    if (
-      message.includes(
-        "HTTP_403"
-      )
-    ) {
-
-      return "تم رفض الوصول إلى خدمة الذكاء الاصطناعي.";
-
-    }
-
-    if (
-      message.includes(
-        "HTTP_404"
-      )
-    ) {
-
-      return "لم يتم العثور على خدمة UniMind AI. تحقق من رابط Edge Function.";
-
-    }
-
-    if (
-      message.includes(
-        "HTTP_429"
-      )
-    ) {
-
-      return "تم الوصول إلى حد الاستخدام الحالي لـ Gemini. حاول مرة أخرى لاحقًا.";
-
-    }
-
-    if (
-      message.includes(
-        "HTTP_503"
-      )
-    ) {
-
-      return "خدمة Gemini مشغولة حاليًا بسبب ارتفاع الطلب. حاول مرة أخرى بعد قليل.";
-
-    }
-
-    if (
-      message.includes(
-        "GEMINI_API_KEY"
-      )
-    ) {
-
-      return "مفتاح Gemini غير مضبوط بشكل صحيح في Supabase Secrets.";
-
-    }
-
-    if (
-      message.includes(
-        "Gemini API Error"
-      )
-    ) {
-
-      return (
-        "حدث خطأ في خدمة Gemini. تفاصيل الخطأ: " +
+    async function callUniMindAI(
         message
-      );
-
-    }
-
-    if (
-      message.includes(
-        "INVALID_RESPONSE"
-      )
     ) {
 
-      return "تم الاتصال بالخدمة، لكن لم تصل إجابة صحيحة من Gemini.";
+        const response =
+            await fetch(
+                API_URL,
+                {
+                    method: "POST",
 
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        message: message
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json()
+                .catch(() => ({}));
+
+
+        if (!response.ok) {
+
+            const error =
+                new Error(
+                    data?.details ||
+                    data?.error ||
+                    `HTTP_${response.status}`
+                );
+
+            error.status =
+                response.status;
+
+            throw error;
+        }
+
+
+        if (
+            !data ||
+            typeof data.reply !== "string"
+        ) {
+
+            throw new Error(
+                "INVALID_RESPONSE"
+            );
+        }
+
+
+        return data.reply;
     }
 
-    return (
-      message ||
-      "حدث خطأ غير متوقع. حاول مرة أخرى."
-    );
-  }
 
-  // ==========================================================
-  // FORMAT AI RESPONSE
-  // ==========================================================
+    /* =========================================================
+       ERROR HANDLING
+    ========================================================= */
 
-  function formatAIResponse(
-    text
-  ) {
+    function getReadableError(
+        error
+    ) {
 
-    if (!text) {
-      return "";
+        const message =
+            String(
+                error?.message ||
+                error ||
+                ""
+            );
+
+
+        if (
+            error?.status === 401 ||
+            message.includes("401")
+        ) {
+
+            return "حدث خطأ في المصادقة مع خدمة الذكاء الاصطناعي.";
+        }
+
+
+        if (
+            error?.status === 403 ||
+            message.includes("403")
+        ) {
+
+            return "تم رفض الطلب من خدمة الذكاء الاصطناعي.";
+        }
+
+
+        if (
+            error?.status === 429 ||
+            message.includes("429")
+        ) {
+
+            return "تم الوصول إلى حد الاستخدام مؤقتًا. حاول مرة أخرى بعد قليل.";
+        }
+
+
+        if (
+            message.includes("503") ||
+            message.includes("HTTP_503") ||
+            message.includes("high demand")
+        ) {
+
+            return "خدمة Gemini مشغولة حاليًا بسبب ارتفاع الطلب. حاول مرة أخرى بعد قليل.";
+        }
+
+
+        if (
+            message.includes("GEMINI_API_KEY")
+        ) {
+
+            return "مفتاح Gemini غير مضبوط في الخادم.";
+        }
+
+
+        if (
+            message.includes("Gemini API Error")
+        ) {
+
+            return "حدث خطأ أثناء الاتصال بخدمة Gemini.";
+        }
+
+
+        if (
+            message.includes("INVALID_RESPONSE")
+        ) {
+
+            return "تم الاتصال بالخدمة ولكن لم تصل إجابة صحيحة.";
+        }
+
+
+        return "حدث خطأ أثناء الاتصال بمساعد UniMind AI. حاول مرة أخرى.";
     }
 
-    let safe =
-      escapeHTML(text);
 
-    safe =
-      safe.replace(
-        /\*\*(.*?)\*\*/g,
-        "<strong>$1</strong>"
-      );
+    /* =========================================================
+       FORMAT AI RESPONSE
+    ========================================================= */
 
-    safe =
-      safe.replace(
-        /`([^`]+)`/g,
-        "<code>$1</code>"
-      );
+    function formatAIResponse(
+        text
+    ) {
 
-    safe =
-      safe.replace(
-        /^### (.*)$/gm,
-        "<h4>$1</h4>"
-      );
+        if (!text) {
+            return "";
+        }
 
-    safe =
-      safe.replace(
-        /^## (.*)$/gm,
-        "<h3>$1</h3>"
-      );
 
-    safe =
-      safe.replace(
-        /^\s*[-•]\s+(.*)$/gm,
-        "<li>$1</li>"
-      );
+        let result =
+            escapeHTML(text);
 
-    safe =
-      safe.replace(
-        /(<li>.*<\/li>)/gs,
-        "<ul>$1</ul>"
-      );
 
-    safe =
-      safe.replace(
-        /\n\n+/g,
-        "</p><p>"
-      );
+        result =
+            result.replace(
+                /\*\*(.*?)\*\*/g,
+                "<strong>$1</strong>"
+            );
 
-    safe =
-      safe.replace(
-        /\n/g,
-        "<br>"
-      );
 
-    return `<p>${safe}</p>`;
-  }
+        result =
+            result.replace(
+                /^### (.*)$/gm,
+                "<h4>$1</h4>"
+            );
 
-  // ==========================================================
-  // FORMAT USER TEXT
-  // ==========================================================
 
-  function formatText(
-    text
-  ) {
+        result =
+            result.replace(
+                /^## (.*)$/gm,
+                "<h3>$1</h3>"
+            );
 
-    return escapeHTML(
-      text
-    ).replace(
-      /\n/g,
-      "<br>"
-    );
-  }
 
-  // ==========================================================
-  // ESCAPE HTML
-  // ==========================================================
+        result =
+            result.replace(
+                /^# (.*)$/gm,
+                "<h2>$1</h2>"
+            );
 
-  function escapeHTML(
-    value
-  ) {
 
-    return String(value)
-      .replace(
-        /&/g,
-        "&amp;"
-      )
-      .replace(
-        /</g,
-        "&lt;"
-      )
-      .replace(
-        />/g,
-        "&gt;"
-      )
-      .replace(
-        /"/g,
-        "&quot;"
-      )
-      .replace(
-        /'/g,
-        "&#039;"
-      );
-  }
+        result =
+            result.replace(
+                /\n/g,
+                "<br>"
+            );
 
-  // ==========================================================
-  // SCROLL CHAT MESSAGES ONLY
-  // ==========================================================
 
-  function scrollMessagesToBottom(
-    container
-  ) {
-
-    requestAnimationFrame(() => {
-
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: "smooth"
-      });
-
-    });
-  }
-
-  // ==========================================================
-  // ESC KEY
-  // ==========================================================
-
-  document.addEventListener(
-    "keydown",
-    (event) => {
-
-      if (
-        event.key === "Escape"
-      ) {
-
-        closeChat();
-
-      }
-
+        return result;
     }
-  );
 
-  // ==========================================================
-  // GLOBAL CHAT BUTTON SUPPORT
-  // ==========================================================
 
-  document
-    .querySelectorAll(
-      "[data-open-chat], .open-chat, #start-learning, #try-demo"
-    )
-    .forEach((button) => {
+    /* =========================================================
+       ESCAPE HTML
+    ========================================================= */
 
-      button.addEventListener(
+    function escapeHTML(
+        text
+    ) {
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+        div.textContent =
+            text;
+
+        return div.innerHTML;
+    }
+
+
+    /* =========================================================
+       SCROLL CHAT MESSAGES
+    ========================================================= */
+
+    function scrollMessagesToBottom(
+        container
+    ) {
+
+        if (!container) {
+            return;
+        }
+
+
+        requestAnimationFrame(
+            () => {
+
+                container.scrollTop =
+                    container.scrollHeight;
+
+            }
+        );
+    }
+
+
+    /* =========================================================
+       CONNECT BUTTONS
+    ========================================================= */
+
+    const studyAssistantButton =
+        document.getElementById(
+            "studyAssistantButton"
+        );
+
+
+    const ctaStartButton =
+        document.getElementById(
+            "ctaStartButton"
+        );
+
+
+    const freePlanButton =
+        document.getElementById(
+            "freePlanButton"
+        );
+
+
+    const studentPlanButton =
+        document.getElementById(
+            "studentPlanButton"
+        );
+
+
+    const proPlanButton =
+        document.getElementById(
+            "proPlanButton"
+        );
+
+
+    /* مساعد الدراسة */
+
+    studyAssistantButton?.addEventListener(
         "click",
         (event) => {
 
-          event.preventDefault();
-          event.stopPropagation();
+            event.preventDefault();
+            event.stopPropagation();
 
-          openChat();
+            openChat();
 
         }
-      );
+    );
 
-    });
+
+    /* CTA */
+
+    ctaStartButton?.addEventListener(
+        "click",
+        (event) => {
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            openChat();
+
+        }
+    );
+
+
+    /* الخطط */
+
+    freePlanButton?.addEventListener(
+        "click",
+        (event) => {
+
+            event.preventDefault();
+
+            openChat();
+
+        }
+    );
+
+
+    studentPlanButton?.addEventListener(
+        "click",
+        (event) => {
+
+            event.preventDefault();
+
+            openChat();
+
+        }
+    );
+
+
+    proPlanButton?.addEventListener(
+        "click",
+        (event) => {
+
+            event.preventDefault();
+
+            openChat();
+
+        }
+    );
+
+
+    /* =========================================================
+       PREVENT PLACEHOLDER BUTTONS FROM DOING ANYTHING
+    ========================================================= */
+
+    document
+        .querySelectorAll(
+            ".feature-placeholder, .footer-placeholder"
+        )
+        .forEach(
+            (button) => {
+
+                button.addEventListener(
+                    "click",
+                    (event) => {
+
+                        event.preventDefault();
+
+                    }
+                );
+
+            }
+        );
+
+
+    /* =========================================================
+       LOGO
+    ========================================================= */
+
+    document
+        .getElementById("logoLink")
+        ?.addEventListener(
+            "click",
+            (event) => {
+
+                event.preventDefault();
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
+
+            }
+        );
+
+
+    document
+        .getElementById("footerLogoButton")
+        ?.addEventListener(
+            "click",
+            () => {
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
+
+            }
+        );
+
+
+    /* =========================================================
+       EXPOSE OPEN CHAT
+       للاستخدام الخارجي إذا احتجناه
+    ========================================================= */
+
+    window.openChat =
+        openChat;
+
+
+    window.closeUniMindChat =
+        closeChat;
+
+
+    /* =========================================================
+       THEME
+    ========================================================= */
+
+    const themeToggle =
+        document.getElementById(
+            "themeToggle"
+        );
+
+
+    themeToggle?.addEventListener(
+        "click",
+        () => {
+
+            document.body.classList.toggle(
+                "dark-mode"
+            );
+
+        }
+    );
+
+
+    /* =========================================================
+       LANGUAGE BUTTON
+    ========================================================= */
+
+    const languageToggle =
+        document.getElementById(
+            "languageToggle"
+        );
+
+
+    languageToggle?.addEventListener(
+        "click",
+        () => {
+
+            alert(
+                "نسخة اللغة الإنجليزية ستكون متاحة قريبًا."
+            );
+
+        }
+    );
+
+
+    /* =========================================================
+       LOGIN BUTTON
+    ========================================================= */
+
+    const loginButton =
+        document.getElementById(
+            "loginButton"
+        );
+
+
+    loginButton?.addEventListener(
+        "click",
+        () => {
+
+            alert(
+                "نظام تسجيل الدخول سيكون متاحًا قريبًا."
+            );
+
+        }
+    );
 
 });
-```
