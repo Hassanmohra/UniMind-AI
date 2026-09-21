@@ -1,10 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-    /* =========================================================
-       UniMind AI
-       Main Application
-    ========================================================= */
-
     const API_URL =
         "https://yzsfublvnwknjnayfosm.supabase.co/functions/v1/unimind-chat";
 
@@ -12,96 +7,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       PAGE SCROLL LOCK
-    ========================================================= */
-
-    function lockPageScroll() {
-
-        savedScrollY =
-            window.scrollY ||
-            window.pageYOffset ||
-            0;
-
-        document.body.dataset.unimindScrollY =
-            String(savedScrollY);
-
-        document.body.style.position = "fixed";
-        document.body.style.top =
-            `-${savedScrollY}px`;
-
-        document.body.style.left = "0";
-        document.body.style.right = "0";
-        document.body.style.width = "100%";
-
-        document.documentElement.classList.add(
-            "unimind-modal-open"
-        );
-
-        document.body.classList.add(
-            "unimind-chat-open"
-        );
-    }
-
-
-    function unlockPageScroll() {
-
-        const stored =
-            Number(
-                document.body.dataset.unimindScrollY || 0
-            );
-
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.left = "";
-        document.body.style.right = "";
-        document.body.style.width = "";
-
-        delete document.body.dataset.unimindScrollY;
-
-        document.documentElement.classList.remove(
-            "unimind-modal-open"
-        );
-
-        document.body.classList.remove(
-            "unimind-chat-open"
-        );
-
-        window.scrollTo(
-            0,
-            stored
-        );
-    }
-
-
-    /* =========================================================
-       CREATE CHAT MODAL
+       CHAT MODAL
     ========================================================= */
 
     function createChatModal() {
 
-        const modal =
-            document.createElement("div");
+        const modal = document.createElement("div");
 
-        modal.id =
-            "unimind-chat-modal";
-
-        modal.className =
-            "unimind-chat-modal";
-
+        modal.id = "unimind-chat-modal";
+        modal.className = "unimind-chat-modal";
 
         modal.innerHTML = `
+            <div class="unimind-chat-overlay"></div>
 
-            <div
-                class="unimind-chat-overlay"
-                id="unimind-chat-overlay"
-            ></div>
-
-            <div
-                class="unimind-chat-window"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="unimind-chat-title"
-            >
+            <div class="unimind-chat-window">
 
                 <div class="unimind-chat-header">
 
@@ -112,19 +31,16 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
 
                         <div>
-
-                            <strong id="unimind-chat-title">
+                            <strong>
                                 UniMind AI
                             </strong>
 
                             <span>
                                 AI Assistant Online
                             </span>
-
                         </div>
 
                     </div>
-
 
                     <div class="unimind-chat-actions">
 
@@ -247,6 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* =========================================================
        OPEN CHAT
+       تعديل آمن فقط لفتح النافذة
     ========================================================= */
 
     function openChat() {
@@ -262,55 +179,60 @@ document.addEventListener("DOMContentLoaded", () => {
             modal =
                 createChatModal();
 
-            document.body.appendChild(
-                modal
-            );
+            document.body.appendChild(modal);
 
-            initializeChat(modal);
+            initializeChat();
         }
 
 
-        /* مهم جدًا:
-           ثبّت النافذة على الشاشة */
-        modal.style.position = "fixed";
-        modal.style.top = "0";
-        modal.style.left = "0";
-        modal.style.right = "0";
-        modal.style.bottom = "0";
-        modal.style.width = "100vw";
-        modal.style.height = "100vh";
-        modal.style.zIndex = "999999";
+        /*
+         * حفظ مكان الصفحة الحالي
+         * حتى لا يقفز الموقع إلى الأسفل
+         */
+
+        savedScrollY =
+            window.scrollY ||
+            window.pageYOffset ||
+            0;
 
 
-        lockPageScroll();
+        /*
+         * لا نغيّر CSS الأساسي للتصميم.
+         * فقط نضيف class الفتح الموجودة أصلًا.
+         */
 
-
-        /* افتح النافذة */
         modal.classList.add("active");
 
+        document.body.classList.add(
+            "unimind-chat-open"
+        );
 
-        const input =
+
+        /*
+         * التركيز بدون تحريك الصفحة
+         */
+
+        const textarea =
             modal.querySelector(
                 "#unimind-chat-input"
             );
 
 
-        /* التركيز بدون تحريك الصفحة */
         setTimeout(() => {
 
             try {
 
-                input?.focus({
+                textarea?.focus({
                     preventScroll: true
                 });
 
             } catch {
 
-                input?.focus();
+                textarea?.focus();
 
             }
 
-        }, 150);
+        }, 250);
     }
 
 
@@ -331,12 +253,25 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        modal.classList.remove(
-            "active"
+        modal.classList.remove("active");
+
+        document.body.classList.remove(
+            "unimind-chat-open"
         );
 
 
-        unlockPageScroll();
+        /*
+         * إعادة الصفحة إلى مكانها
+         */
+
+        requestAnimationFrame(() => {
+
+            window.scrollTo(
+                0,
+                savedScrollY
+            );
+
+        });
     }
 
 
@@ -344,29 +279,44 @@ document.addEventListener("DOMContentLoaded", () => {
        INITIALIZE CHAT
     ========================================================= */
 
-    function initializeChat(modal) {
+    function initializeChat() {
+
+        const modal =
+            document.getElementById(
+                "unimind-chat-modal"
+            );
+
+
+        if (!modal) {
+            return;
+        }
+
 
         const closeButton =
             modal.querySelector(
                 "#unimind-chat-close"
             );
 
+
+        const overlay =
+            modal.querySelector(
+                ".unimind-chat-overlay"
+            );
+
+
         const newButton =
             modal.querySelector(
                 "#unimind-chat-new"
             );
 
-        const overlay =
-            modal.querySelector(
-                "#unimind-chat-overlay"
-            );
 
         const sendButton =
             modal.querySelector(
                 "#unimind-chat-send"
             );
 
-        const input =
+
+        const textarea =
             modal.querySelector(
                 "#unimind-chat-input"
             );
@@ -382,17 +332,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 event.stopPropagation();
 
                 closeChat();
+
             }
         );
 
 
+        /* OVERLAY */
+
         overlay?.addEventListener(
             "click",
-            (event) => {
-
-                event.preventDefault();
+            () => {
 
                 closeChat();
+
             }
         );
 
@@ -408,9 +360,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         "#unimind-chat-messages"
                     );
 
+
                 if (!messages) {
                     return;
                 }
+
 
                 messages.innerHTML = `
 
@@ -466,9 +420,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
 
-                initializeSuggestions(
-                    modal
-                );
+                initializeSuggestions();
+
             }
         );
 
@@ -479,7 +432,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "click",
             () => {
 
-                sendMessage(modal);
+                sendMessage();
 
             }
         );
@@ -487,7 +440,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         /* ENTER */
 
-        input?.addEventListener(
+        textarea?.addEventListener(
             "keydown",
             (event) => {
 
@@ -498,32 +451,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     event.preventDefault();
 
-                    sendMessage(modal);
+                    sendMessage();
+
                 }
+
             }
         );
 
 
         /* AUTO RESIZE */
 
-        input?.addEventListener(
+        textarea?.addEventListener(
             "input",
             () => {
 
-                input.style.height = "auto";
+                textarea.style.height =
+                    "auto";
 
-                input.style.height =
+                textarea.style.height =
                     Math.min(
-                        input.scrollHeight,
+                        textarea.scrollHeight,
                         140
                     ) + "px";
+
             }
         );
 
 
-        initializeSuggestions(
-            modal
-        );
+        initializeSuggestions();
     }
 
 
@@ -531,39 +486,59 @@ document.addEventListener("DOMContentLoaded", () => {
        SUGGESTIONS
     ========================================================= */
 
-    function initializeSuggestions(modal) {
+    function initializeSuggestions() {
 
-        modal
+        document
             .querySelectorAll(
-                "[data-suggestion]"
+                "#unimind-chat-modal [data-suggestion]"
             )
-            .forEach((button) => {
+            .forEach(
+                (button) => {
 
-                button.onclick = () => {
+                    button.onclick = () => {
 
-                    const input =
-                        modal.querySelector(
-                            "#unimind-chat-input"
+                        const modal =
+                            document.getElementById(
+                                "unimind-chat-modal"
+                            );
+
+
+                        const textarea =
+                            modal?.querySelector(
+                                "#unimind-chat-input"
+                            );
+
+
+                        if (!textarea) {
+                            return;
+                        }
+
+
+                        textarea.value =
+                            button.dataset.suggestion || "";
+
+
+                        textarea.dispatchEvent(
+                            new Event("input")
                         );
 
-                    if (!input) {
-                        return;
-                    }
 
-                    input.value =
-                        button.dataset.suggestion || "";
+                        try {
 
-                    input.dispatchEvent(
-                        new Event(
-                            "input"
-                        )
-                    );
+                            textarea.focus({
+                                preventScroll: true
+                            });
 
-                    input.focus();
+                        } catch {
 
-                };
+                            textarea.focus();
 
-            });
+                        }
+
+                    };
+
+                }
+            );
     }
 
 
@@ -571,26 +546,38 @@ document.addEventListener("DOMContentLoaded", () => {
        SEND MESSAGE
     ========================================================= */
 
-    async function sendMessage(modal) {
+    async function sendMessage() {
 
-        const input =
-            modal.querySelector(
+        const modal =
+            document.getElementById(
+                "unimind-chat-modal"
+            );
+
+
+        const textarea =
+            modal?.querySelector(
                 "#unimind-chat-input"
             );
 
+
         const messages =
-            modal.querySelector(
+            modal?.querySelector(
                 "#unimind-chat-messages"
             );
 
 
-        if (!input || !messages) {
+        if (
+            !textarea ||
+            !messages
+        ) {
+
             return;
+
         }
 
 
         const message =
-            input.value.trim();
+            textarea.value.trim();
 
 
         if (!message) {
@@ -604,8 +591,8 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
-        input.value = "";
-        input.style.height = "auto";
+        textarea.value = "";
+        textarea.style.height = "auto";
 
 
         const loading =
@@ -671,6 +658,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 "div"
             );
 
+
         element.className =
             "unimind-message unimind-user-message";
 
@@ -701,6 +689,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 "div"
             );
 
+
         element.className =
             "unimind-message unimind-ai-message unimind-loading";
 
@@ -724,6 +713,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span></span>
 
             </div>
+
         `;
 
 
@@ -750,6 +740,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 "div"
             );
 
+
         element.className =
             "unimind-message unimind-ai-message";
 
@@ -771,6 +762,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${formatAIResponse(text)}
 
             </div>
+
         `;
 
 
@@ -781,7 +773,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       CALL GEMINI THROUGH SUPABASE
+       GEMINI / SUPABASE
     ========================================================= */
 
     async function callUniMindAI(
@@ -807,7 +799,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         const data =
-            await response.json()
+            await response
+                .json()
                 .catch(() => ({}));
 
 
@@ -820,8 +813,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     `HTTP_${response.status}`
                 );
 
+
             error.status =
                 response.status;
+
 
             throw error;
         }
@@ -835,6 +830,7 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error(
                 "INVALID_RESPONSE"
             );
+
         }
 
 
@@ -864,6 +860,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
 
             return "حدث خطأ في المصادقة مع خدمة الذكاء الاصطناعي.";
+
         }
 
 
@@ -873,6 +870,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
 
             return "تم رفض الطلب من خدمة الذكاء الاصطناعي.";
+
         }
 
 
@@ -882,6 +880,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
 
             return "تم الوصول إلى حد الاستخدام مؤقتًا. حاول مرة أخرى بعد قليل.";
+
         }
 
 
@@ -892,6 +891,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
 
             return "خدمة Gemini مشغولة حاليًا بسبب ارتفاع الطلب. حاول مرة أخرى بعد قليل.";
+
         }
 
 
@@ -900,6 +900,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
 
             return "مفتاح Gemini غير مضبوط في الخادم.";
+
         }
 
 
@@ -908,6 +909,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
 
             return "حدث خطأ أثناء الاتصال بخدمة Gemini.";
+
         }
 
 
@@ -916,6 +918,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
 
             return "تم الاتصال بالخدمة ولكن لم تصل إجابة صحيحة.";
+
         }
 
 
@@ -924,7 +927,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       FORMAT AI RESPONSE
+       FORMAT RESPONSE
     ========================================================= */
 
     function formatAIResponse(
@@ -992,15 +995,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 "div"
             );
 
+
         div.textContent =
             text;
+
 
         return div.innerHTML;
     }
 
 
     /* =========================================================
-       SCROLL CHAT MESSAGES
+       CHAT SCROLL
     ========================================================= */
 
     function scrollMessagesToBottom(
@@ -1024,109 +1029,92 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       CONNECT BUTTONS
+       IMPORTANT:
+       STUDY ASSISTANT BUTTON
     ========================================================= */
 
-    const studyAssistantButton =
+    const studyButton =
         document.getElementById(
             "studyAssistantButton"
         );
 
 
-    const ctaStartButton =
+    if (studyButton) {
+
+        studyButton.addEventListener(
+            "click",
+            (event) => {
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                openChat();
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       CTA BUTTON
+    ========================================================= */
+
+    const ctaButton =
         document.getElementById(
             "ctaStartButton"
         );
 
 
-    const freePlanButton =
-        document.getElementById(
-            "freePlanButton"
+    if (ctaButton) {
+
+        ctaButton.addEventListener(
+            "click",
+            (event) => {
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                openChat();
+
+            }
         );
 
-
-    const studentPlanButton =
-        document.getElementById(
-            "studentPlanButton"
-        );
+    }
 
 
-    const proPlanButton =
-        document.getElementById(
-            "proPlanButton"
-        );
+    /* =========================================================
+       OTHER BUTTONS
+    ========================================================= */
+
+    [
+        "freePlanButton",
+        "studentPlanButton",
+        "proPlanButton"
+    ].forEach(
+        (id) => {
+
+            const button =
+                document.getElementById(id);
 
 
-    /* مساعد الدراسة */
+            button?.addEventListener(
+                "click",
+                (event) => {
 
-    studyAssistantButton?.addEventListener(
-        "click",
-        (event) => {
+                    event.preventDefault();
 
-            event.preventDefault();
-            event.stopPropagation();
+                    openChat();
 
-            openChat();
-
-        }
-    );
-
-
-    /* CTA */
-
-    ctaStartButton?.addEventListener(
-        "click",
-        (event) => {
-
-            event.preventDefault();
-            event.stopPropagation();
-
-            openChat();
-
-        }
-    );
-
-
-    /* الخطط */
-
-    freePlanButton?.addEventListener(
-        "click",
-        (event) => {
-
-            event.preventDefault();
-
-            openChat();
-
-        }
-    );
-
-
-    studentPlanButton?.addEventListener(
-        "click",
-        (event) => {
-
-            event.preventDefault();
-
-            openChat();
-
-        }
-    );
-
-
-    proPlanButton?.addEventListener(
-        "click",
-        (event) => {
-
-            event.preventDefault();
-
-            openChat();
+                }
+            );
 
         }
     );
 
 
     /* =========================================================
-       PREVENT PLACEHOLDER BUTTONS FROM DOING ANYTHING
+       PLACEHOLDER BUTTONS
     ========================================================= */
 
     document
@@ -1150,44 +1138,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       LOGO
-    ========================================================= */
-
-    document
-        .getElementById("logoLink")
-        ?.addEventListener(
-            "click",
-            (event) => {
-
-                event.preventDefault();
-
-                window.scrollTo({
-                    top: 0,
-                    behavior: "smooth"
-                });
-
-            }
-        );
-
-
-    document
-        .getElementById("footerLogoButton")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                window.scrollTo({
-                    top: 0,
-                    behavior: "smooth"
-                });
-
-            }
-        );
-
-
-    /* =========================================================
-       EXPOSE OPEN CHAT
-       للاستخدام الخارجي إذا احتجناه
+       GLOBAL OPEN CHAT
     ========================================================= */
 
     window.openChat =
@@ -1221,7 +1172,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       LANGUAGE BUTTON
+       LANGUAGE
     ========================================================= */
 
     const languageToggle =
@@ -1243,7 +1194,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       LOGIN BUTTON
+       LOGIN
     ========================================================= */
 
     const loginButton =
