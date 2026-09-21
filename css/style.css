@@ -1773,3 +1773,489 @@ body.dark-mode .navbar {
 
     color: white;
 }
+/* =========================================================
+   UNIMIND AI CHAT MODAL
+   ========================================================= */
+
+#unimind-chat-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 999999 !important;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+#unimind-chat-modal.active {
+    display: flex !important;
+}
+
+.unimind-chat-overlay {
+    position: absolute;
+    inset: 0;
+
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.unimind-chat-window {
+    position: relative;
+    z-index: 2;
+
+    width: min(720px, 100%);
+    height: min(720px, calc(100vh - 40px));
+
+    background: #ffffff;
+
+    border-radius: 24px;
+
+    box-shadow:
+        0 25px 80px rgba(0, 0, 0, 0.25);
+
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
+
+    direction: rtl;
+}
+
+.unimind-chat-header {
+    min-height: 78px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 16px 20px;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    background: #ffffff;
+}
+
+.unimind-chat-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.unimind-chat-logo {
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: linear-gradient(
+        135deg,
+        #7c3aed,
+        #4f46e5
+    );
+
+    color: #ffffff;
+
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.unimind-chat-brand strong {
+    display: block;
+
+    color: #111827;
+
+    font-size: 16px;
+}
+
+.unimind-chat-brand span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #10b981;
+
+    font-size: 12px;
+}
+
+.unimind-chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.unimind-chat-actions button {
+    width: 38px;
+    height: 38px;
+
+    border: 0;
+    border-radius: 10px;
+
+    background: #f3f4f6;
+
+    color: #374151;
+
+    font-size: 22px;
+
+    cursor: pointer;
+
+    transition: 0.2s ease;
+}
+
+.unimind-chat-actions button:hover {
+    background: #e5e7eb;
+}
+
+.unimind-chat-messages {
+    flex: 1;
+
+    overflow-y: auto;
+
+    padding: 28px 24px;
+
+    background: #f8fafc;
+}
+
+.unimind-welcome-message {
+    max-width: 560px;
+
+    margin: 20px auto 24px;
+
+    text-align: center;
+}
+
+.unimind-welcome-icon {
+    width: 58px;
+    height: 58px;
+
+    margin: 0 auto 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 18px;
+
+    background: linear-gradient(
+        135deg,
+        #7c3aed,
+        #4f46e5
+    );
+
+    color: white;
+
+    font-size: 28px;
+
+    box-shadow:
+        0 10px 30px rgba(79, 70, 229, 0.25);
+}
+
+.unimind-welcome-message h2 {
+    margin: 0 0 10px;
+
+    color: #111827;
+
+    font-size: 24px;
+}
+
+.unimind-welcome-message p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+    line-height: 1.8;
+}
+
+.unimind-suggestions {
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 10px;
+
+    max-width: 560px;
+
+    margin: 0 auto 25px;
+}
+
+.unimind-suggestions button {
+    padding: 13px 15px;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 14px;
+
+    background: #ffffff;
+
+    color: #374151;
+
+    font-family: inherit;
+
+    font-size: 13px;
+
+    cursor: pointer;
+
+    transition: 0.2s ease;
+}
+
+.unimind-suggestions button:hover {
+    border-color: #8b5cf6;
+
+    color: #6d28d9;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+.unimind-message {
+    max-width: 85%;
+
+    margin-bottom: 16px;
+
+    padding: 14px 16px;
+
+    border-radius: 16px;
+
+    line-height: 1.8;
+
+    font-size: 14px;
+}
+
+.unimind-user-message {
+    margin-right: auto;
+
+    background: #4f46e5;
+
+    color: #ffffff;
+
+    border-bottom-right-radius: 5px;
+}
+
+.unimind-ai-message {
+    margin-left: auto;
+
+    background: #ffffff;
+
+    color: #374151;
+
+    border: 1px solid #e5e7eb;
+
+    border-bottom-left-radius: 5px;
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.04);
+}
+
+.unimind-message-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    margin-bottom: 8px;
+
+    color: #4f46e5;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.unimind-message-content {
+    line-height: 1.9;
+}
+
+.unimind-loading-dots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.unimind-loading-dots span {
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #6366f1;
+
+    animation: unimindTyping 1.2s infinite ease-in-out;
+}
+
+.unimind-loading-dots span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.unimind-loading-dots span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes unimindTyping {
+
+    0%,
+    60%,
+    100% {
+        opacity: 0.3;
+        transform: translateY(0);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translateY(-4px);
+    }
+}
+
+.unimind-chat-input-area {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+
+    padding: 14px 18px;
+
+    background: #ffffff;
+
+    border-top: 1px solid #e5e7eb;
+}
+
+#unimind-chat-input {
+    flex: 1;
+
+    min-height: 46px;
+    max-height: 140px;
+
+    padding: 13px 15px;
+
+    resize: none;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 14px;
+
+    outline: none;
+
+    background: #f9fafb;
+
+    color: #111827;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    line-height: 1.6;
+
+    box-sizing: border-box;
+}
+
+#unimind-chat-input:focus {
+    border-color: #6366f1;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+#unimind-chat-send {
+    width: 46px;
+    height: 46px;
+
+    flex-shrink: 0;
+
+    border: 0;
+
+    border-radius: 14px;
+
+    background: linear-gradient(
+        135deg,
+        #7c3aed,
+        #4f46e5
+    );
+
+    color: #ffffff;
+
+    font-size: 19px;
+
+    cursor: pointer;
+
+    transition: 0.2s ease;
+}
+
+#unimind-chat-send:hover {
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 8px 20px rgba(79, 70, 229, 0.25);
+}
+
+.unimind-chat-footer {
+    padding: 9px 16px;
+
+    text-align: center;
+
+    background: #ffffff;
+
+    color: #9ca3af;
+
+    font-size: 10px;
+
+    border-top: 1px solid #f3f4f6;
+}
+
+.unimind-chat-footer span {
+    margin-right: 8px;
+}
+
+body.unimind-chat-open {
+    overflow: hidden;
+}
+
+
+/* =========================
+   MOBILE
+   ========================= */
+
+@media (max-width: 600px) {
+
+    #unimind-chat-modal {
+        padding: 0;
+    }
+
+    .unimind-chat-window {
+        width: 100%;
+        height: 100%;
+
+        border-radius: 0;
+    }
+
+    .unimind-chat-header {
+        min-height: 70px;
+    }
+
+    .unimind-chat-messages {
+        padding: 20px 14px;
+    }
+
+    .unimind-suggestions {
+        grid-template-columns: 1fr;
+    }
+
+    .unimind-welcome-message h2 {
+        font-size: 20px;
+    }
+
+    .unimind-message {
+        max-width: 92%;
+    }
+
+}
