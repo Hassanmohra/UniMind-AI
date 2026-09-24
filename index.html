@@ -8,12 +8,11 @@
 
     <meta
         name="description"
-        content="UniMind AI - مساعدك الجامعي الذكي للدراسة والتعلم وتنظيم الحياة الجامعية."
+        content="UniMind AI - مساعدك الجامعي الذكي للدراسة والتعلم وتنظيم حياتك الجامعية."
     >
 
     <title>UniMind AI | مساعدك الجامعي الذكي</title>
 
-    <!-- CSS -->
     <link rel="stylesheet" href="css/style.css?v=8">
 </head>
 
@@ -22,7 +21,6 @@
     <!-- ================= NAVBAR ================= -->
 
     <header class="navbar">
-
         <div class="container nav-container">
 
             <a href="#" class="logo" id="logoLink">
@@ -31,19 +29,9 @@
             </a>
 
             <nav class="nav-links">
-
-                <a href="#features">
-                    المميزات
-                </a>
-
-                <a href="#about">
-                    عن UniMind
-                </a>
-
-                <a href="#pricing">
-                    الخطط
-                </a>
-
+                <a href="#features">المميزات</a>
+                <a href="#about">عن UniMind</a>
+                <a href="#pricing">الخطط</a>
             </nav>
 
             <div class="nav-actions">
@@ -76,123 +64,116 @@
             </div>
 
         </div>
-
     </header>
 
 
     <!-- ================= HERO ================= -->
 
-    <main>
+    <section class="hero">
 
-        <section class="hero">
+        <div class="container hero-container">
 
-            <div class="container hero-container">
+            <div class="hero-content">
 
-                <div class="hero-content">
+                <div class="hero-badge">
+                    ✦ الذكاء الاصطناعي للطلاب
+                </div>
 
-                    <div class="hero-badge">
-                        ✦ الذكاء الاصطناعي للطلاب
-                    </div>
+                <h1>
+                    مساعدك الجامعي
+                    <span>الذكي</span>
+                </h1>
 
-                    <h1>
-                        مساعدك الجامعي
-                        <span>الذكي</span>
-                    </h1>
+                <p class="hero-description">
+                    ادرس بذكاء، افهم أسرع، ونظّم حياتك الجامعية
+                    باستخدام الذكاء الاصطناعي.
+                </p>
 
-                    <p class="hero-description">
-                        ادرس بذكاء، افهم أسرع، ونظّم حياتك الجامعية
-                        باستخدام الذكاء الاصطناعي.
-                    </p>
+                <div class="hero-actions">
 
-                    <div class="hero-actions">
+                    <button
+                        type="button"
+                        id="ctaStartButton"
+                        class="primary-button"
+                    >
+                        ابدأ الآن
+                        <span>←</span>
+                    </button>
 
-                        <button
-                            type="button"
-                            id="ctaStartButton"
-                            class="primary-button"
-                        >
-                            ابدأ الآن
-                            <span>←</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            id="heroDemoButton"
-                            class="secondary-button"
-                        >
-                            جرّب المساعد
-                        </button>
-
-                    </div>
-
-                    <div class="hero-note">
-                        ✓ لا تحتاج إلى خبرة تقنية
-                        &nbsp;&nbsp;
-                        ✓ مصمم للطلاب
-                        &nbsp;&nbsp;
-                        ✓ يدعم العربية
-                    </div>
+                    <button
+                        type="button"
+                        id="heroDemoButton"
+                        class="secondary-button"
+                    >
+                        جرّب المساعد
+                    </button>
 
                 </div>
 
+                <div class="hero-note">
+                    ✓ لا تحتاج إلى خبرة تقنية
+                    &nbsp;&nbsp;
+                    ✓ مصمم للطلاب
+                    &nbsp;&nbsp;
+                    ✓ يدعم العربية
+                </div>
 
-                <!-- Hero AI Card -->
+            </div>
 
-                <div class="hero-visual">
 
-                    <div class="ai-card">
+            <div class="hero-visual">
 
-                        <div class="ai-card-header">
+                <div class="ai-card">
 
-                            <div class="ai-brand">
+                    <div class="ai-card-header">
 
-                                <div class="ai-logo">
-                                    ✦
-                                </div>
+                        <div class="ai-brand">
 
-                                <div>
-                                    <strong>UniMind AI</strong>
-                                    <small>AI Assistant Online</small>
-                                </div>
-
+                            <div class="ai-logo">
+                                ✦
                             </div>
 
-                            <span class="online-dot"></span>
-
-                        </div>
-
-
-                        <div class="ai-message ai-message-user">
-                            اشرح لي مفهوم الذكاء الاصطناعي بطريقة بسيطة
-                        </div>
-
-
-                        <div class="ai-message ai-message-bot">
-
-                            <div class="ai-message-title">
-                                ✦ UniMind AI
+                            <div>
+                                <strong>UniMind AI</strong>
+                                <small>AI Assistant Online</small>
                             </div>
 
-                            <p>
-                                بالتأكيد! الذكاء الاصطناعي هو مجال من علوم
-                                الحاسوب يهدف إلى إنشاء أنظمة تستطيع تنفيذ
-                                مهام تحتاج عادةً إلى قدر من الذكاء البشري.
-                            </p>
-
                         </div>
 
+                        <span class="online-dot"></span>
 
-                        <div class="ai-input-preview">
+                    </div>
 
-                            <span>
-                                اكتب سؤالك هنا...
-                            </span>
 
-                            <button type="button">
-                                ➤
-                            </button>
+                    <div class="ai-message ai-message-user">
+                        اشرح لي مفهوم الذكاء الاصطناعي بطريقة بسيطة
+                    </div>
 
+
+                    <div class="ai-message ai-message-bot">
+
+                        <div class="ai-message-title">
+                            ✦ UniMind AI
                         </div>
+
+                        <p>
+                            بالتأكيد! الذكاء الاصطناعي هو مجال من علوم
+                            الحاسوب يهدف إلى إنشاء أنظمة تستطيع تنفيذ
+                            مهام تحتاج عادةً إلى قدر من الذكاء البشري.
+                        </p>
+
+                    </div>
+
+
+                    <div class="ai-input-preview">
+
+                        <span>
+                            اكتب سؤالك هنا...
+                        </span>
+
+                        <button type="button">
+                            ➤
+                        </button>
 
                     </div>
 
@@ -200,304 +181,282 @@
 
             </div>
 
-        </section>
+        </div>
+
+    </section>
 
 
-        <!-- ================= FEATURES ================= -->
+    <!-- ================= FEATURES ================= -->
 
-        <section
-            class="features-section"
-            id="features"
-        >
+    <section
+        class="features-section"
+        id="features"
+    >
 
-            <div class="container">
+        <div class="container">
 
-                <div class="section-heading">
+            <div class="section-heading">
 
-                    <div class="section-badge">
-                        ✦ أدوات UniMind
-                    </div>
-
-                    <h2>
-                        كل ما تحتاجه
-                        <span>في مكان واحد</span>
-                    </h2>
-
-                    <p>
-                        مجموعة من الأدوات الذكية المصممة لمساعدتك
-                        في الدراسة وتنظيم حياتك الجامعية.
-                    </p>
-
+                <div class="section-badge">
+                    ✦ أدوات UniMind
                 </div>
 
+                <h2>
+                    كل ما تحتاجه
+                    <span>في مكان واحد</span>
+                </h2>
 
-                <div class="features-grid">
-
-
-                    <!-- AI Chat -->
-
-                    <article class="feature-card">
-
-                        <div class="feature-icon">
-                            🤖
-                        </div>
-
-                        <h3>
-                            مساعد الدراسة الذكي
-                        </h3>
-
-                        <p>
-                            تحدث مع مساعد ذكي واسأله عن المحاضرات
-                            والبرمجة والمواد الجامعية.
-                        </p>
-
-                        <button
-                            type="button"
-                            id="studyAssistantButton"
-                            class="feature-button"
-                            onclick="if (typeof window.openChat === 'function') { window.openChat(); }"
-                        >
-                            جرّب الآن
-                            <span>←</span>
-                        </button>
-
-                    </article>
-
-
-                    <!-- Lecture Summarizer -->
-
-                    <article class="feature-card">
-
-                        <div class="feature-icon">
-                            📄
-                        </div>
-
-                        <h3>
-                            تلخيص المحاضرات
-                        </h3>
-
-                        <p>
-                            ارفع ملف المحاضرة واستعد للحصول على
-                            ملخص منظم وسهل الفهم.
-                        </p>
-
-                        <button
-                            type="button"
-                            id="lectureSummarizerButton"
-                            class="feature-button"
-                        >
-                            جرّب الآن
-                            <span>←</span>
-                        </button>
-
-                    </article>
-
-
-                    <!-- Quizzes -->
-
-                    <article class="feature-card">
-
-                        <div class="feature-icon">
-                            🧠
-                        </div>
-
-                        <h3>
-                            الاختبارات الذكية
-                        </h3>
-
-                        <p>
-                            اختبر معلوماتك من خلال أسئلة
-                            تساعدك على الاستعداد للامتحانات.
-                        </p>
-
-                        <button
-                            type="button"
-                            class="feature-placeholder"
-                        >
-                            قريبًا
-                            <span>←</span>
-                        </button>
-
-                    </article>
-
-
-                    <!-- Flashcards -->
-
-                    <article class="feature-card">
-
-                        <div class="feature-icon">
-                            🗂️
-                        </div>
-
-                        <h3>
-                            البطاقات التعليمية
-                        </h3>
-
-                        <p>
-                            أنشئ بطاقات تعليمية تساعدك على
-                            مراجعة المعلومات وحفظها.
-                        </p>
-
-                        <button
-                            type="button"
-                            class="feature-placeholder"
-                        >
-                            قريبًا
-                            <span>←</span>
-                        </button>
-
-                    </article>
-
-
-                    <!-- Study Planner -->
-
-                    <article class="feature-card">
-
-                        <div class="feature-icon">
-                            📅
-                        </div>
-
-                        <h3>
-                            مخطط الدراسة
-                        </h3>
-
-                        <p>
-                            أنشئ خطة دراسية منظمة تناسب
-                            وقتك وموادك الجامعية.
-                        </p>
-
-                        <button
-                            type="button"
-                            class="feature-placeholder"
-                        >
-                            قريبًا
-                            <span>←</span>
-                        </button>
-
-                    </article>
-
-
-                    <!-- CV Assistant -->
-
-                    <article class="feature-card">
-
-                        <div class="feature-icon">
-                            📄
-                        </div>
-
-                        <h3>
-                            مساعد السيرة الذاتية
-                        </h3>
-
-                        <p>
-                            أنشئ وطوّر سيرتك الذاتية بطريقة
-                            احترافية تناسب سوق العمل.
-                        </p>
-
-                        <button
-                            type="button"
-                            class="feature-placeholder"
-                        >
-                            قريبًا
-                            <span>←</span>
-                        </button>
-
-                    </article>
-
-                </div>
+                <p>
+                    مجموعة من الأدوات الذكية المصممة لمساعدتك
+                    في الدراسة وتنظيم حياتك الجامعية.
+                </p>
 
             </div>
 
-        </section>
+
+            <div class="features-grid">
 
 
-        <!-- ================= ABOUT ================= -->
+                <!-- مساعد الدراسة -->
 
-        <section
-            class="about-section"
-            id="about"
-        >
+                <article class="feature-card">
 
-            <div class="container about-container">
-
-                <div class="about-content">
-
-                    <div class="section-badge">
-                        ✦ لماذا UniMind؟
-                    </div>
-
-                    <h2>
-                        الدراسة أصبحت
-                        <span>أذكى وأسهل</span>
-                    </h2>
-
-                    <p>
-                        UniMind AI هو مساعد جامعي ذكي يساعد الطلاب
-                        على فهم المواد، تنظيم الدراسة، مراجعة المعلومات
-                        والاستعداد للاختبارات باستخدام تقنيات الذكاء الاصطناعي.
-                    </p>
-
-                    <div class="about-points">
-
-                        <div class="about-point">
-                            <span>✓</span>
-                            <div>
-                                <strong>فهم أسرع</strong>
-                                <p>
-                                    احصل على شرح مبسط للمفاهيم الصعبة.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="about-point">
-                            <span>✓</span>
-                            <div>
-                                <strong>تنظيم أفضل</strong>
-                                <p>
-                                    خطط دراستك ونظّم وقتك بطريقة أفضل.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="about-point">
-                            <span>✓</span>
-                            <div>
-                                <strong>تعلم أكثر</strong>
-                                <p>
-                                    استخدم أدوات ذكية للمراجعة والاختبار.
-                                </p>
-                            </div>
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="about-card">
-
-                    <div class="about-card-icon">
-                        ✦
+                    <div class="feature-icon">
+                        🤖
                     </div>
 
                     <h3>
-                        تعلم بطريقة مختلفة
+                        مساعد الدراسة الذكي
                     </h3>
 
                     <p>
-                        اسأل، افهم، لخّص، اختبر نفسك
-                        وواصل التقدم.
+                        تحدث مع مساعد ذكي واسأله عن المحاضرات
+                        والبرمجة والمواد الجامعية.
                     </p>
 
-                    <div class="about-stat">
+                    <button
+                        type="button"
+                        id="studyAssistantButton"
+                        class="feature-placeholder"
+                        onclick="if (typeof window.openChat === 'function') window.openChat();"
+                    >
+                        جرّب الآن ←
+                    </button>
 
-                        <strong>
-                            AI
-                        </strong>
+                </article>
 
-                        <span>
-                            مساعدك في كل خطوة
-                        </span>
+
+                <!-- تلخيص المحاضرات -->
+
+                <article class="feature-card">
+
+                    <div class="feature-icon">
+                        📄
+                    </div>
+
+                    <h3>
+                        تلخيص المحاضرات
+                    </h3>
+
+                    <p>
+                        ارفع ملف المحاضرة واستعد للحصول على
+                        ملخص منظم وسهل الفهم.
+                    </p>
+
+                    <button
+                        type="button"
+                        id="lectureSummarizerButton"
+                        class="feature-placeholder"
+                    >
+                        جرّب الآن ←
+                    </button>
+
+                </article>
+
+
+                <!-- الاختبارات -->
+
+                <article class="feature-card">
+
+                    <div class="feature-icon">
+                        🧠
+                    </div>
+
+                    <h3>
+                        الاختبارات الذكية
+                    </h3>
+
+                    <p>
+                        اختبر معلوماتك من خلال أسئلة
+                        تساعدك على الاستعداد للامتحانات.
+                    </p>
+
+                    <button
+                        type="button"
+                        class="feature-placeholder"
+                    >
+                        قريبًا ←
+                    </button>
+
+                </article>
+
+
+                <!-- البطاقات -->
+
+                <article class="feature-card">
+
+                    <div class="feature-icon">
+                        🗂️
+                    </div>
+
+                    <h3>
+                        البطاقات التعليمية
+                    </h3>
+
+                    <p>
+                        أنشئ بطاقات تعليمية تساعدك على
+                        مراجعة المعلومات وحفظها.
+                    </p>
+
+                    <button
+                        type="button"
+                        class="feature-placeholder"
+                    >
+                        قريبًا ←
+                    </button>
+
+                </article>
+
+
+                <!-- مخطط الدراسة -->
+
+                <article class="feature-card">
+
+                    <div class="feature-icon">
+                        📅
+                    </div>
+
+                    <h3>
+                        مخطط الدراسة
+                    </h3>
+
+                    <p>
+                        أنشئ خطة دراسية منظمة تناسب
+                        وقتك وموادك الجامعية.
+                    </p>
+
+                    <button
+                        type="button"
+                        class="feature-placeholder"
+                    >
+                        قريبًا ←
+                    </button>
+
+                </article>
+
+
+                <!-- السيرة الذاتية -->
+
+                <article class="feature-card">
+
+                    <div class="feature-icon">
+                        📄
+                    </div>
+
+                    <h3>
+                        مساعد السيرة الذاتية
+                    </h3>
+
+                    <p>
+                        أنشئ وطوّر سيرتك الذاتية بطريقة
+                        احترافية تناسب سوق العمل.
+                    </p>
+
+                    <button
+                        type="button"
+                        class="feature-placeholder"
+                    >
+                        قريبًا ←
+                    </button>
+
+                </article>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================= ABOUT ================= -->
+
+    <section
+        class="about-section"
+        id="about"
+    >
+
+        <div class="container about-container">
+
+            <div class="about-content">
+
+                <div class="section-badge">
+                    ✦ لماذا UniMind؟
+                </div>
+
+                <h2>
+                    الدراسة أصبحت
+                    <span>أذكى وأسهل</span>
+                </h2>
+
+                <p>
+                    UniMind AI هو مساعد جامعي ذكي يساعد الطلاب
+                    على فهم المواد، تنظيم الدراسة، مراجعة المعلومات
+                    والاستعداد للاختبارات باستخدام تقنيات الذكاء الاصطناعي.
+                </p>
+
+                <div class="about-points">
+
+                    <div class="about-point">
+
+                        <span>✓</span>
+
+                        <div>
+                            <strong>فهم أسرع</strong>
+
+                            <p>
+                                احصل على شرح مبسط للمفاهيم الصعبة.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="about-point">
+
+                        <span>✓</span>
+
+                        <div>
+                            <strong>تنظيم أفضل</strong>
+
+                            <p>
+                                خطط دراستك ونظّم وقتك بطريقة أفضل.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="about-point">
+
+                        <span>✓</span>
+
+                        <div>
+                            <strong>تعلم أكثر</strong>
+
+                            <p>
+                                استخدم أدوات ذكية للمراجعة والاختبار.
+                            </p>
+                        </div>
 
                     </div>
 
@@ -505,189 +464,219 @@
 
             </div>
 
-        </section>
+
+            <div class="about-card">
+
+                <div class="about-card-icon">
+                    ✦
+                </div>
+
+                <h3>
+                    تعلم بطريقة مختلفة
+                </h3>
+
+                <p>
+                    اسأل، افهم، لخّص، اختبر نفسك
+                    وواصل التقدم.
+                </p>
+
+                <div class="about-stat">
+
+                    <strong>
+                        AI
+                    </strong>
+
+                    <span>
+                        مساعدك في كل خطوة
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
 
 
-        <!-- ================= PRICING ================= -->
+    <!-- ================= PRICING ================= -->
 
-        <section
-            class="pricing-section"
-            id="pricing"
-        >
+    <section
+        class="pricing-section"
+        id="pricing"
+    >
 
-            <div class="container">
+        <div class="container">
 
-                <div class="section-heading">
+            <div class="section-heading">
+
+                <div class="section-badge">
+                    ✦ خطط UniMind
+                </div>
+
+                <h2>
+                    ابدأ مجانًا
+                    <span>وطوّر تجربتك</span>
+                </h2>
+
+                <p>
+                    اختر الخطة التي تناسب احتياجاتك الدراسية.
+                </p>
+
+            </div>
+
+
+            <div class="pricing-grid">
+
+
+                <div class="pricing-card">
+
+                    <div class="pricing-icon">
+                        🌱
+                    </div>
+
+                    <h3>
+                        مجاني
+                    </h3>
+
+                    <div class="pricing-price">
+                        $0
+                        <small>/ شهريًا</small>
+                    </div>
+
+                    <ul>
+                        <li>✓ مساعد الدراسة</li>
+                        <li>✓ أسئلة أساسية</li>
+                        <li>✓ أدوات تعليمية محدودة</li>
+                    </ul>
+
+                    <button
+                        type="button"
+                        id="freePlanButton"
+                        class="pricing-button"
+                    >
+                        ابدأ مجانًا
+                    </button>
+
+                </div>
+
+
+                <div class="pricing-card featured">
+
+                    <div class="pricing-label">
+                        الأكثر استخدامًا
+                    </div>
+
+                    <div class="pricing-icon">
+                        🎓
+                    </div>
+
+                    <h3>
+                        الطالب
+                    </h3>
+
+                    <div class="pricing-price">
+                        $5
+                        <small>/ شهريًا</small>
+                    </div>
+
+                    <ul>
+                        <li>✓ جميع أدوات UniMind</li>
+                        <li>✓ تلخيص المحاضرات</li>
+                        <li>✓ اختبارات ذكية</li>
+                        <li>✓ خطط دراسية</li>
+                    </ul>
+
+                    <button
+                        type="button"
+                        id="studentPlanButton"
+                        class="pricing-button primary"
+                    >
+                        جرّب خطة الطالب
+                    </button>
+
+                </div>
+
+
+                <div class="pricing-card">
+
+                    <div class="pricing-icon">
+                        🚀
+                    </div>
+
+                    <h3>
+                        Pro
+                    </h3>
+
+                    <div class="pricing-price">
+                        $10
+                        <small>/ شهريًا</small>
+                    </div>
+
+                    <ul>
+                        <li>✓ جميع المميزات</li>
+                        <li>✓ استخدام موسع</li>
+                        <li>✓ أدوات متقدمة</li>
+                        <li>✓ أولوية في الخدمة</li>
+                    </ul>
+
+                    <button
+                        type="button"
+                        id="proPlanButton"
+                        class="pricing-button"
+                    >
+                        استكشف Pro
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================= CTA ================= -->
+
+    <section class="cta-section">
+
+        <div class="container">
+
+            <div class="cta-box">
+
+                <div class="cta-content">
 
                     <div class="section-badge">
-                        ✦ خطط UniMind
+                        ✦ جاهز للبدء؟
                     </div>
 
                     <h2>
-                        ابدأ مجانًا
-                        <span>وطوّر تجربتك</span>
+                        اجعل UniMind
+                        <span>مساعدك الجامعي</span>
                     </h2>
 
                     <p>
-                        اختر الخطة التي تناسب احتياجاتك الدراسية.
+                        ابدأ الآن واستخدم الذكاء الاصطناعي
+                        بطريقة تساعدك على الدراسة بشكل أفضل.
                     </p>
 
-                </div>
-
-
-                <div class="pricing-grid">
-
-
-                    <div class="pricing-card">
-
-                        <div class="pricing-icon">
-                            🌱
-                        </div>
-
-                        <h3>
-                            مجاني
-                        </h3>
-
-                        <div class="pricing-price">
-                            $0
-                            <small>/ شهريًا</small>
-                        </div>
-
-                        <ul>
-                            <li>✓ مساعد الدراسة</li>
-                            <li>✓ أسئلة أساسية</li>
-                            <li>✓ أدوات تعليمية محدودة</li>
-                        </ul>
-
-                        <button
-                            type="button"
-                            id="freePlanButton"
-                            class="pricing-button"
-                        >
-                            ابدأ مجانًا
-                        </button>
-
-                    </div>
-
-
-                    <div class="pricing-card featured">
-
-                        <div class="pricing-label">
-                            الأكثر استخدامًا
-                        </div>
-
-                        <div class="pricing-icon">
-                            🎓
-                        </div>
-
-                        <h3>
-                            الطالب
-                        </h3>
-
-                        <div class="pricing-price">
-                            $5
-                            <small>/ شهريًا</small>
-                        </div>
-
-                        <ul>
-                            <li>✓ جميع أدوات UniMind</li>
-                            <li>✓ تلخيص المحاضرات</li>
-                            <li>✓ اختبارات ذكية</li>
-                            <li>✓ خطط دراسية</li>
-                        </ul>
-
-                        <button
-                            type="button"
-                            id="studentPlanButton"
-                            class="pricing-button primary"
-                        >
-                            جرّب خطة الطالب
-                        </button>
-
-                    </div>
-
-
-                    <div class="pricing-card">
-
-                        <div class="pricing-icon">
-                            🚀
-                        </div>
-
-                        <h3>
-                            Pro
-                        </h3>
-
-                        <div class="pricing-price">
-                            $10
-                            <small>/ شهريًا</small>
-                        </div>
-
-                        <ul>
-                            <li>✓ جميع المميزات</li>
-                            <li>✓ استخدام موسع</li>
-                            <li>✓ أدوات متقدمة</li>
-                            <li>✓ أولوية في الخدمة</li>
-                        </ul>
-
-                        <button
-                            type="button"
-                            id="proPlanButton"
-                            class="pricing-button"
-                        >
-                            استكشف Pro
-                        </button>
-
-                    </div>
+                    <button
+                        type="button"
+                        id="ctaStartButton"
+                        class="primary-button"
+                    >
+                        ابدأ مع UniMind AI
+                        <span>←</span>
+                    </button>
 
                 </div>
 
             </div>
 
-        </section>
+        </div>
 
-
-        <!-- ================= CTA ================= -->
-
-        <section class="cta-section">
-
-            <div class="container">
-
-                <div class="cta-box">
-
-                    <div class="cta-content">
-
-                        <div class="section-badge">
-                            ✦ جاهز للبدء؟
-                        </div>
-
-                        <h2>
-                            اجعل UniMind
-                            <span>مساعدك الجامعي</span>
-                        </h2>
-
-                        <p>
-                            ابدأ الآن واستخدم الذكاء الاصطناعي
-                            بطريقة تساعدك على الدراسة بشكل أفضل.
-                        </p>
-
-                        <button
-                            type="button"
-                            id="ctaStartButton"
-                            class="primary-button"
-                        >
-                            ابدأ مع UniMind AI
-                            <span>←</span>
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-
-    </main>
+    </section>
 
 
     <!-- ================= FOOTER ================= -->
@@ -699,8 +688,15 @@
             <div class="footer-brand">
 
                 <a href="#" class="logo">
-                    <span class="logo-icon">✦</span>
-                    <span>UniMind AI</span>
+
+                    <span class="logo-icon">
+                        ✦
+                    </span>
+
+                    <span>
+                        UniMind AI
+                    </span>
+
                 </a>
 
                 <p>
@@ -779,19 +775,7 @@
 
     <!-- ================= JAVASCRIPT ================= -->
 
-    <!-- مهم جدًا: هذا السطر هو الذي كان ناقصًا -->
     <script src="js/app.js?v=8"></script>
-
-
-    <!-- ================= FALLBACK TEST ================= -->
-
-    <script>
-        /*
-         * هذا الاختبار لا يعرض أي رسالة.
-         * الهدف منه فقط التأكد أن الصفحة تعمل بشكل طبيعي.
-         */
-        console.log("UniMind AI page loaded successfully.");
-    </script>
 
 </body>
 
