@@ -1,491 +1,1082 @@
-```html
 <!DOCTYPE html>
+
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+```
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    <meta
-        name="description"
-        content="UniMind AI - مساعدك الجامعي الذكي"
-    >
+<meta
+    name="description"
+    content="UniMind AI - مساعدك الجامعي الذكي"
+>
 
-    <title>UniMind AI | مساعدك الجامعي الذكي</title>
+<title>UniMind AI | مساعدك الجامعي الذكي</title>
 
-    <!-- Google Font -->
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
+<!-- Google Font -->
+<link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+>
 
-    <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin
-    >
+<link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+>
 
-    <link
-        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
-    >
+<link
+    href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+>
 
-    <!-- Main CSS -->
-    <link
-        rel="stylesheet"
-        href="css/style.css?v=20"
-    >
+<!-- Main CSS -->
+<link
+    rel="stylesheet"
+    href="css/style.css?v=20"
+>
 
-    <style>
+<style>
 
-        /* =====================================================
-           UNI MIND - BASIC BUTTON FIXES
-        ===================================================== */
+    button {
+        font-family: inherit;
+        cursor: pointer;
+    }
 
-        button {
-            font-family: inherit;
-            cursor: pointer;
+    /* =====================================================
+       LECTURE MODAL
+    ===================================================== */
+
+    #unimind-lecture-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: none;
+    }
+
+    #unimind-lecture-modal.active {
+        display: block;
+    }
+
+    .unimind-lecture-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(8px);
+    }
+
+    .unimind-lecture-window {
+        position: relative;
+        width: min(720px, calc(100% - 30px));
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        margin: 20px auto;
+        background: #ffffff;
+        border-radius: 24px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+        animation: lectureModalIn 0.25s ease;
+    }
+
+    @keyframes lectureModalIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.97);
         }
 
-        /* =====================================================
-           LECTURE MODAL
-        ===================================================== */
-
-        #unimind-lecture-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 99999;
-            display: none;
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
         }
+    }
 
-        #unimind-lecture-modal.active {
-            display: block;
-        }
+    .unimind-lecture-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 22px 24px;
+        border-bottom: 1px solid #e5e7eb;
+    }
 
-        .unimind-lecture-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.72);
-            backdrop-filter: blur(8px);
-        }
+    .unimind-lecture-header-content {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .unimind-lecture-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        background: #eff6ff;
+        font-size: 24px;
+    }
+
+    .unimind-lecture-title {
+        margin: 0;
+        color: #111827;
+        font-size: 20px;
+        font-weight: 800;
+    }
+
+    .unimind-lecture-subtitle {
+        margin: 4px 0 0;
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+    #unimind-lecture-close {
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 12px;
+        background: #f3f4f6;
+        color: #374151;
+        font-size: 22px;
+        transition: 0.2s;
+    }
+
+    #unimind-lecture-close:hover {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .unimind-lecture-body {
+        padding: 24px;
+    }
+
+    .unimind-upload-area {
+        border: 2px dashed #bfdbfe;
+        border-radius: 20px;
+        padding: 35px 20px;
+        text-align: center;
+        background: #f8fbff;
+        transition: 0.2s;
+    }
+
+    .unimind-upload-area:hover,
+    .unimind-upload-area.dragover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+
+    .unimind-upload-icon {
+        width: 70px;
+        height: 70px;
+        margin: 0 auto 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px;
+        background: #dbeafe;
+        font-size: 32px;
+    }
+
+    .unimind-upload-area h3 {
+        margin: 0 0 8px;
+        color: #111827;
+        font-size: 18px;
+    }
+
+    .unimind-upload-area p {
+        margin: 0 0 18px;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    #unimind-choose-file {
+        border: 0;
+        padding: 12px 22px;
+        border-radius: 12px;
+        background: #2563eb;
+        color: #fff;
+        font-family: inherit;
+        font-weight: 700;
+        transition: 0.2s;
+    }
+
+    #unimind-choose-file:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+    }
+
+    #unimind-lecture-file {
+        display: none;
+    }
+
+    #unimind-selected-file {
+        display: none;
+        margin-top: 18px;
+        padding: 15px;
+        border-radius: 15px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+    }
+
+    .unimind-selected-file-inner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .unimind-file-icon {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: #dbeafe;
+        font-size: 21px;
+    }
+
+    .unimind-file-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    #unimind-file-name {
+        margin: 0 0 4px;
+        color: #111827;
+        font-size: 14px;
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #unimind-file-size {
+        color: #6b7280;
+        font-size: 12px;
+    }
+
+    #unimind-remove-file {
+        width: 34px;
+        height: 34px;
+        border: 0;
+        border-radius: 10px;
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    #unimind-file-status {
+        margin-top: 14px;
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    #unimind-text-preview {
+        display: none;
+        margin-top: 20px;
+    }
+
+    #unimind-text-preview h4 {
+        margin: 0 0 10px;
+        color: #111827;
+    }
+
+    #unimind-text-content {
+        width: 100%;
+        min-height: 150px;
+        padding: 14px;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        background: #f8fafc;
+        color: #374151;
+        font-family: inherit;
+        font-size: 13px;
+        resize: vertical;
+    }
+
+    #unimind-summarize-button {
+        width: 100%;
+        margin-top: 20px;
+        padding: 14px 20px;
+        border: 0;
+        border-radius: 14px;
+        background: #2563eb;
+        color: #fff;
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 800;
+        transition: 0.2s;
+    }
+
+    #unimind-summarize-button:hover:not(:disabled) {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+    }
+
+    #unimind-summarize-button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    #unimind-summary-result {
+        display: none;
+        margin-top: 22px;
+        padding: 20px;
+        border-radius: 18px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+    }
+
+    #unimind-summary-result h3 {
+        margin: 0 0 12px;
+        color: #111827;
+    }
+
+    #unimind-summary-content {
+        color: #374151;
+        line-height: 1.9;
+        white-space: pre-wrap;
+        font-size: 14px;
+    }
+
+    #unimind-copy-summary {
+        margin-top: 15px;
+        padding: 10px 16px;
+        border: 0;
+        border-radius: 10px;
+        background: #111827;
+        color: #fff;
+        font-family: inherit;
+    }
+
+    /* =====================================================
+       CHAT
+    ===================================================== */
+
+    #unimind-chat-modal {
+        z-index: 99990;
+    }
+
+    /* =====================================================
+       MOBILE
+    ===================================================== */
+
+    @media (max-width: 600px) {
 
         .unimind-lecture-window {
-            position: relative;
-            width: min(720px, calc(100% - 30px));
-            max-height: calc(100vh - 40px);
-            overflow-y: auto;
-
-            margin: 20px auto;
-
-            background: #ffffff;
-            border-radius: 24px;
-
-            box-shadow:
-                0 30px 80px rgba(0, 0, 0, 0.25);
-
-            animation: lectureModalIn 0.25s ease;
-        }
-
-        @keyframes lectureModalIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px) scale(0.97);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+            width: calc(100% - 18px);
+            margin: 9px auto;
+            max-height: calc(100vh - 18px);
+            border-radius: 20px;
         }
 
         .unimind-lecture-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            padding: 22px 24px;
-
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .unimind-lecture-header-content {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .unimind-lecture-icon {
-            width: 48px;
-            height: 48px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            border-radius: 14px;
-
-            background: #eff6ff;
-
-            font-size: 24px;
-        }
-
-        .unimind-lecture-title {
-            margin: 0;
-
-            color: #111827;
-
-            font-size: 20px;
-            font-weight: 800;
-        }
-
-        .unimind-lecture-subtitle {
-            margin: 4px 0 0;
-
-            color: #6b7280;
-
-            font-size: 13px;
-        }
-
-        #unimind-lecture-close {
-            width: 40px;
-            height: 40px;
-
-            border: 0;
-            border-radius: 12px;
-
-            background: #f3f4f6;
-            color: #374151;
-
-            font-size: 22px;
-
-            transition: 0.2s;
-        }
-
-        #unimind-lecture-close:hover {
-            background: #fee2e2;
-            color: #dc2626;
+            padding: 17px;
         }
 
         .unimind-lecture-body {
-            padding: 24px;
+            padding: 17px;
         }
-
-        /* Upload */
 
         .unimind-upload-area {
-            border: 2px dashed #bfdbfe;
-            border-radius: 20px;
-
-            padding: 35px 20px;
-
-            text-align: center;
-
-            background: #f8fbff;
-
-            transition: 0.2s;
+            padding: 28px 15px;
         }
+    }
 
-        .unimind-upload-area:hover,
-        .unimind-upload-area.dragover {
-            border-color: #3b82f6;
-            background: #eff6ff;
-        }
+</style>
+```
 
-        .unimind-upload-icon {
-            width: 70px;
-            height: 70px;
-
-            margin: 0 auto 15px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            border-radius: 20px;
-
-            background: #dbeafe;
-
-            font-size: 32px;
-        }
-
-        .unimind-upload-area h3 {
-            margin: 0 0 8px;
-
-            color: #111827;
-
-            font-size: 18px;
-        }
-
-        .unimind-upload-area p {
-            margin: 0 0 18px;
-
-            color: #6b7280;
-
-            font-size: 14px;
-        }
-
-        #unimind-choose-file {
-            border: 0;
-
-            padding: 12px 22px;
-
-            border-radius: 12px;
-
-            background: #2563eb;
-            color: #fff;
-
-            font-family: inherit;
-            font-weight: 700;
-
-            transition: 0.2s;
-        }
-
-        #unimind-choose-file:hover {
-            background: #1d4ed8;
-            transform: translateY(-1px);
-        }
-
-        #unimind-lecture-file {
-            display: none;
-        }
-
-        /* Selected file */
-
-        #unimind-selected-file {
-            display: none;
-
-            margin-top: 18px;
-
-            padding: 15px;
-
-            border-radius: 15px;
-
-            background: #f8fafc;
-
-            border: 1px solid #e5e7eb;
-        }
-
-        .unimind-selected-file-inner {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .unimind-file-icon {
-            width: 44px;
-            height: 44px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            border-radius: 12px;
-
-            background: #dbeafe;
-
-            font-size: 21px;
-        }
-
-        .unimind-file-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        #unimind-file-name {
-            margin: 0 0 4px;
-
-            color: #111827;
-
-            font-size: 14px;
-            font-weight: 700;
-
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        #unimind-file-size {
-            color: #6b7280;
-            font-size: 12px;
-        }
-
-        #unimind-remove-file {
-            width: 34px;
-            height: 34px;
-
-            border: 0;
-            border-radius: 10px;
-
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        /* File status */
-
-        #unimind-file-status {
-            margin-top: 14px;
-
-            font-size: 13px;
-            color: #64748b;
-        }
-
-        /* Text preview */
-
-        #unimind-text-preview {
-            display: none;
-
-            margin-top: 20px;
-        }
-
-        #unimind-text-preview h4 {
-            margin: 0 0 10px;
-
-            color: #111827;
-        }
-
-        #unimind-text-content {
-            width: 100%;
-            min-height: 150px;
-
-            padding: 14px;
-
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-
-            background: #f8fafc;
-
-            color: #374151;
-
-            font-family: inherit;
-            font-size: 13px;
-
-            resize: vertical;
-        }
-
-        /* Summarize button */
-
-        #unimind-summarize-button {
-            width: 100%;
-
-            margin-top: 20px;
-
-            padding: 14px 20px;
-
-            border: 0;
-            border-radius: 14px;
-
-            background: #2563eb;
-            color: #fff;
-
-            font-family: inherit;
-            font-size: 15px;
-            font-weight: 800;
-
-            transition: 0.2s;
-        }
-
-        #unimind-summarize-button:hover:not(:disabled) {
-            background: #1d4ed8;
-            transform: translateY(-1px);
-        }
-
-        #unimind-summarize-button:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-        }
-
-        /* Summary result */
-
-        #unimind-summary-result {
-            display: none;
-
-            margin-top: 22px;
-
-            padding: 20px;
-
-            border-radius: 18px;
-
-            background: #f8fafc;
-
-            border: 1px solid #e5e7eb;
-        }
-
-        #unimind-summary-result h3 {
-            margin: 0 0 12px;
-
-            color: #111827;
-        }
-
-        #unimind-summary-content {
-            color: #374151;
-            line-height: 1.9;
-            white-space: pre-wrap;
-            font-size: 14px;
-        }
-
-        #unimind-copy-summary {
-            margin-top: 15px;
-
-            padding: 10px 16px;
-
-            border: 0;
-            border-radius: 10px;
-
-            background: #111827;
-            color: #fff;
-
-            font-family: inherit;
-        }
-
-        /* =====================================================
-           CHAT FALLBACK
-        ===================================================== */
-
-        #unimind-chat-modal {
-            z-index: 99990;
-        }
-
-        /* =====================================================
-           MOBILE
-        ===================================================== */
-
-        @media (max-width: 600px) {
-
-            .unimind-lecture-window {
-                width: calc(100% - 18px);
-                margin: 9px auto;
-                max-height: calc(100vh - 18px);
-                border-radius: 20px;
-            }
-
-            .unimind-lecture-header {
-                padding: 17px;
-            }
-
-            .unimind-lecture-body {
-                padding: 17px;
-            }
-
-            .unimind-upload-area {
-                padding: 28px 15px;
-            }
-        }
-
-    </style>
 </head>
 
 <body>
 
-<!-- =========================================================
-     NAVBAR
-========================================================= -->
-
 <header class="navbar">
 
-    <div class="container nav-container">
+```
+<div class="container nav-container">
+
+    <a href="#" class="logo">
+        <span class="logo-icon">🧠</span>
+        <strong>UniMind AI</strong>
+    </a>
+
+    <nav class="nav-links">
+
+        <a href="#features">المميزات</a>
+        <a href="#how-it-works">كيف يعمل؟</a>
+        <a href="#pricing">الأسعار</a>
+        <a href="#about">عن UniMind</a>
+
+    </nav>
+
+    <div class="nav-actions">
+
+        <button
+            type="button"
+            id="themeToggle"
+            class="theme-btn"
+            aria-label="تغيير المظهر"
+        >
+            🌙
+        </button>
+
+        <button
+            type="button"
+            id="languageToggle"
+            class="language-btn"
+        >
+            EN
+        </button>
+
+        <button
+            type="button"
+            id="loginButton"
+            class="login-btn"
+        >
+            تسجيل الدخول
+        </button>
+
+    </div>
+
+</div>
+```
+
+</header>
+
+<main>
+
+<section class="hero">
+
+```
+<div class="container hero-grid">
+
+    <div class="hero-content">
+
+        <div class="badge">
+            <span class="status-dot"></span>
+            مساعد جامعي ذكي بالذكاء الاصطناعي
+        </div>
+
+        <h1>
+            ادرس بذكاء،
+            <br>
+            <span>وأنجز أكثر.</span>
+        </h1>
+
+        <p class="hero-description">
+            UniMind AI يساعدك على فهم المحاضرات،
+            تلخيص المحتوى، إنشاء الاختبارات،
+            وتنظيم دراستك باستخدام الذكاء الاصطناعي.
+        </p>
+
+        <div class="hero-buttons">
+
+            <button
+                type="button"
+                id="ctaStartButton"
+                class="primary-btn"
+            >
+                ابدأ الآن
+                <span>←</span>
+            </button>
+
+            <button
+                type="button"
+                id="heroDemoButton"
+                class="secondary-btn"
+            >
+                شاهد التجربة
+            </button>
+
+        </div>
+
+        <div class="hero-trust">
+
+            <div class="avatars">
+                <span>👨🏻‍🎓</span>
+                <span>👩🏻‍🎓</span>
+                <span>👨🏻‍💻</span>
+                <span>👩🏻‍💻</span>
+            </div>
+
+            <p>
+                أدوات مصممة للطلاب
+                <br>
+                لتوفير الوقت وتحسين التعلم
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="hero-visual">
+
+        <div class="workspace-card">
+
+            <div class="workspace-header">
+
+                <div class="workspace-title">
+
+                    <div class="ai-icon">🧠</div>
+
+                    <div>
+                        <strong>UniMind AI</strong>
+                        <small>مساعدك الدراسي</small>
+                    </div>
+
+                </div>
+
+                <div class="online-status">
+                    <span class="status-dot"></span>
+                    متصل
+                </div>
+
+            </div>
+
+            <div class="chat-area">
+
+                <div class="message user-message">
+                    <span>
+                        اشرح لي مفهوم الذكاء الاصطناعي بطريقة بسيطة
+                    </span>
+                </div>
+
+                <div class="message ai-message">
+
+                    <div class="ai-message-header">
+
+                        <span class="ai-mini-icon">🧠</span>
+
+                        <strong>
+                            UniMind AI
+                        </strong>
+
+                    </div>
+
+                    <p>
+                        الذكاء الاصطناعي هو تقنية تسمح
+                        للأنظمة والبرامج بمحاكاة بعض
+                        قدرات الإنسان مثل التعلم والتحليل
+                        واتخاذ القرارات.
+                    </p>
+
+                    <div class="ai-points">
+
+                        <span>✓ شرح مبسط</span>
+                        <span>✓ أمثلة عملية</span>
+                        <span>✓ مناسب للطلاب</span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="chat-input">
+
+                <span>
+                    اكتب سؤالك...
+                </span>
+
+                <button
+                    type="button"
+                    id="heroChatButton"
+                >
+                    ↑
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="floating-card floating-card-one">
+            📚
+            <strong>تلخيص ذكي</strong>
+        </div>
+
+        <div class="floating-card floating-card-two">
+            ✨
+            <strong>تعلم أسرع</strong>
+        </div>
+
+    </div>
+
+</div>
+```
+
+</section>
+
+<section id="features" class="section">
+
+```
+<div class="container">
+
+    <div class="section-heading">
+
+        <span class="section-label">
+            أدوات UniMind
+        </span>
+
+        <h2>
+            كل ما تحتاجه في مكان واحد
+        </h2>
+
+        <p>
+            مجموعة أدوات ذكية تساعدك في دراستك وحياتك الجامعية.
+        </p>
+
+    </div>
+
+    <div class="features-grid">
+
+        <!-- AI CHAT -->
+
+        <div class="feature-card">
+
+            <div class="feature-icon purple">
+                🧠
+            </div>
+
+            <h3>
+                مساعد الدراسة الذكي
+            </h3>
+
+            <p>
+                تحدث مع مساعد ذكي واسأله عن أي موضوع
+                دراسي واحصل على شرح واضح.
+            </p>
+
+            <!-- تم إصلاح هذا الزر -->
+            <button
+                type="button"
+                id="studyAssistantButton"
+                class="feature-action"
+                onclick="openChat()"
+            >
+                جرّب الآن ←
+            </button>
+
+        </div>
+
+        <!-- LECTURE SUMMARIZER -->
+
+        <div class="feature-card">
+
+            <div class="feature-icon blue">
+                📄
+            </div>
+
+            <h3>
+                تلخيص المحاضرات
+            </h3>
+
+            <p>
+                ارفع ملف المحاضرة واحصل على ملخص
+                منظم وسهل الفهم.
+            </p>
+
+            <button
+                type="button"
+                id="lectureSummarizerButton"
+                class="feature-action"
+            >
+                جرّب الآن ←
+            </button>
+
+        </div>
+
+        <!-- QUIZZES -->
+
+        <div class="feature-card">
+
+            <div class="feature-icon orange">
+                📝
+            </div>
+
+            <h3>
+                الاختبارات الذكية
+            </h3>
+
+            <p>
+                أنشئ اختبارات وأسئلة تدريبية
+                تساعدك على الاستعداد للامتحان.
+            </p>
+
+            <button
+                type="button"
+                class="feature-action"
+                id="quizButton"
+            >
+                جرّب الآن ←
+            </button>
+
+        </div>
+
+        <!-- FLASHCARDS -->
+
+        <div class="feature-card">
+
+            <div class="feature-icon green">
+                🗂️
+            </div>
+
+            <h3>
+                البطاقات التعليمية
+            </h3>
+
+            <p>
+                أنشئ Flashcards لمراجعة المعلومات
+                وحفظها بطريقة أسرع.
+            </p>
+
+            <button
+                type="button"
+                class="feature-action"
+                id="flashcardsButton"
+            >
+                جرّب الآن ←
+            </button>
+
+        </div>
+
+        <!-- STUDY PLANNER -->
+
+        <div class="feature-card">
+
+            <div class="feature-icon pink">
+                📅
+            </div>
+
+            <h3>
+                مخطط الدراسة
+            </h3>
+
+            <p>
+                نظم وقتك وأنشئ خطة دراسية
+                مناسبة لموادك وامتحاناتك.
+            </p>
+
+            <button
+                type="button"
+                class="feature-action"
+                id="plannerButton"
+            >
+                جرّب الآن ←
+            </button>
+
+        </div>
+
+        <!-- CV -->
+
+        <div class="feature-card">
+
+            <div class="feature-icon cyan">
+                💼
+            </div>
+
+            <h3>
+                مساعد السيرة الذاتية
+            </h3>
+
+            <p>
+                ساعد نفسك على إنشاء وتحسين سيرتك
+                الذاتية بطريقة احترافية.
+            </p>
+
+            <button
+                type="button"
+                class="feature-action"
+                id="cvButton"
+            >
+                جرّب الآن ←
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+```
+
+</section>
+
+<section id="how-it-works" class="section process-section">
+
+```
+<div class="container">
+
+    <div class="section-heading">
+
+        <span class="section-label">
+            طريقة الاستخدام
+        </span>
+
+        <h2>
+            ابدأ خلال دقائق
+        </h2>
+
+        <p>
+            تجربة بسيطة بدون تعقيد.
+        </p>
+
+    </div>
+
+    <div class="steps">
+
+        <div class="step">
+
+            <div class="step-number">01</div>
+
+            <div class="step-icon">👤</div>
+
+            <h3>ابدأ</h3>
+
+            <p>
+                اختر الأداة التي تحتاجها.
+            </p>
+
+        </div>
+
+        <div class="step">
+
+            <div class="step-number">02</div>
+
+            <div class="step-icon">✍️</div>
+
+            <h3>أدخل المحتوى</h3>
+
+            <p>
+                اطرح سؤالك أو ارفع محاضرتك.
+            </p>
+
+        </div>
+
+        <div class="step">
+
+            <div class="step-number">03</div>
+
+            <div class="step-icon">✨</div>
+
+            <h3>احصل على النتيجة</h3>
+
+            <p>
+                دع الذكاء الاصطناعي يساعدك.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+```
+
+</section>
+
+<section id="pricing" class="section pricing-section">
+
+```
+<div class="container">
+
+    <div class="section-heading">
+
+        <span class="section-label">
+            الخطط
+        </span>
+
+        <h2>
+            اختر الخطة المناسبة لك
+        </h2>
+
+        <p>
+            ابدأ مجانًا وانتقل إلى خطة أكبر عندما تحتاج.
+        </p>
+
+    </div>
+
+    <div class="pricing-grid">
+
+        <div class="pricing-card">
+
+            <div class="plan-name">
+                مجاني
+            </div>
+
+            <h3>
+                $0
+                <small>/ شهريًا</small>
+            </h3>
+
+            <p>
+                مناسب لتجربة UniMind.
+            </p>
+
+            <ul>
+
+                <li>✓ مساعد الدراسة</li>
+                <li>✓ أدوات أساسية</li>
+                <li>✓ استخدام محدود</li>
+
+            </ul>
+
+            <button
+                type="button"
+                id="freePlanButton"
+                class="secondary-btn full-btn"
+            >
+                ابدأ مجانًا
+            </button>
+
+        </div>
+
+        <div class="pricing-card featured">
+
+            <span class="popular">
+                الأكثر استخدامًا
+            </span>
+
+            <div class="plan-name">
+                الطالب
+            </div>
+
+            <h3>
+                $5
+                <small>/ شهريًا</small>
+            </h3>
+
+            <p>
+                للطلاب الذين يريدون أدوات أكثر.
+            </p>
+
+            <ul>
+
+                <li>✓ جميع الأدوات</li>
+                <li>✓ استخدام أكبر</li>
+                <li>✓ تلخيص المحاضرات</li>
+                <li>✓ اختبارات ذكية</li>
+
+            </ul>
+
+            <button
+                type="button"
+                id="studentPlanButton"
+                class="primary-btn full-btn"
+            >
+                اختر الخطة
+            </button>
+
+        </div>
+
+        <div class="pricing-card">
+
+            <div class="plan-name">
+                احترافي
+            </div>
+
+            <h3>
+                $10
+                <small>/ شهريًا</small>
+            </h3>
+
+            <p>
+                للمستخدمين الذين يحتاجون استخدامًا مكثفًا.
+            </p>
+
+            <ul>
+
+                <li>✓ جميع المميزات</li>
+                <li>✓ استخدام موسع</li>
+                <li>✓ أدوات متقدمة</li>
+
+            </ul>
+
+            <button
+                type="button"
+                id="proPlanButton"
+                class="secondary-btn full-btn"
+            >
+                اختر الخطة
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+```
+
+</section>
+
+<section class="cta-section">
+
+```
+<div class="container">
+
+    <div class="cta-box">
+
+        <span class="section-label">
+            جاهز للبدء؟
+        </span>
+
+        <h2>
+            اجعل دراستك أكثر ذكاءً
+        </h2>
+
+        <p>
+            جرّب UniMind AI وابدأ بتنظيم
+            رحلتك الجامعية بطريقة مختلفة.
+        </p>
+
+        <button
+            type="button"
+            id="ctaBottomButton"
+            class="primary-btn"
+        >
+            ابدأ الآن ←
+        </button>
+
+    </div>
+
+</div>
+```
+
+</section>
+
+<section id="about" class="section">
+
+```
+<div class="container">
+
+    <div class="section-heading">
+
+        <span class="section-label">
+            عن UniMind AI
+        </span>
+
+        <h2>
+            مساعدك في رحلتك الجامعية
+        </h2>
+
+        <p>
+            UniMind AI هو مفهوم لمساعد جامعي يعتمد
+            على الذكاء الاصطناعي لمساعدة الطلاب في
+            الدراسة وتنظيم الوقت وإنجاز المهام الأكاديمية.
+        </p>
+
+    </div>
+
+</div>
+```
+
+</section>
+
+</main>
+
+<footer class="footer">
+
+```
+<div class="container footer-content">
+
+    <div class="footer-brand">
 
         <a href="#" class="logo">
 
@@ -493,854 +1084,39 @@
                 🧠
             </span>
 
-            <strong>UniMind AI</strong>
+            <strong>
+                UniMind AI
+            </strong>
 
         </a>
 
-        <nav class="nav-links">
-
-            <a href="#features">
-                المميزات
-            </a>
-
-            <a href="#how-it-works">
-                كيف يعمل؟
-            </a>
-
-            <a href="#pricing">
-                الأسعار
-            </a>
-
-            <a href="#about">
-                عن UniMind
-            </a>
-
-        </nav>
-
-        <div class="nav-actions">
-
-            <button
-                type="button"
-                id="themeToggle"
-                class="theme-btn"
-                aria-label="تغيير المظهر"
-            >
-                🌙
-            </button>
-
-            <button
-                type="button"
-                id="languageToggle"
-                class="language-btn"
-            >
-                EN
-            </button>
-
-            <button
-                type="button"
-                id="loginButton"
-                class="login-btn"
-            >
-                تسجيل الدخول
-            </button>
-
-        </div>
-
-    </div>
-
-</header>
-
-
-<!-- =========================================================
-     HERO
-========================================================= -->
-
-<main>
-
-<section class="hero">
-
-    <div class="container hero-grid">
-
-        <div class="hero-content">
-
-            <div class="badge">
-                <span class="status-dot"></span>
-                مساعد جامعي ذكي بالذكاء الاصطناعي
-            </div>
-
-            <h1>
-                ادرس بذكاء،
-                <br>
-                <span>وأنجز أكثر.</span>
-            </h1>
-
-            <p class="hero-description">
-                UniMind AI يساعدك على فهم المحاضرات،
-                تلخيص المحتوى، إنشاء الاختبارات،
-                وتنظيم دراستك باستخدام الذكاء الاصطناعي.
-            </p>
-
-            <div class="hero-buttons">
-
-                <button
-                    type="button"
-                    id="ctaStartButton"
-                    class="primary-btn"
-                >
-                    ابدأ الآن
-                    <span>←</span>
-                </button>
-
-                <button
-                    type="button"
-                    id="heroDemoButton"
-                    class="secondary-btn"
-                >
-                    شاهد التجربة
-                </button>
-
-            </div>
-
-            <div class="hero-trust">
-
-                <div class="avatars">
-                    <span>👨🏻‍🎓</span>
-                    <span>👩🏻‍🎓</span>
-                    <span>👨🏻‍💻</span>
-                    <span>👩🏻‍💻</span>
-                </div>
-
-                <p>
-                    أدوات مصممة للطلاب
-                    <br>
-                    لتوفير الوقت وتحسين التعلم
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <!-- HERO VISUAL -->
-
-        <div class="hero-visual">
-
-            <div class="workspace-card">
-
-                <div class="workspace-header">
-
-                    <div class="workspace-title">
-
-                        <div class="ai-icon">
-                            🧠
-                        </div>
-
-                        <div>
-                            <strong>UniMind AI</strong>
-                            <small>مساعدك الدراسي</small>
-                        </div>
-
-                    </div>
-
-                    <div class="online-status">
-                        <span class="status-dot"></span>
-                        متصل
-                    </div>
-
-                </div>
-
-
-                <div class="chat-area">
-
-                    <div class="message user-message">
-
-                        <span>
-                            اشرح لي مفهوم الذكاء الاصطناعي بطريقة بسيطة
-                        </span>
-
-                    </div>
-
-
-                    <div class="message ai-message">
-
-                        <div class="ai-message-header">
-
-                            <span class="ai-mini-icon">
-                                🧠
-                            </span>
-
-                            <strong>
-                                UniMind AI
-                            </strong>
-
-                        </div>
-
-                        <p>
-                            الذكاء الاصطناعي هو تقنية تسمح
-                            للأنظمة والبرامج بمحاكاة بعض
-                            قدرات الإنسان مثل التعلم والتحليل
-                            واتخاذ القرارات.
-                        </p>
-
-                        <div class="ai-points">
-
-                            <span>✓ شرح مبسط</span>
-                            <span>✓ أمثلة عملية</span>
-                            <span>✓ مناسب للطلاب</span>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="chat-input">
-
-                    <span>
-                        اكتب سؤالك...
-                    </span>
-
-                    <button
-                        type="button"
-                        id="heroChatButton"
-                    >
-                        ↑
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            <div class="floating-card floating-card-one">
-                📚
-                <strong>تلخيص ذكي</strong>
-            </div>
-
-            <div class="floating-card floating-card-two">
-                ✨
-                <strong>تعلم أسرع</strong>
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- =========================================================
-     FEATURES
-========================================================= -->
-
-<section
-    id="features"
-    class="section"
->
-
-    <div class="container">
-
-        <div class="section-heading">
-
-            <span class="section-label">
-                أدوات UniMind
-            </span>
-
-            <h2>
-                كل ما تحتاجه في مكان واحد
-            </h2>
-
-            <p>
-                مجموعة أدوات ذكية تساعدك في دراستك وحياتك الجامعية.
-            </p>
-
-        </div>
-
-
-        <div class="features-grid">
-
-
-            <!-- AI CHAT -->
-
-            <div class="feature-card">
-
-                <div class="feature-icon purple">
-                    🧠
-                </div>
-
-                <h3>
-                    مساعد الدراسة الذكي
-                </h3>
-
-                <p>
-                    تحدث مع مساعد ذكي واسأله عن أي موضوع
-                    دراسي واحصل على شرح واضح.
-                </p>
-
-                <button
-                    type="button"
-                    id="studyAssistantButton"
-                    class="feature-action"
-                >
-                    جرّب الآن ←
-                </button>
-
-            </div>
-
-
-            <!-- LECTURE SUMMARIZER -->
-
-            <div class="feature-card">
-
-                <div class="feature-icon blue">
-                    📄
-                </div>
-
-                <h3>
-                    تلخيص المحاضرات
-                </h3>
-
-                <p>
-                    ارفع ملف المحاضرة واحصل على ملخص
-                    منظم وسهل الفهم.
-                </p>
-
-                <button
-                    type="button"
-                    id="lectureSummarizerButton"
-                    class="feature-action"
-                >
-                    جرّب الآن ←
-                </button>
-
-            </div>
-
-
-            <!-- QUIZZES -->
-
-            <div class="feature-card">
-
-                <div class="feature-icon orange">
-                    📝
-                </div>
-
-                <h3>
-                    الاختبارات الذكية
-                </h3>
-
-                <p>
-                    أنشئ اختبارات وأسئلة تدريبية
-                    تساعدك على الاستعداد للامتحان.
-                </p>
-
-                <button
-                    type="button"
-                    class="feature-action"
-                    id="quizButton"
-                >
-                    جرّب الآن ←
-                </button>
-
-            </div>
-
-
-            <!-- FLASHCARDS -->
-
-            <div class="feature-card">
-
-                <div class="feature-icon green">
-                    🗂️
-                </div>
-
-                <h3>
-                    البطاقات التعليمية
-                </h3>
-
-                <p>
-                    أنشئ Flashcards لمراجعة المعلومات
-                    وحفظها بطريقة أسرع.
-                </p>
-
-                <button
-                    type="button"
-                    class="feature-action"
-                    id="flashcardsButton"
-                >
-                    جرّب الآن ←
-                </button>
-
-            </div>
-
-
-            <!-- STUDY PLANNER -->
-
-            <div class="feature-card">
-
-                <div class="feature-icon pink">
-                    📅
-                </div>
-
-                <h3>
-                    مخطط الدراسة
-                </h3>
-
-                <p>
-                    نظم وقتك وأنشئ خطة دراسية
-                    مناسبة لموادك وامتحاناتك.
-                </p>
-
-                <button
-                    type="button"
-                    class="feature-action"
-                    id="plannerButton"
-                >
-                    جرّب الآن ←
-                </button>
-
-            </div>
-
-
-            <!-- CV -->
-
-            <div class="feature-card">
-
-                <div class="feature-icon cyan">
-                    💼
-                </div>
-
-                <h3>
-                    مساعد السيرة الذاتية
-                </h3>
-
-                <p>
-                    ساعد نفسك على إنشاء وتحسين سيرتك
-                    الذاتية بطريقة احترافية.
-                </p>
-
-                <button
-                    type="button"
-                    class="feature-action"
-                    id="cvButton"
-                >
-                    جرّب الآن ←
-                </button>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- =========================================================
-     HOW IT WORKS
-========================================================= -->
-
-<section
-    id="how-it-works"
-    class="section process-section"
->
-
-    <div class="container">
-
-        <div class="section-heading">
-
-            <span class="section-label">
-                طريقة الاستخدام
-            </span>
-
-            <h2>
-                ابدأ خلال دقائق
-            </h2>
-
-            <p>
-                تجربة بسيطة بدون تعقيد.
-            </p>
-
-        </div>
-
-
-        <div class="steps">
-
-            <div class="step">
-
-                <div class="step-number">
-                    01
-                </div>
-
-                <div class="step-icon">
-                    👤
-                </div>
-
-                <h3>
-                    ابدأ
-                </h3>
-
-                <p>
-                    اختر الأداة التي تحتاجها.
-                </p>
-
-            </div>
-
-
-            <div class="step">
-
-                <div class="step-number">
-                    02
-                </div>
-
-                <div class="step-icon">
-                    ✍️
-                </div>
-
-                <h3>
-                    أدخل المحتوى
-                </h3>
-
-                <p>
-                    اطرح سؤالك أو ارفع محاضرتك.
-                </p>
-
-            </div>
-
-
-            <div class="step">
-
-                <div class="step-number">
-                    03
-                </div>
-
-                <div class="step-icon">
-                    ✨
-                </div>
-
-                <h3>
-                    احصل على النتيجة
-                </h3>
-
-                <p>
-                    دع الذكاء الاصطناعي يساعدك.
-                </p>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- =========================================================
-     PRICING
-========================================================= -->
-
-<section
-    id="pricing"
-    class="section pricing-section"
->
-
-    <div class="container">
-
-        <div class="section-heading">
-
-            <span class="section-label">
-                الخطط
-            </span>
-
-            <h2>
-                اختر الخطة المناسبة لك
-            </h2>
-
-            <p>
-                ابدأ مجانًا وانتقل إلى خطة أكبر عندما تحتاج.
-            </p>
-
-        </div>
-
-
-        <div class="pricing-grid">
-
-
-            <div class="pricing-card">
-
-                <div class="plan-name">
-                    مجاني
-                </div>
-
-                <h3>
-                    $0
-                    <small>/ شهريًا</small>
-                </h3>
-
-                <p>
-                    مناسب لتجربة UniMind.
-                </p>
-
-                <ul>
-
-                    <li>
-                        ✓ مساعد الدراسة
-                    </li>
-
-                    <li>
-                        ✓ أدوات أساسية
-                    </li>
-
-                    <li>
-                        ✓ استخدام محدود
-                    </li>
-
-                </ul>
-
-                <button
-                    type="button"
-                    id="freePlanButton"
-                    class="secondary-btn full-btn"
-                >
-                    ابدأ مجانًا
-                </button>
-
-            </div>
-
-
-            <div class="pricing-card featured">
-
-                <span class="popular">
-                    الأكثر استخدامًا
-                </span>
-
-                <div class="plan-name">
-                    الطالب
-                </div>
-
-                <h3>
-                    $5
-                    <small>/ شهريًا</small>
-                </h3>
-
-                <p>
-                    للطلاب الذين يريدون أدوات أكثر.
-                </p>
-
-                <ul>
-
-                    <li>
-                        ✓ جميع الأدوات
-                    </li>
-
-                    <li>
-                        ✓ استخدام أكبر
-                    </li>
-
-                    <li>
-                        ✓ تلخيص المحاضرات
-                    </li>
-
-                    <li>
-                        ✓ اختبارات ذكية
-                    </li>
-
-                </ul>
-
-                <button
-                    type="button"
-                    id="studentPlanButton"
-                    class="primary-btn full-btn"
-                >
-                    اختر الخطة
-                </button>
-
-            </div>
-
-
-            <div class="pricing-card">
-
-                <div class="plan-name">
-                    احترافي
-                </div>
-
-                <h3>
-                    $10
-                    <small>/ شهريًا</small>
-                </h3>
-
-                <p>
-                    للمستخدمين الذين يحتاجون استخدامًا مكثفًا.
-                </p>
-
-                <ul>
-
-                    <li>
-                        ✓ جميع المميزات
-                    </li>
-
-                    <li>
-                        ✓ استخدام موسع
-                    </li>
-
-                    <li>
-                        ✓ أدوات متقدمة
-                    </li>
-
-                </ul>
-
-                <button
-                    type="button"
-                    id="proPlanButton"
-                    class="secondary-btn full-btn"
-                >
-                    اختر الخطة
-                </button>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- =========================================================
-     CTA
-========================================================= -->
-
-<section class="cta-section">
-
-    <div class="container">
-
-        <div class="cta-box">
-
-            <span class="section-label">
-                جاهز للبدء؟
-            </span>
-
-            <h2>
-                اجعل دراستك أكثر ذكاءً
-            </h2>
-
-            <p>
-                جرّب UniMind AI وابدأ بتنظيم
-                رحلتك الجامعية بطريقة مختلفة.
-            </p>
-
-            <button
-                type="button"
-                id="ctaBottomButton"
-                class="primary-btn"
-            >
-                ابدأ الآن ←
-            </button>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- =========================================================
-     ABOUT
-========================================================= -->
-
-<section
-    id="about"
-    class="section"
->
-
-    <div class="container">
-
-        <div class="section-heading">
-
-            <span class="section-label">
-                عن UniMind AI
-            </span>
-
-            <h2>
-                مساعدك في رحلتك الجامعية
-            </h2>
-
-            <p>
-                UniMind AI هو مفهوم لمساعد جامعي يعتمد
-                على الذكاء الاصطناعي لمساعدة الطلاب في
-                الدراسة وتنظيم الوقت وإنجاز المهام الأكاديمية.
-            </p>
-
-        </div>
-
-    </div>
-
-</section>
-
-</main>
-
-
-<!-- =========================================================
-     FOOTER
-========================================================= -->
-
-<footer class="footer">
-
-    <div class="container footer-content">
-
-        <div class="footer-brand">
-
-            <a href="#" class="logo">
-
-                <span class="logo-icon">
-                    🧠
-                </span>
-
-                <strong>
-                    UniMind AI
-                </strong>
-
-            </a>
-
-            <p>
-                مساعدك الجامعي الذكي.
-            </p>
-
-        </div>
-
-
-        <div class="footer-links">
-
-            <a href="#features">
-                المميزات
-            </a>
-
-            <a href="#how-it-works">
-                كيف يعمل؟
-            </a>
-
-            <a href="#pricing">
-                الأسعار
-            </a>
-
-            <a href="#about">
-                عن المشروع
-            </a>
-
-        </div>
-
-    </div>
-
-
-    <div class="container footer-bottom">
-
         <p>
-            © 2026 UniMind AI. جميع الحقوق محفوظة.
+            مساعدك الجامعي الذكي.
         </p>
 
     </div>
 
-</footer>
+    <div class="footer-links">
 
+        <a href="#features">المميزات</a>
+        <a href="#how-it-works">كيف يعمل؟</a>
+        <a href="#pricing">الأسعار</a>
+        <a href="#about">عن المشروع</a>
+
+    </div>
+
+</div>
+
+<div class="container footer-bottom">
+
+    <p>
+        © 2026 UniMind AI. جميع الحقوق محفوظة.
+    </p>
+
+</div>
+```
+
+</footer>
 
 <!-- =========================================================
      LECTURE SUMMARIZER MODAL
@@ -1351,176 +1127,169 @@
     aria-hidden="true"
 >
 
-    <div
-        class="unimind-lecture-overlay"
-        id="unimind-lecture-overlay"
-    ></div>
+```
+<div
+    class="unimind-lecture-overlay"
+    id="unimind-lecture-overlay"
+></div>
 
+<div
+    class="unimind-lecture-window"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="unimind-lecture-title"
+>
 
-    <div
-        class="unimind-lecture-window"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="unimind-lecture-title"
-    >
+    <div class="unimind-lecture-header">
 
-        <div class="unimind-lecture-header">
+        <div class="unimind-lecture-header-content">
 
-            <div class="unimind-lecture-header-content">
-
-                <div class="unimind-lecture-icon">
-                    📄
-                </div>
-
-                <div>
-
-                    <h2
-                        id="unimind-lecture-title"
-                        class="unimind-lecture-title"
-                    >
-                        تلخيص المحاضرات
-                    </h2>
-
-                    <p class="unimind-lecture-subtitle">
-                        ارفع ملف المحاضرة للحصول على ملخص منظم
-                    </p>
-
-                </div>
-
+            <div class="unimind-lecture-icon">
+                📄
             </div>
 
+            <div>
 
-            <button
-                type="button"
-                id="unimind-lecture-close"
-                aria-label="إغلاق"
-            >
-                ×
-            </button>
+                <h2
+                    id="unimind-lecture-title"
+                    class="unimind-lecture-title"
+                >
+                    تلخيص المحاضرات
+                </h2>
+
+                <p class="unimind-lecture-subtitle">
+                    ارفع ملف المحاضرة للحصول على ملخص منظم
+                </p>
+
+            </div>
 
         </div>
 
+        <button
+            type="button"
+            id="unimind-lecture-close"
+            aria-label="إغلاق"
+        >
+            ×
+        </button>
 
-        <div class="unimind-lecture-body">
+    </div>
 
-            <div
-                class="unimind-upload-area"
-                id="unimind-upload-area"
-            >
+    <div class="unimind-lecture-body">
 
-                <div class="unimind-upload-icon">
-                    📤
-                </div>
+        <div
+            class="unimind-upload-area"
+            id="unimind-upload-area"
+        >
 
-                <h3>
-                    ارفع ملف المحاضرة
-                </h3>
-
-                <p>
-                    PDF أو Word أو TXT — حتى 25MB
-                </p>
-
-                <button
-                    type="button"
-                    id="unimind-choose-file"
-                >
-                    اختر ملفًا
-                </button>
-
-                <input
-                    type="file"
-                    id="unimind-lecture-file"
-                    accept=".pdf,.doc,.docx,.txt"
-                >
-
+            <div class="unimind-upload-icon">
+                📤
             </div>
 
+            <h3>
+                ارفع ملف المحاضرة
+            </h3>
 
-            <div id="unimind-selected-file">
-
-                <div class="unimind-selected-file-inner">
-
-                    <div class="unimind-file-icon">
-                        📄
-                    </div>
-
-                    <div class="unimind-file-info">
-
-                        <p id="unimind-file-name">
-                            اسم الملف
-                        </p>
-
-                        <span id="unimind-file-size">
-                            0 KB
-                        </span>
-
-                    </div>
-
-                    <button
-                        type="button"
-                        id="unimind-remove-file"
-                        aria-label="حذف الملف"
-                    >
-                        ×
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            <div id="unimind-file-status">
-                لم يتم اختيار ملف بعد.
-            </div>
-
-
-            <div id="unimind-text-preview">
-
-                <h4>
-                    معاينة النص
-                </h4>
-
-                <textarea
-                    id="unimind-text-content"
-                    readonly
-                    placeholder="سيظهر محتوى الملف النصي هنا..."
-                ></textarea>
-
-            </div>
-
+            <p>
+                PDF أو Word أو TXT — حتى 25MB
+            </p>
 
             <button
                 type="button"
-                id="unimind-summarize-button"
-                disabled
+                id="unimind-choose-file"
             >
-                ✨ تلخيص المحاضرة
+                اختر ملفًا
             </button>
 
+            <input
+                type="file"
+                id="unimind-lecture-file"
+                accept=".pdf,.doc,.docx,.txt"
+            >
 
-            <div id="unimind-summary-result">
+        </div>
 
-                <h3>
-                    📚 ملخص المحاضرة
-                </h3>
+        <div id="unimind-selected-file">
 
-                <div id="unimind-summary-content"></div>
+            <div class="unimind-selected-file-inner">
+
+                <div class="unimind-file-icon">
+                    📄
+                </div>
+
+                <div class="unimind-file-info">
+
+                    <p id="unimind-file-name">
+                        اسم الملف
+                    </p>
+
+                    <span id="unimind-file-size">
+                        0 KB
+                    </span>
+
+                </div>
 
                 <button
                     type="button"
-                    id="unimind-copy-summary"
+                    id="unimind-remove-file"
+                    aria-label="حذف الملف"
                 >
-                    نسخ الملخص
+                    ×
                 </button>
 
             </div>
+
+        </div>
+
+        <div id="unimind-file-status">
+            لم يتم اختيار ملف بعد.
+        </div>
+
+        <div id="unimind-text-preview">
+
+            <h4>
+                معاينة النص
+            </h4>
+
+            <textarea
+                id="unimind-text-content"
+                readonly
+                placeholder="سيظهر محتوى الملف النصي هنا..."
+            ></textarea>
+
+        </div>
+
+        <button
+            type="button"
+            id="unimind-summarize-button"
+            disabled
+        >
+            ✨ تلخيص المحاضرة
+        </button>
+
+        <div id="unimind-summary-result">
+
+            <h3>
+                📚 ملخص المحاضرة
+            </h3>
+
+            <div id="unimind-summary-content"></div>
+
+            <button
+                type="button"
+                id="unimind-copy-summary"
+            >
+                نسخ الملخص
+            </button>
 
         </div>
 
     </div>
 
 </div>
+```
 
+</div>
 
 <!-- =========================================================
      CHAT
@@ -1528,13 +1297,94 @@
 
 <div id="unimind-chat-modal"></div>
 
-
 <!-- =========================================================
      MAIN JAVASCRIPT
 ========================================================= -->
 
-<script src="js/app.js?v=20"></script>
+<script src="js/app.js?v=21"></script>
 
+<!-- =========================================================
+     DIRECT STUDY ASSISTANT FIX
+========================================================= -->
+
+<script>
+
+(function () {
+
+    "use strict";
+
+    function setupStudyAssistantDirect() {
+
+        const button =
+            document.getElementById(
+                "studyAssistantButton"
+            );
+
+        if (!button) {
+            console.error(
+                "UniMind: studyAssistantButton not found"
+            );
+            return;
+        }
+
+        /*
+         * الزر لديه onclick مباشر أيضًا.
+         * هذا الربط الاحتياطي يحاول فتح المساعد
+         * إذا كان app.js قد تم تحميله بشكل صحيح.
+         */
+
+        button.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                if (
+                    typeof window.openChat ===
+                    "function"
+                ) {
+
+                    window.openChat();
+
+                } else {
+
+                    alert(
+                        "مساعد الدراسة لم يتم تحميله بعد. يرجى تحديث الصفحة باستخدام Ctrl + F5."
+                    );
+
+                }
+
+            }
+        );
+
+        console.log(
+            "UniMind: study assistant direct fix loaded"
+        );
+
+    }
+
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            setupStudyAssistantDirect
+        );
+
+    } else {
+
+        setupStudyAssistantDirect();
+
+    }
+
+})();
+
+</script>
 
 <!-- =========================================================
      DIRECT LECTURE BUTTON FIX
@@ -1546,14 +1396,19 @@
 
     "use strict";
 
-
     function openLectureWindow() {
 
         const modal =
-            document.getElementById("unimind-lecture-modal");
+            document.getElementById(
+                "unimind-lecture-modal"
+            );
 
         if (!modal) {
-            alert("حدث خطأ: نافذة تلخيص المحاضرات غير موجودة.");
+
+            alert(
+                "حدث خطأ: نافذة تلخيص المحاضرات غير موجودة."
+            );
+
             return;
         }
 
@@ -1564,7 +1419,8 @@
             "false"
         );
 
-        document.body.style.overflow = "hidden";
+        document.body.style.overflow =
+            "hidden";
 
     }
 
@@ -1572,7 +1428,9 @@
     function closeLectureWindow() {
 
         const modal =
-            document.getElementById("unimind-lecture-modal");
+            document.getElementById(
+                "unimind-lecture-modal"
+            );
 
         if (!modal) {
             return;
@@ -1585,7 +1443,8 @@
             "true"
         );
 
-        document.body.style.overflow = "";
+        document.body.style.overflow =
+            "";
 
     }
 
@@ -1598,21 +1457,24 @@
             );
 
         if (!button) {
+
             console.error(
                 "UniMind: lectureSummarizerButton not found"
             );
+
             return;
         }
 
 
-        button.onclick = function (event) {
+        button.onclick =
+            function (event) {
 
-            event.preventDefault();
-            event.stopPropagation();
+                event.preventDefault();
+                event.stopPropagation();
 
-            openLectureWindow();
+                openLectureWindow();
 
-        };
+            };
 
 
         console.log(
@@ -1655,9 +1517,7 @@
             "keydown",
             function (event) {
 
-                if (
-                    event.key === "Escape"
-                ) {
+                if (event.key === "Escape") {
 
                     const modal =
                         document.getElementById(
@@ -1666,7 +1526,9 @@
 
                     if (
                         modal &&
-                        modal.classList.contains("active")
+                        modal.classList.contains(
+                            "active"
+                        )
                     ) {
 
                         closeLectureWindow();
@@ -1759,47 +1621,44 @@
         }
 
 
-        /* اختيار الملف */
+        chooseButton.onclick =
+            function () {
 
-        chooseButton.onclick = function () {
+                fileInput.click();
 
-            fileInput.click();
-
-        };
-
-
-        /* عند اختيار الملف */
-
-        fileInput.onchange = function () {
-
-            const file =
-                fileInput.files &&
-                fileInput.files[0];
-
-            if (!file) {
-                return;
-            }
+            };
 
 
-            const maxSize =
-                25 * 1024 * 1024;
+        fileInput.onchange =
+            function () {
+
+                const file =
+                    fileInput.files &&
+                    fileInput.files[0];
+
+                if (!file) {
+                    return;
+                }
 
 
-            if (file.size > maxSize) {
-
-                alert(
-                    "حجم الملف أكبر من 25MB."
-                );
-
-                fileInput.value = "";
-
-                return;
-
-            }
+                const maxSize =
+                    25 * 1024 * 1024;
 
 
-            const allowedExtensions =
-                [
+                if (file.size > maxSize) {
+
+                    alert(
+                        "حجم الملف أكبر من 25MB."
+                    );
+
+                    fileInput.value = "";
+
+                    return;
+
+                }
+
+
+                const allowedExtensions = [
                     ".pdf",
                     ".doc",
                     ".docx",
@@ -1807,134 +1666,151 @@
                 ];
 
 
-            const lowerName =
-                file.name.toLowerCase();
+                const lowerName =
+                    file.name.toLowerCase();
 
 
-            const valid =
-                allowedExtensions.some(
-                    function (extension) {
-                        return lowerName.endsWith(
-                            extension
+                const valid =
+                    allowedExtensions.some(
+                        function (extension) {
+
+                            return lowerName.endsWith(
+                                extension
+                            );
+
+                        }
+                    );
+
+
+                if (!valid) {
+
+                    alert(
+                        "نوع الملف غير مدعوم. استخدم PDF أو Word أو TXT."
+                    );
+
+                    fileInput.value = "";
+
+                    return;
+
+                }
+
+
+                if (selectedFileBox) {
+
+                    selectedFileBox.style.display =
+                        "block";
+
+                }
+
+
+                if (fileName) {
+
+                    fileName.textContent =
+                        file.name;
+
+                }
+
+
+                if (fileSize) {
+
+                    fileSize.textContent =
+                        formatFileSize(
+                            file.size
                         );
-                    }
-                );
+
+                }
 
 
-            if (!valid) {
+                if (fileStatus) {
 
-                alert(
-                    "نوع الملف غير مدعوم. استخدم PDF أو Word أو TXT."
-                );
+                    fileStatus.textContent =
+                        "تم اختيار الملف بنجاح ✓";
 
-                fileInput.value = "";
-
-                return;
-
-            }
+                }
 
 
-            if (selectedFileBox) {
-                selectedFileBox.style.display =
-                    "block";
-            }
+                if (summarizeButton) {
+
+                    summarizeButton.disabled =
+                        false;
+
+                }
 
 
-            if (fileName) {
-                fileName.textContent =
-                    file.name;
-            }
+                if (
+                    textPreview &&
+                    textContent &&
+                    lowerName.endsWith(".txt")
+                ) {
+
+                    textPreview.style.display =
+                        "block";
 
 
-            if (fileSize) {
-
-                fileSize.textContent =
-                    formatFileSize(file.size);
-
-            }
+                    const reader =
+                        new FileReader();
 
 
-            if (fileStatus) {
+                    reader.onload =
+                        function (event) {
 
-                fileStatus.textContent =
-                    "تم اختيار الملف بنجاح ✓";
+                            textContent.value =
+                                event.target.result ||
+                                "";
 
-            }
-
-
-            if (summarizeButton) {
-
-                summarizeButton.disabled =
-                    false;
-
-            }
+                        };
 
 
-            if (
-                textPreview &&
-                textContent &&
-                lowerName.endsWith(".txt")
-            ) {
+                    reader.readAsText(file);
 
-                textPreview.style.display =
-                    "block";
+                } else if (textPreview) {
 
+                    textPreview.style.display =
+                        "none";
 
-                const reader =
-                    new FileReader();
+                }
 
+            };
 
-                reader.onload =
-                    function (event) {
-
-                        textContent.value =
-                            event.target.result || "";
-
-                    };
-
-
-                reader.readAsText(file);
-
-            } else if (textPreview) {
-
-                textPreview.style.display =
-                    "none";
-
-            }
-
-        };
-
-
-        /* حذف الملف */
 
         if (removeButton) {
 
             removeButton.onclick =
                 function () {
 
-                    fileInput.value = "";
+                    fileInput.value =
+                        "";
 
 
                     if (selectedFileBox) {
+
                         selectedFileBox.style.display =
                             "none";
+
                     }
 
 
                     if (summarizeButton) {
+
                         summarizeButton.disabled =
                             true;
+
                     }
 
 
                     if (textPreview) {
+
                         textPreview.style.display =
                             "none";
+
                     }
 
 
                     if (textContent) {
-                        textContent.value = "";
+
+                        textContent.value =
+                            "";
+
                     }
 
 
@@ -1949,8 +1825,6 @@
 
         }
 
-
-        /* Drag & Drop */
 
         if (uploadArea) {
 
@@ -1998,7 +1872,6 @@
                         fileInput.files =
                             files;
 
-
                         fileInput.dispatchEvent(
                             new Event("change")
                         );
@@ -2009,8 +1882,6 @@
 
         }
 
-
-        /* تلخيص */
 
         if (summarizeButton) {
 
@@ -2035,7 +1906,6 @@
 
                     summarizeButton.disabled =
                         true;
-
 
                     summarizeButton.textContent =
                         "⏳ جارٍ تجهيز الملخص...";
@@ -2082,9 +1952,11 @@
                                     summaryContent.textContent =
                                         "ملخص أولي للمحاضرة:\n\n" +
                                         preview +
-                                        (words.length > 180
-                                            ? "\n\n... تم اختصار النص للمعاينة."
-                                            : "");
+                                        (
+                                            words.length > 180
+                                                ? "\n\n... تم اختصار النص للمعاينة."
+                                                : ""
+                                        );
 
                                 } else {
 
@@ -2105,7 +1977,6 @@
                             summarizeButton.disabled =
                                 false;
 
-
                             summarizeButton.textContent =
                                 "✨ تلخيص المحاضرة";
 
@@ -2117,8 +1988,6 @@
 
         }
 
-
-        /* نسخ الملخص */
 
         if (copyButton) {
 
@@ -2222,10 +2091,6 @@
     }
 
 
-    /*
-        جعل الدالة متاحة أيضًا لـ app.js
-    */
-
     window.openLectureSummarizer =
         openLectureWindow;
 
@@ -2238,7 +2103,5 @@
 
 </script>
 
-
 </body>
 </html>
-```
