@@ -1,10 +1,9 @@
-```javascript
-document.addEventListener("DOMContentLoaded", () => {
+/* =========================================================
+   UniMind AI - Main JavaScript
+   ========================================================= */
 
-    /* =========================================================
-       UNIMIND AI
-       Main Application JavaScript
-    ========================================================= */
+(function () {
+    "use strict";
 
     const API_URL =
         "https://yzsfublvnwknjnayfosm.supabase.co/functions/v1/unimind-chat";
@@ -12,10 +11,210 @@ document.addEventListener("DOMContentLoaded", () => {
     let savedScrollY = 0;
     let selectedLectureFile = null;
 
+    /* =========================================================
+       START APP
+       يعمل سواء تم تحميل الملف قبل أو بعد DOMContentLoaded
+       ========================================================= */
+
+    function startUniMind() {
+        if (window.__UNIMIND_STARTED__) return;
+        window.__UNIMIND_STARTED__ = true;
+
+        console.log("UniMind AI JavaScript loaded successfully");
+
+        setupButtons();
+        setupTheme();
+        setupLanguage();
+        setupLogin();
+        setupKeyboard();
+
+        /* جعل الوظائف متاحة للـ HTML */
+        window.openChat = openChat;
+        window.closeUniMindChat = closeChat;
+        window.openLectureSummarizer = openLectureModal;
+        window.closeLectureSummarizer = closeLectureModal;
+
+        console.log("UniMind buttons initialized");
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", startUniMind);
+    } else {
+        startUniMind();
+    }
+
 
     /* =========================================================
-       CHAT MODAL
-    ========================================================= */
+       BUTTONS
+       ========================================================= */
+
+    function setupButtons() {
+
+        /* مساعد الدراسة */
+        connectButton(
+            "studyAssistantButton",
+            function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                openChat();
+            }
+        );
+
+
+        /* تلخيص المحاضرات */
+        connectButton(
+            "lectureSummarizerButton",
+            function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                openLectureModal();
+            }
+        );
+
+
+        /* زر CTA */
+        connectButton(
+            "ctaStartButton",
+            function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                openChat();
+            }
+        );
+
+
+        /* الخطط */
+        [
+            "freePlanButton",
+            "studentPlanButton",
+            "proPlanButton"
+        ].forEach(function (id) {
+
+            connectButton(id, function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                alert(
+                    "سيتم فتح مساعد UniMind AI لإكمال الخطوات."
+                );
+
+                openChat();
+            });
+
+        });
+
+
+        /*
+         * أزرار الهيرو الجديدة
+         * ندعم أكثر من ID حتى لا تعتمد الصفحة
+         * على اسم واحد فقط.
+         */
+
+        [
+            "heroDemoButton",
+            "heroChatButton",
+            "ctaBottomButton"
+        ].forEach(function (id) {
+
+            connectButton(id, function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                openChat();
+            });
+
+        });
+
+
+        /*
+         * البحث عن الأزرار بالـ data-action
+         * إذا كانت موجودة في HTML.
+         */
+
+        document.querySelectorAll("[data-action]").forEach(function (button) {
+
+            const action = button.dataset.action;
+
+            if (action === "chat") {
+                button.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    openChat();
+                });
+            }
+
+            if (action === "lecture") {
+                button.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    openLectureModal();
+                });
+            }
+
+        });
+
+
+        /*
+         * أزرار المميزات
+         */
+
+        document.querySelectorAll(".feature-placeholder").forEach(function (button) {
+
+            if (button.id === "studyAssistantButton") return;
+            if (button.id === "lectureSummarizerButton") return;
+
+            button.addEventListener("click", function (event) {
+
+                event.preventDefault();
+
+                alert(
+                    "هذه الميزة ستكون متاحة قريبًا في UniMind AI."
+                );
+
+            });
+
+        });
+
+
+        /*
+         * أزرار footer
+         */
+
+        document.querySelectorAll(".footer-placeholder").forEach(function (button) {
+
+            button.addEventListener("click", function (event) {
+
+                event.preventDefault();
+
+                alert(
+                    "هذه الصفحة ستكون متاحة قريبًا."
+                );
+
+            });
+
+        });
+    }
+
+
+    function connectButton(id, callback) {
+
+        const button = document.getElementById(id);
+
+        if (!button) {
+            console.warn(
+                "UniMind: button not found -> " + id
+            );
+            return;
+        }
+
+        button.addEventListener("click", callback);
+
+        console.log(
+            "UniMind: connected -> " + id
+        );
+    }
+
+
+    /* =========================================================
+       CHAT
+       ========================================================= */
 
     function createChatModal() {
 
@@ -49,7 +248,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         <button
                             type="button"
                             id="unimind-chat-new"
-                            aria-label="محادثة جديدة"
                         >
                             ＋
                         </button>
@@ -57,7 +255,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         <button
                             type="button"
                             id="unimind-chat-close"
-                            aria-label="إغلاق"
                         >
                             ×
                         </button>
@@ -137,7 +334,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button
                         type="button"
                         id="unimind-chat-send"
-                        aria-label="إرسال"
                     >
                         ➤
                     </button>
@@ -163,16 +359,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =========================================================
-       OPEN CHAT
-    ========================================================= */
-
     function openChat() {
 
         let modal =
-            document.getElementById(
-                "unimind-chat-modal"
-            );
+            document.getElementById("unimind-chat-modal");
 
         if (!modal) {
 
@@ -195,42 +385,24 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
         const textarea =
-            modal.querySelector(
-                "#unimind-chat-input"
-            );
+            modal.querySelector("#unimind-chat-input");
 
-        setTimeout(() => {
+        setTimeout(function () {
 
-            try {
-
-                textarea?.focus({
-                    preventScroll: true
-                });
-
-            } catch {
-
-                textarea?.focus();
-
+            if (textarea) {
+                textarea.focus();
             }
 
         }, 250);
     }
 
 
-    /* =========================================================
-       CLOSE CHAT
-    ========================================================= */
-
     function closeChat() {
 
         const modal =
-            document.getElementById(
-                "unimind-chat-modal"
-            );
+            document.getElementById("unimind-chat-modal");
 
-        if (!modal) {
-            return;
-        }
+        if (!modal) return;
 
         modal.classList.remove("active");
 
@@ -238,102 +410,61 @@ document.addEventListener("DOMContentLoaded", () => {
             "unimind-chat-open"
         );
 
-        requestAnimationFrame(() => {
-
-            window.scrollTo(
-                0,
-                savedScrollY
-            );
-
-        });
+        window.scrollTo(
+            0,
+            savedScrollY
+        );
     }
 
-
-    /* =========================================================
-       INITIALIZE CHAT
-    ========================================================= */
 
     function initializeChat() {
 
         const modal =
-            document.getElementById(
-                "unimind-chat-modal"
-            );
+            document.getElementById("unimind-chat-modal");
 
-        if (!modal) {
-            return;
-        }
+        if (!modal) return;
+
 
         const closeButton =
-            modal.querySelector(
-                "#unimind-chat-close"
-            );
+            modal.querySelector("#unimind-chat-close");
 
         const overlay =
-            modal.querySelector(
-                ".unimind-chat-overlay"
-            );
+            modal.querySelector(".unimind-chat-overlay");
 
         const newButton =
-            modal.querySelector(
-                "#unimind-chat-new"
-            );
+            modal.querySelector("#unimind-chat-new");
 
         const sendButton =
-            modal.querySelector(
-                "#unimind-chat-send"
-            );
+            modal.querySelector("#unimind-chat-send");
 
         const textarea =
-            modal.querySelector(
-                "#unimind-chat-input"
-            );
+            modal.querySelector("#unimind-chat-input");
 
-
-        /* CLOSE */
 
         closeButton?.addEventListener(
             "click",
-            (event) => {
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                closeChat();
-
-            }
+            closeChat
         );
 
-
-        /* OVERLAY */
 
         overlay?.addEventListener(
             "click",
-            () => {
-
-                closeChat();
-
-            }
+            closeChat
         );
 
 
-        /* NEW CHAT */
-
         newButton?.addEventListener(
             "click",
-            () => {
+            function () {
 
                 const messages =
                     modal.querySelector(
                         "#unimind-chat-messages"
                     );
 
-                if (!messages) {
-                    return;
-                }
+                if (!messages) return;
 
                 messages.innerHTML = `
-
                     <div class="unimind-welcome-message">
 
                         <div class="unimind-welcome-icon">
@@ -345,13 +476,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         </h2>
 
                         <p>
-                            اسألني عن المحاضرات،
-                            البرمجة، المواد الجامعية،
-                            الاختبارات أو الأبحاث.
+                            ابدأ محادثة جديدة مع UniMind AI.
                         </p>
 
                     </div>
-
 
                     <div class="unimind-suggestions">
 
@@ -376,39 +504,23 @@ document.addEventListener("DOMContentLoaded", () => {
                             🧠 اختبر معلوماتي
                         </button>
 
-                        <button
-                            type="button"
-                            data-suggestion="اشرح لي مفهومًا في البرمجة"
-                        >
-                            💻 اشرح البرمجة
-                        </button>
-
                     </div>
                 `;
 
                 initializeSuggestions();
-
             }
         );
 
-
-        /* SEND */
 
         sendButton?.addEventListener(
             "click",
-            () => {
-
-                sendMessage();
-
-            }
+            sendMessage
         );
 
 
-        /* ENTER */
-
         textarea?.addEventListener(
             "keydown",
-            (event) => {
+            function (event) {
 
                 if (
                     event.key === "Enter" &&
@@ -418,28 +530,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     event.preventDefault();
 
                     sendMessage();
-
                 }
 
             }
         );
 
 
-        /* AUTO RESIZE */
-
         textarea?.addEventListener(
             "input",
-            () => {
+            function () {
 
-                textarea.style.height =
-                    "auto";
+                textarea.style.height = "auto";
 
                 textarea.style.height =
                     Math.min(
                         textarea.scrollHeight,
                         140
                     ) + "px";
-
             }
         );
 
@@ -448,64 +555,37 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =========================================================
-       SUGGESTIONS
-    ========================================================= */
-
     function initializeSuggestions() {
 
         document
             .querySelectorAll(
                 "#unimind-chat-modal [data-suggestion]"
             )
-            .forEach(
-                (button) => {
+            .forEach(function (button) {
 
-                    button.onclick = () => {
+                button.onclick = function () {
 
-                        const modal =
-                            document.getElementById(
-                                "unimind-chat-modal"
-                            );
-
-                        const textarea =
-                            modal?.querySelector(
-                                "#unimind-chat-input"
-                            );
-
-                        if (!textarea) {
-                            return;
-                        }
-
-                        textarea.value =
-                            button.dataset.suggestion || "";
-
-                        textarea.dispatchEvent(
-                            new Event("input")
+                    const modal =
+                        document.getElementById(
+                            "unimind-chat-modal"
                         );
 
-                        try {
+                    const textarea =
+                        modal?.querySelector(
+                            "#unimind-chat-input"
+                        );
 
-                            textarea.focus({
-                                preventScroll: true
-                            });
+                    if (!textarea) return;
 
-                        } catch {
+                    textarea.value =
+                        button.dataset.suggestion || "";
 
-                            textarea.focus();
+                    textarea.focus();
+                };
 
-                        }
-
-                    };
-
-                }
-            );
+            });
     }
 
-
-    /* =========================================================
-       SEND CHAT MESSAGE
-    ========================================================= */
 
     async function sendMessage() {
 
@@ -524,21 +604,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 "#unimind-chat-messages"
             );
 
-        if (
-            !textarea ||
-            !messages
-        ) {
-
-            return;
-
-        }
+        if (!textarea || !messages) return;
 
         const message =
             textarea.value.trim();
 
-        if (!message) {
-            return;
-        }
+        if (!message) return;
+
 
         addUserMessage(
             messages,
@@ -548,21 +620,15 @@ document.addEventListener("DOMContentLoaded", () => {
         textarea.value = "";
         textarea.style.height = "auto";
 
-        const loading =
-            addLoadingMessage(
-                messages
-            );
 
-        scrollMessagesToBottom(
-            messages
-        );
+        const loading =
+            addLoadingMessage(messages);
+
 
         try {
 
             const reply =
-                await callUniMindAI(
-                    message
-                );
+                await callUniMindAI(message);
 
             loading.remove();
 
@@ -577,32 +643,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
             addAIMessage(
                 messages,
-                getReadableError(
-                    error
-                )
+                getReadableError(error)
             );
 
         }
 
-        scrollMessagesToBottom(
-            messages
-        );
+
+        scrollMessagesToBottom(messages);
     }
 
 
-    /* =========================================================
-       USER MESSAGE
-    ========================================================= */
-
-    function addUserMessage(
-        container,
-        text
-    ) {
+    function addUserMessage(container, text) {
 
         const element =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         element.className =
             "unimind-message unimind-user-message";
@@ -613,108 +667,63 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         `;
 
-        container.appendChild(
-            element
-        );
+        container.appendChild(element);
     }
 
 
-    /* =========================================================
-       LOADING
-    ========================================================= */
-
-    function addLoadingMessage(
-        container
-    ) {
+    function addLoadingMessage(container) {
 
         const element =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         element.className =
             "unimind-message unimind-ai-message unimind-loading";
 
         element.innerHTML = `
-
             <div class="unimind-message-header">
-
-                <span>
-                    ✦
-                </span>
-
+                <span>✦</span>
                 UniMind AI
-
             </div>
 
             <div class="unimind-loading-dots">
-
                 <span></span>
                 <span></span>
                 <span></span>
-
             </div>
-
         `;
 
-        container.appendChild(
-            element
-        );
+        container.appendChild(element);
+
+        scrollMessagesToBottom(container);
 
         return element;
     }
 
 
-    /* =========================================================
-       AI MESSAGE
-    ========================================================= */
-
-    function addAIMessage(
-        container,
-        text
-    ) {
+    function addAIMessage(container, text) {
 
         const element =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         element.className =
             "unimind-message unimind-ai-message";
 
         element.innerHTML = `
-
             <div class="unimind-message-header">
-
-                <span>
-                    ✦
-                </span>
-
+                <span>✦</span>
                 UniMind AI
-
             </div>
 
             <div class="unimind-message-content">
-
                 ${formatAIResponse(text)}
-
             </div>
-
         `;
 
-        container.appendChild(
-            element
-        );
+        container.appendChild(element);
     }
 
 
-    /* =========================================================
-       AI API
-    ========================================================= */
-
-    async function callUniMindAI(
-        message
-    ) {
+    async function callUniMindAI(message) {
 
         const response =
             await fetch(
@@ -733,10 +742,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             );
 
+
         const data =
             await response
                 .json()
-                .catch(() => ({}));
+                .catch(function () {
+                    return {};
+                });
+
 
         if (!response.ok) {
 
@@ -744,7 +757,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 new Error(
                     data?.details ||
                     data?.error ||
-                    `HTTP_${response.status}`
+                    "HTTP_" + response.status
                 );
 
             error.status =
@@ -752,6 +765,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             throw error;
         }
+
 
         if (
             !data ||
@@ -761,20 +775,14 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error(
                 "INVALID_RESPONSE"
             );
-
         }
+
 
         return data.reply;
     }
 
 
-    /* =========================================================
-       ERROR HANDLING
-    ========================================================= */
-
-    function getReadableError(
-        error
-    ) {
+    function getReadableError(error) {
 
         const message =
             String(
@@ -783,82 +791,60 @@ document.addEventListener("DOMContentLoaded", () => {
                 ""
             );
 
+
         if (
             error?.status === 401 ||
             message.includes("401")
         ) {
-
             return "حدث خطأ في المصادقة مع خدمة الذكاء الاصطناعي.";
-
         }
+
 
         if (
             error?.status === 403 ||
             message.includes("403")
         ) {
-
             return "تم رفض الطلب من خدمة الذكاء الاصطناعي.";
-
         }
+
 
         if (
             error?.status === 429 ||
             message.includes("429")
         ) {
-
             return "تم الوصول إلى حد الاستخدام مؤقتًا. حاول مرة أخرى بعد قليل.";
-
         }
+
 
         if (
             message.includes("503") ||
-            message.includes("HTTP_503") ||
             message.includes("high demand")
         ) {
-
-            return "خدمة Gemini مشغولة حاليًا بسبب ارتفاع الطلب. حاول مرة أخرى بعد قليل.";
-
+            return "خدمة Gemini مشغولة حاليًا. حاول مرة أخرى بعد قليل.";
         }
+
 
         if (
             message.includes("GEMINI_API_KEY")
         ) {
-
             return "مفتاح Gemini غير مضبوط في الخادم.";
-
         }
 
-        if (
-            message.includes("Gemini API Error")
-        ) {
-
-            return "حدث خطأ أثناء الاتصال بخدمة Gemini.";
-
-        }
 
         if (
             message.includes("INVALID_RESPONSE")
         ) {
-
             return "تم الاتصال بالخدمة ولكن لم تصل إجابة صحيحة.";
-
         }
 
-        return "حدث خطأ أثناء الاتصال بمساعد UniMind AI. حاول مرة أخرى.";
+
+        return "حدث خطأ أثناء الاتصال بمساعد UniMind AI.";
     }
 
 
-    /* =========================================================
-       FORMAT AI RESPONSE
-    ========================================================= */
+    function formatAIResponse(text) {
 
-    function formatAIResponse(
-        text
-    ) {
-
-        if (!text) {
-            return "";
-        }
+        if (!text) return "";
 
         let result =
             escapeHTML(text);
@@ -897,69 +883,44 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =========================================================
-       ESCAPE HTML
-    ========================================================= */
-
-    function escapeHTML(
-        text
-    ) {
+    function escapeHTML(text) {
 
         const div =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
-        div.textContent =
-            text;
+        div.textContent = text;
 
         return div.innerHTML;
     }
 
 
-    /* =========================================================
-       CHAT SCROLL
-    ========================================================= */
+    function scrollMessagesToBottom(container) {
 
-    function scrollMessagesToBottom(
-        container
-    ) {
+        if (!container) return;
 
-        if (!container) {
-            return;
-        }
-
-        requestAnimationFrame(
-            () => {
-
-                container.scrollTop =
-                    container.scrollHeight;
-
-            }
-        );
+        requestAnimationFrame(function () {
+            container.scrollTop =
+                container.scrollHeight;
+        });
     }
 
 
     /* =========================================================
        LECTURE SUMMARIZER
-       نظام رفع المحاضرات
-    ========================================================= */
+       ========================================================= */
 
     function createLectureModal() {
 
-        const existing =
+        let existing =
             document.getElementById(
                 "unimind-lecture-modal"
             );
 
-        if (existing) {
-            return existing;
-        }
+        if (existing) return existing;
+
 
         const modal =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         modal.id =
             "unimind-lecture-modal";
@@ -969,7 +930,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         modal.innerHTML = `
-
             <div class="unimind-lecture-overlay"></div>
 
             <div class="unimind-lecture-window">
@@ -977,7 +937,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="unimind-lecture-header">
 
                     <div>
-
                         <div class="unimind-lecture-title">
                             📄 تلخيص المحاضرات
                         </div>
@@ -985,14 +944,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="unimind-lecture-subtitle">
                             ارفع محاضرتك ودع UniMind يساعدك على فهمها
                         </div>
-
                     </div>
 
                     <button
                         type="button"
                         id="unimind-lecture-close"
                         class="unimind-lecture-close"
-                        aria-label="إغلاق"
                     >
                         ×
                     </button>
@@ -1010,7 +967,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <input
                             type="file"
                             id="unimind-lecture-file"
-                            accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                            accept=".pdf,.doc,.docx,.txt"
                             hidden
                         >
 
@@ -1053,15 +1010,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         <div class="unimind-file-info">
 
-                            <strong
-                                id="unimind-file-name"
-                            >
+                            <strong id="unimind-file-name">
                                 اسم الملف
                             </strong>
 
-                            <span
-                                id="unimind-file-size"
-                            >
+                            <span id="unimind-file-size">
                                 0 KB
                             </span>
 
@@ -1071,7 +1024,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             type="button"
                             id="unimind-remove-file"
                             class="unimind-remove-file"
-                            aria-label="حذف الملف"
                         >
                             ×
                         </button>
@@ -1148,19 +1100,14 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         `;
 
-        document.body.appendChild(
-            modal
-        );
+
+        document.body.appendChild(modal);
 
         initializeLectureModal();
 
         return modal;
     }
 
-
-    /* =========================================================
-       INITIALIZE LECTURE MODAL
-    ========================================================= */
 
     function initializeLectureModal() {
 
@@ -1169,9 +1116,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 "unimind-lecture-modal"
             );
 
-        if (!modal) {
-            return;
-        }
+        if (!modal) return;
 
 
         const overlay =
@@ -1215,8 +1160,6 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        /* CLOSE */
-
         closeButton?.addEventListener(
             "click",
             closeLectureModal
@@ -1229,23 +1172,21 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
-        /* OPEN FILE SELECTOR */
-
         chooseButton?.addEventListener(
             "click",
-            (event) => {
+            function (event) {
 
                 event.preventDefault();
+                event.stopPropagation();
 
                 fileInput?.click();
-
             }
         );
 
 
         uploadArea?.addEventListener(
             "click",
-            (event) => {
+            function (event) {
 
                 if (
                     event.target.closest(
@@ -1256,67 +1197,51 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 fileInput?.click();
-
             }
         );
 
 
-        /* FILE SELECTED */
-
         fileInput?.addEventListener(
             "change",
-            () => {
+            function () {
 
                 const file =
                     fileInput.files?.[0];
 
                 if (file) {
-
-                    handleLectureFile(
-                        file
-                    );
-
+                    handleLectureFile(file);
                 }
-
             }
         );
 
 
-        /* DRAG OVER */
-
         uploadArea?.addEventListener(
             "dragover",
-            (event) => {
+            function (event) {
 
                 event.preventDefault();
 
                 uploadArea.classList.add(
                     "dragging"
                 );
-
             }
         );
 
 
-        /* DRAG LEAVE */
-
         uploadArea?.addEventListener(
             "dragleave",
-            () => {
+            function () {
 
                 uploadArea.classList.remove(
                     "dragging"
                 );
-
             }
         );
 
 
-        /* DROP */
-
         uploadArea?.addEventListener(
             "drop",
-            (event) => {
+            function (event) {
 
                 event.preventDefault();
 
@@ -1328,22 +1253,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     event.dataTransfer?.files?.[0];
 
                 if (file) {
-
-                    handleLectureFile(
-                        file
-                    );
-
+                    handleLectureFile(file);
                 }
-
             }
         );
 
 
-        /* REMOVE FILE */
-
         removeButton?.addEventListener(
             "click",
-            () => {
+            function () {
 
                 selectedLectureFile = null;
 
@@ -1352,44 +1270,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 resetLectureFileUI();
-
             }
         );
 
-
-        /* SUMMARIZE */
 
         summarizeButton?.addEventListener(
             "click",
-            () => {
-
-                summarizeLecture();
-
-            }
+            summarizeLecture
         );
 
 
-        /* COPY */
-
         copyButton?.addEventListener(
             "click",
-            async () => {
+            async function () {
 
                 const content =
                     document.getElementById(
                         "unimind-summary-content"
                     );
 
-                if (!content) {
-                    return;
-                }
+                if (!content) return;
 
                 const text =
                     content.innerText.trim();
 
-                if (!text) {
-                    return;
-                }
+                if (!text) return;
+
 
                 try {
 
@@ -1400,29 +1306,21 @@ document.addEventListener("DOMContentLoaded", () => {
                     copyButton.textContent =
                         "تم النسخ ✓";
 
-                    setTimeout(() => {
-
+                    setTimeout(function () {
                         copyButton.textContent =
                             "نسخ الملخص";
-
                     }, 2000);
 
                 } catch {
 
                     alert(
-                        "لم يتمكن المتصفح من نسخ الملخص."
+                        "تعذر نسخ الملخص."
                     );
-
                 }
-
             }
         );
     }
 
-
-    /* =========================================================
-       OPEN LECTURE MODAL
-    ========================================================= */
 
     function openLectureModal() {
 
@@ -1434,20 +1332,13 @@ document.addEventListener("DOMContentLoaded", () => {
             window.pageYOffset ||
             0;
 
-        modal.classList.add(
-            "active"
-        );
+        modal.classList.add("active");
 
         document.body.classList.add(
             "unimind-lecture-open"
         );
-
     }
 
-
-    /* =========================================================
-       CLOSE LECTURE MODAL
-    ========================================================= */
 
     function closeLectureModal() {
 
@@ -1456,42 +1347,66 @@ document.addEventListener("DOMContentLoaded", () => {
                 "unimind-lecture-modal"
             );
 
-        if (!modal) {
-            return;
-        }
+        if (!modal) return;
 
-        modal.classList.remove(
-            "active"
-        );
+        modal.classList.remove("active");
 
         document.body.classList.remove(
             "unimind-lecture-open"
         );
 
-        requestAnimationFrame(() => {
-
-            window.scrollTo(
-                0,
-                savedScrollY
-            );
-
-        });
-
+        window.scrollTo(
+            0,
+            savedScrollY
+        );
     }
 
 
-    /* =========================================================
-       HANDLE LECTURE FILE
-    ========================================================= */
+    function handleLectureFile(file) {
 
-    function handleLectureFile(
-        file
-    ) {
+        if (!file) return;
 
-        const status =
-            document.getElementById(
-                "unimind-file-status"
+
+        const extension =
+            file.name
+                .split(".")
+                .pop()
+                .toLowerCase();
+
+
+        const allowed = [
+            "pdf",
+            "doc",
+            "docx",
+            "txt"
+        ];
+
+
+        if (!allowed.includes(extension)) {
+
+            alert(
+                "اختر ملف PDF أو DOC أو DOCX أو TXT."
             );
+
+            return;
+        }
+
+
+        if (
+            file.size >
+            25 * 1024 * 1024
+        ) {
+
+            alert(
+                "الحد الأقصى لحجم الملف هو 25MB."
+            );
+
+            return;
+        }
+
+
+        selectedLectureFile = file;
+
 
         const selectedBox =
             document.getElementById(
@@ -1506,6 +1421,96 @@ document.addEventListener("DOMContentLoaded", () => {
         const fileSize =
             document.getElementById(
                 "unimind-file-size"
+            );
+
+        const status =
+            document.getElementById(
+                "unimind-file-status"
+            );
+
+        const summarizeButton =
+            document.getElementById(
+                "unimind-summarize-button"
+            );
+
+
+        if (fileName) {
+            fileName.textContent =
+                file.name;
+        }
+
+
+        if (fileSize) {
+            fileSize.textContent =
+                formatFileSize(file.size);
+        }
+
+
+        if (selectedBox) {
+            selectedBox.hidden = false;
+        }
+
+
+        if (status) {
+
+            status.textContent =
+                "تم اختيار الملف بنجاح ✓";
+
+            status.classList.add("success");
+        }
+
+
+        if (summarizeButton) {
+            summarizeButton.disabled = false;
+        }
+
+
+        if (extension === "txt") {
+
+            const reader =
+                new FileReader();
+
+            reader.onload =
+                function (event) {
+
+                    const preview =
+                        document.getElementById(
+                            "unimind-text-preview"
+                        );
+
+                    const content =
+                        document.getElementById(
+                            "unimind-text-content"
+                        );
+
+                    if (preview) {
+                        preview.hidden = false;
+                    }
+
+                    if (content) {
+                        content.value =
+                            event.target.result || "";
+                    }
+                };
+
+            reader.readAsText(
+                file,
+                "UTF-8"
+            );
+        }
+    }
+
+
+    function resetLectureFileUI() {
+
+        const selectedBox =
+            document.getElementById(
+                "unimind-selected-file"
+            );
+
+        const status =
+            document.getElementById(
+                "unimind-file-status"
             );
 
         const summarizeButton =
@@ -1523,161 +1528,47 @@ document.addEventListener("DOMContentLoaded", () => {
                 "unimind-text-content"
             );
 
-
-        if (!file) {
-            return;
-        }
-
-
-        const allowedExtensions = [
-            "pdf",
-            "doc",
-            "docx",
-            "txt"
-        ];
-
-
-        const extension =
-            file.name
-                .split(".")
-                .pop()
-                .toLowerCase();
-
-
-        if (
-            !allowedExtensions.includes(
-                extension
-            )
-        ) {
-
-            alert(
-                "نوع الملف غير مدعوم. اختر PDF أو DOC أو DOCX أو TXT."
+        const result =
+            document.getElementById(
+                "unimind-summary-result"
             );
-
-            return;
-        }
-
-
-        const maxSize =
-            25 * 1024 * 1024;
-
-
-        if (file.size > maxSize) {
-
-            alert(
-                "حجم الملف كبير جدًا. الحد الأقصى حاليًا 25MB."
-            );
-
-            return;
-        }
-
-
-        selectedLectureFile =
-            file;
-
-
-        if (fileName) {
-
-            fileName.textContent =
-                file.name;
-
-        }
-
-
-        if (fileSize) {
-
-            fileSize.textContent =
-                formatFileSize(
-                    file.size
-                );
-
-        }
 
 
         if (selectedBox) {
-
-            selectedBox.hidden =
-                false;
-
+            selectedBox.hidden = true;
         }
-
 
         if (status) {
 
             status.textContent =
-                "تم اختيار الملف بنجاح ✓";
+                "لم يتم اختيار ملف بعد.";
 
-            status.classList.add(
+            status.classList.remove(
                 "success"
             );
-
         }
-
 
         if (summarizeButton) {
-
-            summarizeButton.disabled =
-                false;
-
+            summarizeButton.disabled = true;
         }
 
-
-        /*
-         * قراءة TXT مباشرة
-         */
-
-        if (
-            extension === "txt"
-        ) {
-
-            const reader =
-                new FileReader();
-
-            reader.onload =
-                (event) => {
-
-                    if (preview) {
-                        preview.hidden =
-                            false;
-                    }
-
-                    if (textContent) {
-
-                        textContent.value =
-                            event.target.result || "";
-
-                    }
-
-                };
-
-            reader.readAsText(
-                file,
-                "UTF-8"
-            );
-
-        } else {
-
-            if (preview) {
-                preview.hidden =
-                    true;
-            }
-
+        if (preview) {
+            preview.hidden = true;
         }
 
+        if (textContent) {
+            textContent.value = "";
+        }
+
+        if (result) {
+            result.hidden = true;
+        }
     }
 
 
-    /* =========================================================
-       FORMAT FILE SIZE
-    ========================================================= */
+    function formatFileSize(bytes) {
 
-    function formatFileSize(
-        bytes
-    ) {
-
-        if (!bytes) {
-            return "0 KB";
-        }
+        if (!bytes) return "0 KB";
 
         const units = [
             "Bytes",
@@ -1709,97 +1600,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =========================================================
-       RESET FILE UI
-    ========================================================= */
-
-    function resetLectureFileUI() {
-
-        const selectedBox =
-            document.getElementById(
-                "unimind-selected-file"
-            );
-
-        const status =
-            document.getElementById(
-                "unimind-file-status"
-            );
-
-        const summarizeButton =
-            document.getElementById(
-                "unimind-summarize-button"
-            );
-
-        const preview =
-            document.getElementById(
-                "unimind-text-preview"
-            );
-
-        const textContent =
-            document.getElementById(
-                "unimind-text-content"
-            );
-
-        const summaryResult =
-            document.getElementById(
-                "unimind-summary-result"
-            );
-
-
-        if (selectedBox) {
-            selectedBox.hidden =
-                true;
-        }
-
-
-        if (status) {
-
-            status.textContent =
-                "لم يتم اختيار ملف بعد.";
-
-            status.classList.remove(
-                "success"
-            );
-
-        }
-
-
-        if (summarizeButton) {
-
-            summarizeButton.disabled =
-                true;
-
-        }
-
-
-        if (preview) {
-            preview.hidden =
-                true;
-        }
-
-
-        if (textContent) {
-            textContent.value =
-                "";
-        }
-
-
-        if (summaryResult) {
-            summaryResult.hidden =
-                true;
-        }
-
-    }
-
-
-    /* =========================================================
-       SUMMARIZE LECTURE
-    ========================================================= */
-
     async function summarizeLecture() {
 
         const file =
             selectedLectureFile;
+
+        if (!file) {
+
+            alert(
+                "اختر ملف المحاضرة أولًا."
+            );
+
+            return;
+        }
+
 
         const button =
             document.getElementById(
@@ -1822,157 +1636,68 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        if (!file) {
-
-            alert(
-                "اختر ملف المحاضرة أولًا."
-            );
-
-            return;
-        }
-
-
-        /*
-         * المرحلة الحالية:
-         * تجهيز الملف والتحقق منه.
-         */
-
         if (button) {
 
-            button.disabled =
-                true;
+            button.disabled = true;
 
             button.innerHTML =
                 "⏳ جاري تجهيز المحاضرة...";
-
         }
 
 
         if (status) {
-
             status.textContent =
-                "جاري تجهيز الملف للتحليل...";
-
-            status.classList.remove(
-                "success"
-            );
-
+                "جاري تجهيز الملف...";
         }
 
 
-        await new Promise(
-            resolve =>
-                setTimeout(
-                    resolve,
-                    1200
-                )
-        );
+        await new Promise(function (resolve) {
+            setTimeout(resolve, 1000);
+        });
 
 
         if (result) {
-
-            result.hidden =
-                false;
-
+            result.hidden = false;
         }
 
 
         if (content) {
 
-            if (
-                file.name
-                    .toLowerCase()
-                    .endsWith(".txt")
-            ) {
+            content.innerHTML = `
+                <h3>
+                    تم رفع المحاضرة بنجاح ✓
+                </h3>
 
-                const text =
-                    document.getElementById(
-                        "unimind-text-content"
-                    )?.value || "";
+                <p>
+                    تم التعرف على الملف وتجهيزه.
+                </p>
 
-                if (text.trim()) {
+                <div class="unimind-summary-placeholder">
 
-                    content.innerHTML =
-                        `
-                            <h3>تم تجهيز المحاضرة ✓</h3>
+                    <strong>
+                        الملف:
+                    </strong>
 
-                            <p>
-                                تم رفع الملف بنجاح وقراءة محتواه.
-                                الخطوة التالية هي إرسال المحتوى إلى
-                                محرك الذكاء الاصطناعي لإنشاء الملخص.
-                            </p>
+                    ${escapeHTML(file.name)}
 
-                            <div class="unimind-summary-placeholder">
+                    <br><br>
 
-                                <strong>
-                                    الملف:
-                                </strong>
+                    <strong>
+                        الحجم:
+                    </strong>
 
-                                ${escapeHTML(file.name)}
+                    ${formatFileSize(file.size)}
 
-                                <br><br>
+                    <br><br>
 
-                                <strong>
-                                    عدد الأحرف:
-                                </strong>
+                    <span>
+                        تم تجهيز الملف بنجاح.
+                        سيتم ربط قراءة محتوى PDF وDOCX
+                        بمحرك الذكاء الاصطناعي في المرحلة التالية.
+                    </span>
 
-                                ${text.length.toLocaleString("ar")}
-
-                            </div>
-                        `;
-
-                } else {
-
-                    content.innerHTML =
-                        `
-                            <h3>تم رفع الملف ✓</h3>
-
-                            <p>
-                                الملف النصي فارغ أو لا يحتوي على نص قابل للقراءة.
-                            </p>
-                        `;
-
-                }
-
-            } else {
-
-                content.innerHTML =
-                    `
-                        <h3>تم رفع الملف بنجاح ✓</h3>
-
-                        <p>
-                            أصبح الملف جاهزًا للمرحلة التالية من المعالجة.
-                        </p>
-
-                        <div class="unimind-summary-placeholder">
-
-                            <strong>
-                                الملف:
-                            </strong>
-
-                            ${escapeHTML(file.name)}
-
-                            <br><br>
-
-                            <strong>
-                                الحجم:
-                            </strong>
-
-                            ${formatFileSize(file.size)}
-
-                            <br><br>
-
-                            <span>
-                                سيتم في المرحلة التالية ربط PDF وDOCX
-                                بمحرك قراءة المحتوى ثم إرسال النص إلى
-                                UniMind AI لإنشاء ملخص حقيقي.
-                            </span>
-
-                        </div>
-                    `;
-
-            }
-
+                </div>
+            `;
         }
 
 
@@ -1984,263 +1709,124 @@ document.addEventListener("DOMContentLoaded", () => {
             status.classList.add(
                 "success"
             );
-
         }
 
 
         if (button) {
 
-            button.disabled =
-                false;
+            button.disabled = false;
 
             button.innerHTML =
                 "✨ تلخيص المحاضرة";
-
         }
-
     }
-
-
-    /* =========================================================
-       STUDY ASSISTANT BUTTON
-    ========================================================= */
-
-    const studyButton =
-        document.getElementById(
-            "studyAssistantButton"
-        );
-
-    if (studyButton) {
-
-        studyButton.addEventListener(
-            "click",
-            (event) => {
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                openChat();
-
-            }
-        );
-
-    }
-
-
-    /* =========================================================
-       LECTURE SUMMARIZER BUTTON
-    ========================================================= */
-
-    const lectureButton =
-        document.getElementById(
-            "lectureSummarizerButton"
-        );
-
-    if (lectureButton) {
-
-        lectureButton.addEventListener(
-            "click",
-            (event) => {
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                openLectureModal();
-
-            }
-        );
-
-    }
-
-
-    /* =========================================================
-       CTA BUTTON
-    ========================================================= */
-
-    const ctaButton =
-        document.getElementById(
-            "ctaStartButton"
-        );
-
-    if (ctaButton) {
-
-        ctaButton.addEventListener(
-            "click",
-            (event) => {
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                openChat();
-
-            }
-        );
-
-    }
-
-
-    /* =========================================================
-       PLAN BUTTONS
-    ========================================================= */
-
-    [
-        "freePlanButton",
-        "studentPlanButton",
-        "proPlanButton"
-    ].forEach(
-        (id) => {
-
-            const button =
-                document.getElementById(
-                    id
-                );
-
-            button?.addEventListener(
-                "click",
-                (event) => {
-
-                    event.preventDefault();
-
-                    openChat();
-
-                }
-            );
-
-        }
-    );
-
-
-    /* =========================================================
-       OTHER PLACEHOLDERS
-       لا نضع lectureSummarizerButton هنا
-       لأنه أصبح يعمل فعليًا.
-    ========================================================= */
-
-    document
-        .querySelectorAll(
-            ".feature-placeholder:not(#lectureSummarizerButton), .footer-placeholder"
-        )
-        .forEach(
-            (button) => {
-
-                button.addEventListener(
-                    "click",
-                    (event) => {
-
-                        event.preventDefault();
-
-                        alert(
-                            "هذه الميزة سيتم تفعيلها في المرحلة القادمة من UniMind AI."
-                        );
-
-                    }
-                );
-
-            }
-        );
-
-
-    /* =========================================================
-       GLOBAL FUNCTIONS
-    ========================================================= */
-
-    window.openChat =
-        openChat;
-
-    window.closeUniMindChat =
-        closeChat;
-
-    window.openLectureSummarizer =
-        openLectureModal;
-
-    window.closeLectureSummarizer =
-        closeLectureModal;
 
 
     /* =========================================================
        THEME
-    ========================================================= */
+       ========================================================= */
 
-    const themeToggle =
-        document.getElementById(
-            "themeToggle"
-        );
+    function setupTheme() {
 
-    themeToggle?.addEventListener(
-        "click",
-        () => {
-
-            document.body.classList.toggle(
-                "dark-mode"
+        const button =
+            document.getElementById(
+                "themeToggle"
             );
 
-        }
-    );
+        if (!button) return;
+
+
+        button.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                document.body.classList.toggle(
+                    "dark-mode"
+                );
+
+            }
+        );
+    }
 
 
     /* =========================================================
        LANGUAGE
-    ========================================================= */
+       ========================================================= */
 
-    const languageToggle =
-        document.getElementById(
-            "languageToggle"
-        );
+    function setupLanguage() {
 
-    languageToggle?.addEventListener(
-        "click",
-        () => {
-
-            alert(
-                "نسخة اللغة الإنجليزية ستكون متاحة قريبًا."
+        const button =
+            document.getElementById(
+                "languageToggle"
             );
 
-        }
-    );
+        if (!button) return;
+
+
+        button.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                alert(
+                    "نسخة اللغة الإنجليزية ستكون متاحة قريبًا."
+                );
+
+            }
+        );
+    }
 
 
     /* =========================================================
        LOGIN
-    ========================================================= */
+       ========================================================= */
 
-    const loginButton =
-        document.getElementById(
-            "loginButton"
-        );
+    function setupLogin() {
 
-    loginButton?.addEventListener(
-        "click",
-        () => {
-
-            alert(
-                "نظام تسجيل الدخول سيكون متاحًا قريبًا."
+        const button =
+            document.getElementById(
+                "loginButton"
             );
 
-        }
-    );
+        if (!button) return;
+
+
+        button.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                alert(
+                    "نظام تسجيل الدخول سيكون متاحًا قريبًا."
+                );
+
+            }
+        );
+    }
 
 
     /* =========================================================
-       ESC KEY
-    ========================================================= */
+       ESC
+       ========================================================= */
 
-    document.addEventListener(
-        "keydown",
-        (event) => {
+    function setupKeyboard() {
 
-            if (
-                event.key !== "Escape"
-            ) {
-                return;
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (event.key !== "Escape") {
+                    return;
+                }
+
+                closeChat();
+                closeLectureModal();
             }
+        );
+    }
 
-            closeChat();
-
-            closeLectureModal();
-
-        }
-    );
-
-
-});
-```
+})();
