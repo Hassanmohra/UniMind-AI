@@ -15,10 +15,10 @@
 
 
     // =========================================================
-    // IMPORTANT GLOBAL FUNCTIONS
+    // GLOBAL FUNCTIONS
     // =========================================================
-    // تم نقل تعريف الدوال العامة إلى هنا حتى تكون متاحة
-    // حتى لو حدث خطأ أثناء تهيئة أحد أجزاء الموقع.
+    // هذه الدوال متاحة عالميًا حتى تعمل أزرار HTML
+    // و onclick="openChat()" بشكل مباشر.
 
     window.openChat = openChat;
     window.closeUniMindChat = closeChat;
@@ -98,7 +98,7 @@
 
 
     // =========================================================
-    // START APPLICATION
+    // APPLICATION START
     // =========================================================
 
     if (
@@ -187,7 +187,7 @@
 
 
         // -----------------------------------------------------
-        // Buttons with data-action
+        // DATA ACTION
         // -----------------------------------------------------
 
         document
@@ -247,7 +247,7 @@
 
 
         // -----------------------------------------------------
-        // Feature placeholders
+        // FEATURE PLACEHOLDERS
         // -----------------------------------------------------
 
         document
@@ -317,7 +317,7 @@
 
 
         // -----------------------------------------------------
-        // Pricing
+        // PRICING
         // -----------------------------------------------------
 
         document
@@ -355,7 +355,7 @@
 
 
         // -----------------------------------------------------
-        // Footer links
+        // FOOTER
         // -----------------------------------------------------
 
         document
@@ -425,27 +425,22 @@
         }
 
 
-        if (
-            button.dataset
-                .unimindStudyBound === "true"
-        ) {
+        /*
+         * مهم:
+         * نستخدم onclick مباشرة هنا بدل الاعتماد فقط
+         * على addEventListener.
+         *
+         * هذا يجعل زر مساعد الدراسة يعمل حتى لو كان
+         * في HTML يحتوي على onclick="openChat()".
+         */
 
-            return;
-        }
-
-
-        button.dataset
-            .unimindStudyBound =
-            "true";
-
-
-        button.addEventListener(
-            "click",
+        button.onclick =
             function (event) {
 
-                event.preventDefault();
-
-                event.stopPropagation();
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
 
 
                 console.log(
@@ -453,11 +448,48 @@
                 );
 
 
-                openChat();
+                try {
 
-            },
-            false
-        );
+                    openChat();
+
+                } catch (error) {
+
+                    console.error(
+                        "UniMind: openChat failed:",
+                        error
+                    );
+
+
+                    /*
+                     * محاولة أخيرة للوصول للدالة العالمية
+                     */
+
+                    if (
+                        typeof window.openChat ===
+                        "function"
+                    ) {
+
+                        window.openChat();
+
+                    } else {
+
+                        console.error(
+                            "UniMind: window.openChat is not available"
+                        );
+
+                        alert(
+                            "حدث خطأ في تحميل مساعد الدراسة. يرجى تحديث الصفحة باستخدام Ctrl + F5."
+                        );
+
+                    }
+
+                }
+
+            };
+
+
+        button.dataset.unimindStudyBound =
+            "true";
 
 
         console.log(
