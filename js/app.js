@@ -13,6 +13,23 @@
     let savedScrollY = 0;
     let selectedLectureFile = null;
 
+
+    // =========================================================
+    // IMPORTANT GLOBAL FUNCTIONS
+    // =========================================================
+    // تم نقل تعريف الدوال العامة إلى هنا حتى تكون متاحة
+    // حتى لو حدث خطأ أثناء تهيئة أحد أجزاء الموقع.
+
+    window.openChat = openChat;
+    window.closeUniMindChat = closeChat;
+
+    window.openLectureSummarizer =
+        openLectureModal;
+
+    window.closeLectureSummarizer =
+        closeLectureModal;
+
+
     // =========================================================
     // START
     // =========================================================
@@ -29,40 +46,60 @@
             "UniMind AI JavaScript loaded successfully"
         );
 
-        // إعداد الأزرار
-        setupButtons();
+        try {
+            setupButtons();
+        } catch (error) {
+            console.error(
+                "UniMind setupButtons error:",
+                error
+            );
+        }
 
-        // إعداد المظهر
-        setupTheme();
+        try {
+            setupTheme();
+        } catch (error) {
+            console.error(
+                "UniMind setupTheme error:",
+                error
+            );
+        }
 
-        // إعداد اللغة
-        setupLanguage();
+        try {
+            setupLanguage();
+        } catch (error) {
+            console.error(
+                "UniMind setupLanguage error:",
+                error
+            );
+        }
 
-        // إعداد تسجيل الدخول
-        setupLogin();
+        try {
+            setupLogin();
+        } catch (error) {
+            console.error(
+                "UniMind setupLogin error:",
+                error
+            );
+        }
 
-        // إعداد لوحة المفاتيح
-        setupKeyboard();
-
-        // =====================================================
-        // GLOBAL FUNCTIONS
-        // =====================================================
-
-        window.openChat = openChat;
-
-        window.closeUniMindChat = closeChat;
-
-        window.openLectureSummarizer =
-            openLectureModal;
-
-        window.closeLectureSummarizer =
-            closeLectureModal;
+        try {
+            setupKeyboard();
+        } catch (error) {
+            console.error(
+                "UniMind setupKeyboard error:",
+                error
+            );
+        }
 
         console.log(
             "UniMind buttons initialized"
         );
     }
 
+
+    // =========================================================
+    // START APPLICATION
+    // =========================================================
 
     if (
         document.readyState === "loading"
@@ -388,8 +425,6 @@
         }
 
 
-        // منع تسجيل الحدث أكثر من مرة
-
         if (
             button.dataset
                 .unimindStudyBound === "true"
@@ -418,23 +453,7 @@
                 );
 
 
-                try {
-
-                    openChat();
-
-                } catch (error) {
-
-                    console.error(
-                        "UniMind: Could not open chat",
-                        error
-                    );
-
-
-                    alert(
-                        "حدث خطأ أثناء فتح مساعد الدراسة. افتح Console لمعرفة التفاصيل."
-                    );
-
-                }
+                openChat();
 
             },
             false
@@ -581,7 +600,6 @@
 
         if (existing) {
 
-            // إذا كان موجودًا لكنه فارغ
             if (
                 !existing.querySelector(
                     ".unimind-chat-window"
@@ -2063,10 +2081,6 @@
             "success"
         );
 
-
-        // =====================================================
-        // TXT PREVIEW
-        // =====================================================
 
         if (
             extension === "txt"
