@@ -3191,4 +3191,151 @@ button,
         flex-direction: column;
     }
 }
+   /* =========================================================
+   UniMind AI - Smart Quiz Modal Fix
+   ========================================================= */
+
+#unimind-quiz-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 999999 !important;
+
+    display: none;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    padding: 20px !important;
+    box-sizing: border-box !important;
+}
+
+#unimind-quiz-modal.active {
+    display: flex !important;
+}
+
+.unimind-quiz-overlay {
+    position: absolute !important;
+    inset: 0 !important;
+
+    width: 100% !important;
+    height: 100% !important;
+
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(5px);
+
+    z-index: 0 !important;
+}
+
+.unimind-quiz-window {
+    position: relative !important;
+
+    width: min(760px, 94vw) !important;
+    max-height: 90vh !important;
+
+    margin: 0 !important;
+
+    background: #ffffff !important;
+    border-radius: 24px !important;
+
+    overflow: hidden !important;
+    overflow-y: auto !important;
+
+    box-shadow:
+        0 25px 80px rgba(0, 0, 0, 0.25) !important;
+
+    z-index: 1 !important;
+
+    direction: rtl !important;
+
+    animation: unimindQuizAppear 0.25s ease-out;
+}
+
+@keyframes unimindQuizAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.unimind-quiz-header {
+    position: sticky !important;
+    top: 0 !important;
+
+    z-index: 5 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+
+    padding: 20px 24px !important;
+
+    background: #ffffff !important;
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+.unimind-quiz-close {
+    width: 42px !important;
+    height: 42px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    border: none !important;
+    border-radius: 50% !important;
+
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+
+    font-size: 24px !important;
+    cursor: pointer !important;
+
+    transition: 0.2s ease;
+}
+
+.unimind-quiz-close:hover {
+    background: #e2e8f0 !important;
+    transform: scale(1.05);
+}
+
+.unimind-quiz-content {
+    padding: 28px !important;
+}
+
+/* منع الصفحة الخلفية من التحرك أثناء فتح الاختبار */
+
+body.quiz-modal-open {
+    overflow: hidden !important;
+}
+
+/* الهاتف */
+
+@media (max-width: 600px) {
+
+    #unimind-quiz-modal {
+        padding: 10px !important;
+    }
+
+    .unimind-quiz-window {
+        width: 100% !important;
+        max-height: 94vh !important;
+
+        border-radius: 18px !important;
+    }
+
+    .unimind-quiz-header {
+        padding: 16px !important;
+    }
+
+    .unimind-quiz-content {
+        padding: 20px !important;
+    }
+}
 }
