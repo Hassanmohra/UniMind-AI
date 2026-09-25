@@ -4,7 +4,8 @@
 
     // =========================================================
     // UniMind AI
-    // Main JavaScript v31
+    // Main JavaScript v32
+    // Smart Quiz Edition
     // =========================================================
 
     const API_URL =
@@ -12,6 +13,13 @@
 
     let savedScrollY = 0;
     let selectedLectureFile = null;
+
+    // Quiz state
+    let quizQuestions = [];
+    let currentQuizIndex = 0;
+    let quizScore = 0;
+    let quizAnswered = false;
+    let quizSourceText = "";
 
     // =========================================================
     // EXTERNAL LIBRARIES
@@ -1657,10 +1665,6 @@
                 )
                 .trim();
 
-        /*
-         * نضع حدًا مناسبًا حتى لا نرسل ملفًا
-         * ضخمًا جدًا إلى واجهة الذكاء الاصطناعي.
-         */
         const MAX_CHARS =
             60000;
 
@@ -1851,11 +1855,6 @@ ${prepared.truncated
             return;
         }
 
-        /*
-         * نستخدم innerHTML مع formatMessage
-         * حتى يظهر Markdown البسيط مثل **العناوين**
-         * بشكل جميل وآمن.
-         */
         content.innerHTML =
             formatMessage(
                 summary
@@ -1888,11 +1887,6 @@ ${prepared.truncated
 
             return;
         }
-
-        const button =
-            document.getElementById(
-                "unimind-summarize-button"
-            );
 
         const result =
             document.getElementById(
@@ -2066,10 +2060,6 @@ ${prepared.truncated
             return;
         }
 
-        /*
-         * innerText يأخذ الملخص الظاهر فقط،
-         * وليس رسالة الواجهة أو اسم الملف.
-         */
         const text =
             content.innerText ||
             content.textContent ||
@@ -2158,6 +2148,1362 @@ ${prepared.truncated
             alert(
                 "تعذر نسخ الملخص."
             );
+        }
+    }
+
+
+    // =========================================================
+    // SMART QUIZ
+    // =========================================================
+
+    function createQuizModal() {
+
+        let modal =
+            document.getElementById(
+                "unimind-quiz-modal"
+            );
+
+        if (modal) {
+            return modal;
+        }
+
+        modal =
+            document.createElement("div");
+
+        modal.id =
+            "unimind-quiz-modal";
+
+        modal.innerHTML = `
+
+            <div class="unimind-quiz-overlay"></div>
+
+            <div
+                class="unimind-quiz-window"
+                role="dialog"
+                aria-modal="true"
+                aria-label="الاختبارات الذكية"
+            >
+
+                <div class="unimind-quiz-header">
+
+                    <div>
+
+                        <div class="unimind-quiz-title">
+                            🧠 الاختبارات الذكية
+                        </div>
+
+                        <div class="unimind-quiz-subtitle">
+                            اختبر معلوماتك باستخدام UniMind AI
+                        </div>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        id="unimind-quiz-close"
+                        class="unimind-quiz-close"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+                <div
+                    id="unimind-quiz-content"
+                    class="unimind-quiz-content"
+                >
+
+                    <div class="unimind-quiz-start">
+
+                        <div class="unimind-quiz-icon">
+                            🧠
+                        </div>
+
+                        <h2>
+                            أنشئ اختبارك الذكي
+                        </h2>
+
+                        <p>
+                            اكتب موضوعًا دراسيًا أو الصق
+                            جزءًا من محاضرتك، وسيقوم UniMind AI
+                            بإنشاء اختبار لك.
+                        </p>
+
+                        <label
+                            for="unimind-quiz-topic"
+                            class="unimind-quiz-label"
+                        >
+                            موضوع الاختبار أو محتوى المحاضرة
+                        </label>
+
+                        <textarea
+                            id="unimind-quiz-topic"
+                            class="unimind-quiz-textarea"
+                            rows="7"
+                            placeholder="مثال: اشرح لي أساسيات أمن المعلومات، أو الصق هنا نص المحاضرة..."
+                        ></textarea>
+
+                        <div class="unimind-quiz-options">
+
+                            <label
+                                for="unimind-quiz-count"
+                                class="unimind-quiz-label"
+                            >
+                                عدد الأسئلة
+                            </label>
+
+                            <select
+                                id="unimind-quiz-count"
+                                class="unimind-quiz-select"
+                            >
+
+                                <option value="5">
+                                    5 أسئلة
+                                </option>
+
+                                <option value="10">
+                                    10 أسئلة
+                                </option>
+
+                                <option value="15">
+                                    15 سؤالًا
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        <button
+                            type="button"
+                            id="unimind-generate-quiz"
+                            class="unimind-quiz-primary"
+                        >
+                            ✨ إنشاء الاختبار
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+        `;
+
+        document.body.appendChild(
+            modal
+        );
+
+        initializeQuizModal();
+
+        return modal;
+    }
+
+
+    function initializeQuizModal() {
+
+        const modal =
+            document.getElementById(
+                "unimind-quiz-modal"
+            );
+
+        if (!modal) {
+            return;
+        }
+
+        const close =
+            document.getElementById(
+                "unimind-quiz-close"
+            );
+
+        const overlay =
+            modal.querySelector(
+                ".unimind-quiz-overlay"
+            );
+
+        const generate =
+            document.getElementById(
+                "unimind-generate-quiz"
+            );
+
+        if (close) {
+            close.onclick =
+                closeQuizModal;
+        }
+
+        if (overlay) {
+            overlay.onclick =
+                closeQuizModal;
+        }
+
+        if (generate) {
+            generate.onclick =
+                generateQuiz;
+        }
+    }
+
+
+    function openQuizModal() {
+
+        const modal =
+            createQuizModal();
+
+        savedScrollY =
+            window.scrollY;
+
+        modal.classList.add(
+            "active"
+        );
+
+        document.body.style.top =
+            `-${savedScrollY}px`;
+
+        const topic =
+            document.getElementById(
+                "unimind-quiz-topic"
+            );
+
+        if (topic) {
+
+            setTimeout(
+                function () {
+                    topic.focus();
+                },
+                150
+            );
+        }
+    }
+
+
+    function closeQuizModal() {
+
+        const modal =
+            document.getElementById(
+                "unimind-quiz-modal"
+            );
+
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.remove(
+            "active"
+        );
+
+        document.body.style.top =
+            "";
+
+        window.scrollTo(
+            0,
+            savedScrollY
+        );
+    }
+
+
+    function cleanAIJSON(text) {
+
+        let cleaned =
+            String(text || "")
+                .trim();
+
+        cleaned =
+            cleaned.replace(
+                /^```json\s*/i,
+                ""
+            );
+
+        cleaned =
+            cleaned.replace(
+                /^```\s*/i,
+                ""
+            );
+
+        cleaned =
+            cleaned.replace(
+                /\s*```$/i,
+                ""
+            );
+
+        const firstBrace =
+            cleaned.indexOf("{");
+
+        const lastBrace =
+            cleaned.lastIndexOf("}");
+
+        if (
+            firstBrace !== -1 &&
+            lastBrace !== -1 &&
+            lastBrace > firstBrace
+        ) {
+
+            cleaned =
+                cleaned.slice(
+                    firstBrace,
+                    lastBrace + 1
+                );
+        }
+
+        return cleaned.trim();
+    }
+
+
+    function normalizeQuizData(data) {
+
+        let questions = [];
+
+        if (
+            data &&
+            Array.isArray(
+                data.questions
+            )
+        ) {
+
+            questions =
+                data.questions;
+        }
+
+        if (!questions.length) {
+            return [];
+        }
+
+        return questions
+            .map(function (question) {
+
+                const options =
+                    Array.isArray(
+                        question.options
+                    )
+                        ? question.options
+                        : [];
+
+                let correct =
+                    question.correct;
+
+                if (
+                    typeof correct ===
+                    "string"
+                ) {
+
+                    const letter =
+                        correct
+                            .trim()
+                            .toUpperCase();
+
+                    const letters = [
+                        "A",
+                        "B",
+                        "C",
+                        "D"
+                    ];
+
+                    if (
+                        letters.includes(
+                            letter
+                        )
+                    ) {
+
+                        correct =
+                            letters.indexOf(
+                                letter
+                            );
+                    } else {
+
+                        const number =
+                            parseInt(
+                                correct,
+                                10
+                            );
+
+                        if (
+                            !Number.isNaN(
+                                number
+                            )
+                        ) {
+
+                            correct =
+                                number > 0
+                                    ? number - 1
+                                    : number;
+                            }
+                        }
+                    }
+                }
+
+                correct =
+                    Number(correct);
+
+                return {
+
+                    question:
+                        String(
+                            question.question ||
+                            question.text ||
+                            ""
+                        ).trim(),
+
+                    options:
+                        options
+                            .map(function (option) {
+
+                                return String(
+                                    option
+                                ).trim();
+
+                            })
+                            .filter(Boolean),
+
+                    correct:
+                        correct,
+
+                    explanation:
+                        String(
+                            question.explanation ||
+                            ""
+                        ).trim()
+                };
+
+            })
+            .filter(function (question) {
+
+                return (
+                    question.question &&
+                    question.options.length >= 2 &&
+                    Number.isInteger(
+                        question.correct
+                    ) &&
+                    question.correct >= 0 &&
+                    question.correct <
+                        question.options.length
+                );
+            });
+    }
+
+
+    async function requestQuizFromAI(
+        topic,
+        count
+    ) {
+
+        const prepared =
+            prepareTextForAI(
+                topic
+            );
+
+        const prompt = `
+
+أنت مساعد أكاديمي متخصص في إعداد الاختبارات الجامعية.
+
+أنشئ اختبارًا باللغة العربية اعتمادًا فقط على المحتوى الذي سأرسله لك.
+
+عدد الأسئلة المطلوب:
+${count}
+
+قواعد مهمة جدًا:
+
+1. جميع الأسئلة يجب أن تكون اختيارًا من متعدد.
+2. كل سؤال يحتوي على 4 خيارات إن أمكن.
+3. يجب أن يكون هناك جواب صحيح واحد فقط.
+4. لا تخترع معلومات غير موجودة في المحتوى.
+5. اجعل مستوى الأسئلة مناسبًا لطالب جامعي.
+6. نوّع الأسئلة بين التعريف والفهم والتطبيق والمفاهيم.
+7. أعد النتيجة بصيغة JSON فقط.
+8. لا تضع أي كلام قبل JSON أو بعده.
+9. استخدم هذا الشكل بالضبط:
+
+{
+  "questions": [
+    {
+      "question": "نص السؤال",
+      "options": [
+        "الخيار الأول",
+        "الخيار الثاني",
+        "الخيار الثالث",
+        "الخيار الرابع"
+      ],
+      "correct": 0,
+      "explanation": "شرح مختصر للإجابة الصحيحة"
+    }
+  ]
+}
+
+مهم:
+correct يبدأ من 0.
+إذا كانت الإجابة الصحيحة هي الخيار الأول استخدم 0.
+الثاني 1.
+الثالث 2.
+الرابع 3.
+
+المحتوى الدراسي:
+
+${prepared.text}
+
+أعد JSON فقط.
+`;
+
+        console.log(
+            "UniMind: generating smart quiz...",
+            {
+                characters:
+                    prepared.text.length,
+                questions:
+                    count
+            }
+        );
+
+        const response =
+            await fetch(
+                API_URL,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+
+                        "Accept":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            message:
+                                prompt
+                        })
+                }
+            );
+
+        const rawText =
+            await response.text();
+
+        console.log(
+            "UniMind quiz API status:",
+            response.status
+        );
+
+        console.log(
+            "UniMind quiz API response:",
+            rawText
+        );
+
+        let data = {};
+
+        try {
+
+            data =
+                rawText
+                    ? JSON.parse(rawText)
+                    : {};
+
+        } catch (error) {
+
+            throw new Error(
+                "الخادم أعاد استجابة غير صالحة."
+            );
+        }
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                data.message ||
+                data.error_description ||
+                rawText ||
+                "فشل إنشاء الاختبار."
+            );
+        }
+
+        const reply =
+            data.reply ||
+            data.message ||
+            data.response ||
+            data.answer ||
+            data.content ||
+            "";
+
+        if (!String(reply).trim()) {
+
+            throw new Error(
+                "لم يتم إنشاء أسئلة الاختبار."
+            );
+        }
+
+        const cleaned =
+            cleanAIJSON(
+                reply
+            );
+
+        let quizData;
+
+        try {
+
+            quizData =
+                JSON.parse(
+                    cleaned
+                );
+
+        } catch (error) {
+
+            console.error(
+                "Quiz JSON parsing error:",
+                error
+            );
+
+            throw new Error(
+                "تم إنشاء الاختبار لكن تنسيق الأسئلة غير صالح. حاول مرة أخرى."
+            );
+        }
+
+        const questions =
+            normalizeQuizData(
+                quizData
+            );
+
+        if (!questions.length) {
+
+            throw new Error(
+                "لم يتم العثور على أسئلة صالحة في الاستجابة."
+            );
+        }
+
+        return questions;
+    }
+
+
+    async function generateQuiz() {
+
+        const topic =
+            document.getElementById(
+                "unimind-quiz-topic"
+            );
+
+        const countSelect =
+            document.getElementById(
+                "unimind-quiz-count"
+            );
+
+        const generateButton =
+            document.getElementById(
+                "unimind-generate-quiz"
+            );
+
+        if (
+            !topic ||
+            !countSelect
+        ) {
+            return;
+        }
+
+        const text =
+            topic.value.trim();
+
+        if (!text) {
+
+            alert(
+                "اكتب موضوعًا أو الصق محتوى المحاضرة أولًا."
+            );
+
+            topic.focus();
+
+            return;
+        }
+
+        const count =
+            parseInt(
+                countSelect.value,
+                10
+            ) || 5;
+
+        if (generateButton) {
+
+            generateButton.disabled =
+                true;
+
+            generateButton.textContent =
+                "⏳ جاري إنشاء الاختبار...";
+        }
+
+        const content =
+            document.getElementById(
+                "unimind-quiz-content"
+            );
+
+        if (content) {
+
+            content.innerHTML = `
+
+                <div class="unimind-quiz-loading">
+
+                    <div class="unimind-quiz-icon">
+                        🧠
+                    </div>
+
+                    <h2>
+                        جاري إنشاء الاختبار...
+                    </h2>
+
+                    <p>
+                        UniMind AI يقوم بتحليل المحتوى
+                        وإنشاء أسئلة مناسبة لك.
+                    </p>
+
+                    <div class="unimind-quiz-loading-bar">
+                        <span></span>
+                    </div>
+
+                </div>
+            `;
+        }
+
+        try {
+
+            quizSourceText =
+                text;
+
+            quizQuestions =
+                await requestQuizFromAI(
+                    text,
+                    count
+                );
+
+            currentQuizIndex =
+                0;
+
+            quizScore =
+                0;
+
+            quizAnswered =
+                false;
+
+            renderQuizQuestion();
+
+        } catch (error) {
+
+            console.error(
+                "UniMind Smart Quiz Error:",
+                error
+            );
+
+            if (content) {
+
+                content.innerHTML = `
+
+                    <div class="unimind-quiz-error">
+
+                        <div class="unimind-quiz-icon">
+                            ⚠️
+                        </div>
+
+                        <h2>
+                            تعذر إنشاء الاختبار
+                        </h2>
+
+                        <p>
+                            ${escapeHTML(
+                                error.message ||
+                                "حدث خطأ غير متوقع."
+                            )}
+                        </p>
+
+                        <button
+                            type="button"
+                            class="unimind-quiz-primary"
+                            id="unimind-quiz-retry"
+                        >
+                            🔄 المحاولة مرة أخرى
+                        </button>
+
+                    </div>
+                `;
+
+                const retry =
+                    document.getElementById(
+                        "unimind-quiz-retry"
+                    );
+
+                if (retry) {
+
+                    retry.onclick =
+                        function () {
+
+                            renderQuizStart();
+                        };
+                }
+            }
+
+        }
+    }
+
+
+    function renderQuizStart() {
+
+        const content =
+            document.getElementById(
+                "unimind-quiz-content"
+            );
+
+        if (!content) {
+            return;
+        }
+
+        content.innerHTML = `
+
+            <div class="unimind-quiz-start">
+
+                <div class="unimind-quiz-icon">
+                    🧠
+                </div>
+
+                <h2>
+                    أنشئ اختبارك الذكي
+                </h2>
+
+                <p>
+                    اكتب موضوعًا دراسيًا أو الصق
+                    جزءًا من محاضرتك، وسيقوم UniMind AI
+                    بإنشاء اختبار لك.
+                </p>
+
+                <label
+                    for="unimind-quiz-topic"
+                    class="unimind-quiz-label"
+                >
+                    موضوع الاختبار أو محتوى المحاضرة
+                </label>
+
+                <textarea
+                    id="unimind-quiz-topic"
+                    class="unimind-quiz-textarea"
+                    rows="7"
+                    placeholder="مثال: اشرح لي أساسيات أمن المعلومات، أو الصق هنا نص المحاضرة..."
+                >${escapeHTML(
+                    quizSourceText
+                )}</textarea>
+
+                <div class="unimind-quiz-options">
+
+                    <label
+                        for="unimind-quiz-count"
+                        class="unimind-quiz-label"
+                    >
+                        عدد الأسئلة
+                    </label>
+
+                    <select
+                        id="unimind-quiz-count"
+                        class="unimind-quiz-select"
+                    >
+
+                        <option value="5">
+                            5 أسئلة
+                        </option>
+
+                        <option value="10">
+                            10 أسئلة
+                        </option>
+
+                        <option value="15">
+                            15 سؤالًا
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <button
+                    type="button"
+                    id="unimind-generate-quiz"
+                    class="unimind-quiz-primary"
+                >
+                    ✨ إنشاء الاختبار
+                </button>
+
+            </div>
+        `;
+
+        const generate =
+            document.getElementById(
+                "unimind-generate-quiz"
+            );
+
+        if (generate) {
+
+            generate.onclick =
+                generateQuiz;
+        }
+    }
+
+
+    function renderQuizQuestion() {
+
+        const content =
+            document.getElementById(
+                "unimind-quiz-content"
+            );
+
+        if (!content) {
+            return;
+        }
+
+        const question =
+            quizQuestions[
+                currentQuizIndex
+            ];
+
+        if (!question) {
+
+            renderQuizResult();
+
+            return;
+        }
+
+        quizAnswered =
+            false;
+
+        const total =
+            quizQuestions.length;
+
+        const questionNumber =
+            currentQuizIndex + 1;
+
+        const progress =
+            Math.round(
+                (
+                    questionNumber /
+                    total
+                ) *
+                100
+            );
+
+        const optionsHTML =
+            question.options
+                .map(
+                    function (
+                        option,
+                        index
+                    ) {
+
+                        return `
+
+                            <button
+                                type="button"
+                                class="unimind-quiz-option"
+                                data-index="${index}"
+                            >
+
+                                <span
+                                    class="unimind-quiz-option-letter"
+                                >
+                                    ${String.fromCharCode(
+                                        65 + index
+                                    )}
+                                </span>
+
+                                <span>
+                                    ${escapeHTML(
+                                        option
+                                    )}
+                                </span>
+
+                            </button>
+                        `;
+                    }
+                )
+                .join("");
+
+        content.innerHTML = `
+
+            <div class="unimind-quiz-progress">
+
+                <div class="unimind-quiz-progress-top">
+
+                    <span>
+                        السؤال ${questionNumber}
+                        من ${total}
+                    </span>
+
+                    <span>
+                        ${progress}%
+                    </span>
+
+                </div>
+
+                <div class="unimind-quiz-progress-track">
+
+                    <div
+                        class="unimind-quiz-progress-value"
+                        style="width:${progress}%"
+                    ></div>
+
+                </div>
+
+            </div>
+
+            <div class="unimind-quiz-question-card">
+
+                <div class="unimind-quiz-question-number">
+                    سؤال ${questionNumber}
+                </div>
+
+                <h2>
+                    ${escapeHTML(
+                        question.question
+                    )}
+                </h2>
+
+                <div
+                    class="unimind-quiz-options-list"
+                    id="unimind-quiz-options-list"
+                >
+                    ${optionsHTML}
+                </div>
+
+                <div
+                    id="unimind-quiz-feedback"
+                    class="unimind-quiz-feedback"
+                    style="display:none;"
+                ></div>
+
+                <button
+                    type="button"
+                    id="unimind-quiz-next"
+                    class="unimind-quiz-primary"
+                    style="display:none;"
+                >
+                    ${questionNumber === total
+                        ? "عرض النتيجة 🏆"
+                        : "السؤال التالي →"}
+                </button>
+
+            </div>
+        `;
+
+        document
+            .querySelectorAll(
+                "#unimind-quiz-options-list .unimind-quiz-option"
+            )
+            .forEach(
+                function (button) {
+
+                    button.onclick =
+                        function () {
+
+                            const index =
+                                parseInt(
+                                    button.dataset.index,
+                                    10
+                                );
+
+                            answerQuiz(
+                                index
+                            );
+                        };
+                }
+            );
+
+        const next =
+            document.getElementById(
+                "unimind-quiz-next"
+            );
+
+        if (next) {
+
+            next.onclick =
+                function () {
+
+                    currentQuizIndex++;
+
+                    if (
+                        currentQuizIndex >=
+                        quizQuestions.length
+                    ) {
+
+                        renderQuizResult();
+
+                    } else {
+
+                        renderQuizQuestion();
+                    }
+                };
+        }
+    }
+
+
+    function answerQuiz(
+        selectedIndex
+    ) {
+
+        if (quizAnswered) {
+            return;
+        }
+
+        quizAnswered =
+            true;
+
+        const question =
+            quizQuestions[
+                currentQuizIndex
+            ];
+
+        if (!question) {
+            return;
+        }
+
+        const buttons =
+            document.querySelectorAll(
+                "#unimind-quiz-options-list .unimind-quiz-option"
+            );
+
+        buttons.forEach(
+            function (button) {
+
+                button.disabled =
+                    true;
+
+                const index =
+                    parseInt(
+                        button.dataset.index,
+                        10
+                    );
+
+                if (
+                    index ===
+                    question.correct
+                ) {
+
+                    button.classList.add(
+                        "correct"
+                    );
+                }
+
+                if (
+                    index ===
+                    selectedIndex &&
+                    selectedIndex !==
+                    question.correct
+                ) {
+
+                    button.classList.add(
+                        "wrong"
+                    );
+                }
+            }
+        );
+
+        const feedback =
+            document.getElementById(
+                "unimind-quiz-feedback"
+            );
+
+        const isCorrect =
+            selectedIndex ===
+            question.correct;
+
+        if (isCorrect) {
+
+            quizScore++;
+
+            if (feedback) {
+
+                feedback.className =
+                    "unimind-quiz-feedback correct";
+
+                feedback.innerHTML = `
+                    <strong>
+                        ✅ إجابة صحيحة!
+                    </strong>
+                    ${
+                        question.explanation
+                            ? "<br>" +
+                              escapeHTML(
+                                  question.explanation
+                              )
+                            : ""
+                    }
+                `;
+
+                feedback.style.display =
+                    "block";
+            }
+
+        } else {
+
+            if (feedback) {
+
+                feedback.className =
+                    "unimind-quiz-feedback wrong";
+
+                feedback.innerHTML = `
+                    <strong>
+                        ❌ إجابة غير صحيحة
+                    </strong>
+
+                    <br>
+
+                    الإجابة الصحيحة:
+                    ${escapeHTML(
+                        question.options[
+                            question.correct
+                        ]
+                    )}
+
+                    ${
+                        question.explanation
+                            ? "<br><br>" +
+                              escapeHTML(
+                                  question.explanation
+                              )
+                            : ""
+                    }
+                `;
+
+                feedback.style.display =
+                    "block";
+            }
+        }
+
+        const next =
+            document.getElementById(
+                "unimind-quiz-next"
+            );
+
+        if (next) {
+
+            next.style.display =
+                "block";
+        }
+    }
+
+
+    function renderQuizResult() {
+
+        const content =
+            document.getElementById(
+                "unimind-quiz-content"
+            );
+
+        if (!content) {
+            return;
+        }
+
+        const total =
+            quizQuestions.length;
+
+        const percentage =
+            total
+                ? Math.round(
+                    (
+                        quizScore /
+                        total
+                    ) *
+                    100
+                )
+                : 0;
+
+        let message =
+            "يمكنك المحاولة مرة أخرى لتحسين نتيجتك.";
+
+        if (percentage >= 90) {
+
+            message =
+                "ممتاز جدًا! لديك فهم قوي للمحتوى. 🌟";
+
+        } else if (
+            percentage >= 75
+        ) {
+
+            message =
+                "أداء رائع! استمر في المراجعة. 👏";
+
+        } else if (
+            percentage >= 50
+        ) {
+
+            message =
+                "نتيجة جيدة، لكن هناك بعض النقاط التي تحتاج إلى مراجعة. 📚";
+
+        }
+
+        content.innerHTML = `
+
+            <div class="unimind-quiz-result">
+
+                <div class="unimind-quiz-result-icon">
+                    🏆
+                </div>
+
+                <h2>
+                    انتهى الاختبار!
+                </h2>
+
+                <div class="unimind-quiz-score">
+                    ${quizScore}
+                    <span>
+                        /
+                        ${total}
+                    </span>
+                </div>
+
+                <div class="unimind-quiz-percentage">
+                    ${percentage}%
+                </div>
+
+                <p>
+                    ${message}
+                </p>
+
+                <div class="unimind-quiz-result-actions">
+
+                    <button
+                        type="button"
+                        id="unimind-quiz-retry"
+                        class="unimind-quiz-primary"
+                    >
+                        🔄 إعادة الاختبار
+                    </button>
+
+                    <button
+                        type="button"
+                        id="unimind-quiz-new"
+                        class="unimind-quiz-secondary"
+                    >
+                        🧠 اختبار جديد
+                    </button>
+
+                </div>
+
+            </div>
+        `;
+
+        const retry =
+            document.getElementById(
+                "unimind-quiz-retry"
+            );
+
+        const newQuiz =
+            document.getElementById(
+                "unimind-quiz-new"
+            );
+
+        if (retry) {
+
+            retry.onclick =
+                function () {
+
+                    currentQuizIndex =
+                        0;
+
+                    quizScore =
+                        0;
+
+                    quizAnswered =
+                        false;
+
+                    renderQuizQuestion();
+                };
+        }
+
+        if (newQuiz) {
+
+            newQuiz.onclick =
+                renderQuizStart;
         }
     }
 
@@ -2260,6 +3606,10 @@ ${prepared.truncated
                 };
         }
 
+        // =====================================================
+        // SMART QUIZ
+        // =====================================================
+
         const quizButton =
             document.getElementById(
                 "quizButton"
@@ -2268,13 +3618,22 @@ ${prepared.truncated
         if (quizButton) {
 
             quizButton.onclick =
-                function () {
+                function (event) {
 
-                    alert(
-                        "ميزة الاختبارات الذكية ستكون متاحة قريبًا."
+                    event.preventDefault();
+
+                    console.log(
+                        "UniMind: Smart Quiz clicked"
                     );
+
+                    openQuizModal();
                 };
         }
+
+
+        // =====================================================
+        // FUTURE FEATURES
+        // =====================================================
 
         const flashcardsButton =
             document.getElementById(
@@ -2323,6 +3682,7 @@ ${prepared.truncated
                     );
                 };
         }
+
 
         document
             .querySelectorAll(
@@ -2478,6 +3838,11 @@ ${prepared.truncated
                         "unimind-lecture-modal"
                     );
 
+                const quiz =
+                    document.getElementById(
+                        "unimind-quiz-modal"
+                    );
+
                 if (
                     chat &&
                     chat.classList.contains(
@@ -2498,6 +3863,18 @@ ${prepared.truncated
                 ) {
 
                     closeLectureModal();
+
+                    return;
+                }
+
+                if (
+                    quiz &&
+                    quiz.classList.contains(
+                        "active"
+                    )
+                ) {
+
+                    closeQuizModal();
                 }
             }
         );
@@ -2520,6 +3897,9 @@ ${prepared.truncated
     window.closeLectureSummarizer =
         closeLectureModal;
 
+    window.openUniMindQuiz =
+        openQuizModal;
+
 
     // =========================================================
     // START
@@ -2528,7 +3908,7 @@ ${prepared.truncated
     function startUniMind() {
 
         console.log(
-            "UniMind AI v31 loading..."
+            "UniMind AI v32 loading..."
         );
 
         setupButtons();
@@ -2544,7 +3924,7 @@ ${prepared.truncated
         setupKeyboard();
 
         console.log(
-            "UniMind AI v31 initialized successfully."
+            "UniMind AI v32 initialized successfully."
         );
     }
 
