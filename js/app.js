@@ -4,8 +4,8 @@
 
     // =========================================================
     // UniMind AI
-    // Main JavaScript v32
-    // Smart Quiz Edition
+    // Main JavaScript v33
+    // Smart Quiz Fixed Edition
     // =========================================================
 
     const API_URL =
@@ -2346,6 +2346,10 @@ ${prepared.truncated
         const modal =
             createQuizModal();
 
+        if (!modal) {
+            return;
+        }
+
         savedScrollY =
             window.scrollY;
 
@@ -2370,6 +2374,10 @@ ${prepared.truncated
                 150
             );
         }
+
+        console.log(
+            "UniMind: Smart Quiz modal opened"
+        );
     }
 
 
@@ -2445,6 +2453,10 @@ ${prepared.truncated
     }
 
 
+    // =========================================================
+    // FIXED QUIZ NORMALIZATION
+    // =========================================================
+
     function normalizeQuizData(data) {
 
         let questions = [];
@@ -2504,6 +2516,7 @@ ${prepared.truncated
                             letters.indexOf(
                                 letter
                             );
+
                     } else {
 
                         const number =
@@ -2522,7 +2535,6 @@ ${prepared.truncated
                                 number > 0
                                     ? number - 1
                                     : number;
-                            }
                         }
                     }
                 }
@@ -2927,7 +2939,6 @@ ${prepared.text}
                         };
                 }
             }
-
         }
     }
 
@@ -3606,6 +3617,7 @@ ${prepared.text}
                 };
         }
 
+
         // =====================================================
         // SMART QUIZ
         // =====================================================
@@ -3908,7 +3920,7 @@ ${prepared.text}
     function startUniMind() {
 
         console.log(
-            "UniMind AI v32 loading..."
+            "UniMind AI v33 loading..."
         );
 
         setupButtons();
@@ -3924,7 +3936,7 @@ ${prepared.text}
         setupKeyboard();
 
         console.log(
-            "UniMind AI v32 initialized successfully."
+            "UniMind AI v33 initialized successfully."
         );
     }
 
