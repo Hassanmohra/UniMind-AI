@@ -2747,4 +2747,448 @@ button,
     .step p {
         line-height: 2;
     }
+   /* =========================================================
+   UniMind AI - Smart Quiz
+   ========================================================= */
+
+#unimind-quiz-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: none;
+    font-family: "Cairo", sans-serif;
+}
+
+#unimind-quiz-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.unimind-quiz-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(5px);
+}
+
+.unimind-quiz-window {
+    position: relative;
+    width: min(720px, calc(100% - 30px));
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
+    z-index: 2;
+    direction: rtl;
+    animation: unimindQuizOpen 0.25s ease;
+}
+
+@keyframes unimindQuizOpen {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.unimind-quiz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 22px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.unimind-quiz-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.unimind-quiz-subtitle {
+    margin-top: 5px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.unimind-quiz-close {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 12px;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.unimind-quiz-close:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.unimind-quiz-content {
+    padding: 28px;
+}
+
+.unimind-quiz-start {
+    text-align: center;
+}
+
+.unimind-quiz-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    background: #eef2ff;
+    font-size: 36px;
+}
+
+.unimind-quiz-start h2,
+.unimind-quiz-error h2,
+.unimind-quiz-loading h2,
+.unimind-quiz-result h2 {
+    margin: 0 0 10px;
+    color: #111827;
+}
+
+.unimind-quiz-start p,
+.unimind-quiz-loading p,
+.unimind-quiz-error p,
+.unimind-quiz-result p {
+    color: #6b7280;
+    line-height: 1.8;
+}
+
+.unimind-quiz-label {
+    display: block;
+    margin: 20px 0 8px;
+    text-align: right;
+    font-weight: 700;
+    color: #374151;
+}
+
+.unimind-quiz-textarea,
+.unimind-quiz-select {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #111827;
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.unimind-quiz-textarea {
+    min-height: 160px;
+    padding: 15px;
+    resize: vertical;
+    line-height: 1.8;
+}
+
+.unimind-quiz-select {
+    padding: 13px 15px;
+}
+
+.unimind-quiz-textarea:focus,
+.unimind-quiz-select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.unimind-quiz-options {
+    text-align: right;
+}
+
+.unimind-quiz-primary,
+.unimind-quiz-secondary {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.unimind-quiz-primary {
+    background: #4f46e5;
+    color: white;
+}
+
+.unimind-quiz-primary:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+}
+
+.unimind-quiz-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.unimind-quiz-secondary {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.unimind-quiz-secondary:hover {
+    background: #e5e7eb;
+}
+
+/* Progress */
+
+.unimind-quiz-progress {
+    margin-bottom: 24px;
+}
+
+.unimind-quiz-progress-top {
+    display: flex;
+    justify-content: space-between;
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.unimind-quiz-progress-track {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.unimind-quiz-progress-value {
+    height: 100%;
+    background: #4f46e5;
+    border-radius: 20px;
+    transition: width 0.3s ease;
+}
+
+/* Question */
+
+.unimind-quiz-question-card {
+    padding: 22px;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    background: #fafafa;
+}
+
+.unimind-quiz-question-number {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 10px;
+    background: #eef2ff;
+    color: #4f46e5;
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 14px;
+}
+
+.unimind-quiz-question-card h2 {
+    margin: 0 0 22px;
+    color: #111827;
+    font-size: 20px;
+    line-height: 1.8;
+}
+
+.unimind-quiz-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.unimind-quiz-option {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    border: 2px solid #e5e7eb;
+    border-radius: 14px;
+    background: white;
+    color: #374151;
+    font-family: inherit;
+    font-size: 15px;
+    text-align: right;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.unimind-quiz-option:hover:not(:disabled) {
+    border-color: #6366f1;
+    background: #f5f3ff;
+}
+
+.unimind-quiz-option:disabled {
+    cursor: default;
+}
+
+.unimind-quiz-option-letter {
+    min-width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #f3f4f6;
+    font-weight: 800;
+}
+
+.unimind-quiz-option.correct {
+    border-color: #16a34a;
+    background: #f0fdf4;
+}
+
+.unimind-quiz-option.correct
+.unimind-quiz-option-letter {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.unimind-quiz-option.wrong {
+    border-color: #dc2626;
+    background: #fef2f2;
+}
+
+.unimind-quiz-feedback {
+    margin-top: 18px;
+    padding: 15px;
+    border-radius: 14px;
+    line-height: 1.8;
+}
+
+.unimind-quiz-feedback.correct {
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.unimind-quiz-feedback.wrong {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+/* Loading */
+
+.unimind-quiz-loading,
+.unimind-quiz-error,
+.unimind-quiz-result {
+    text-align: center;
+    padding: 20px 5px;
+}
+
+.unimind-quiz-loading-bar {
+    height: 7px;
+    margin: 25px auto 0;
+    max-width: 400px;
+    overflow: hidden;
+    border-radius: 20px;
+    background: #e5e7eb;
+}
+
+.unimind-quiz-loading-bar span {
+    display: block;
+    width: 40%;
+    height: 100%;
+    background: #4f46e5;
+    border-radius: 20px;
+    animation: quizLoading 1.3s infinite ease-in-out;
+}
+
+@keyframes quizLoading {
+    0% {
+        transform: translateX(250%);
+    }
+
+    100% {
+        transform: translateX(-250%);
+    }
+}
+
+/* Result */
+
+.unimind-quiz-result-icon {
+    font-size: 60px;
+    margin-bottom: 10px;
+}
+
+.unimind-quiz-score {
+    margin: 20px 0 5px;
+    font-size: 56px;
+    font-weight: 900;
+    color: #4f46e5;
+}
+
+.unimind-quiz-score span {
+    font-size: 28px;
+    color: #9ca3af;
+}
+
+.unimind-quiz-percentage {
+    font-size: 24px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.unimind-quiz-result-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.unimind-quiz-result-actions button {
+    margin-top: 0;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+    .unimind-quiz-window {
+        width: calc(100% - 16px);
+        max-height: 94vh;
+        border-radius: 18px;
+    }
+
+    .unimind-quiz-header {
+        padding: 16px;
+    }
+
+    .unimind-quiz-content {
+        padding: 18px;
+    }
+
+    .unimind-quiz-title {
+        font-size: 18px;
+    }
+
+    .unimind-quiz-question-card {
+        padding: 16px;
+    }
+
+    .unimind-quiz-question-card h2 {
+        font-size: 17px;
+    }
+
+    .unimind-quiz-result-actions {
+        flex-direction: column;
+    }
+}
 }
