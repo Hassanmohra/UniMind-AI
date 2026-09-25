@@ -1,75 +1,179 @@
-```javascript
 (function () {
+
     "use strict";
+
 
     // =========================================================
     // UniMind AI
-    // Main JavaScript
+    // Main JavaScript v30
     // =========================================================
+
 
     const API_URL =
         "https://yzsfublvnwknjnayfosm.supabase.co/functions/v1/unimind-chat";
+
 
     let savedScrollY = 0;
     let selectedLectureFile = null;
 
 
     // =========================================================
-    // CHAT
+    // UTILITIES
     // =========================================================
 
-    function createChatModal() {
 
-        let existing =
-            document.getElementById("unimind-chat-modal");
+    function escapeHTML(value) {
 
-        if (existing) {
+        const div =
+            document.createElement("div");
 
-            if (
-                !existing.querySelector(
-                    ".unimind-chat-window"
-                )
-            ) {
-                buildChatModal(existing);
-            }
+        div.textContent =
+            String(value ?? "");
 
+        return div.innerHTML;
+    }
+
+
+    function formatMessage(text) {
+
+        let result =
+            escapeHTML(text);
+
+
+        result =
+            result.replace(
+                /\*\*(.*?)\*\*/g,
+                "<strong>$1</strong>"
+            );
+
+
+        result =
+            result.replace(
+                /\n/g,
+                "<br>"
+            );
+
+
+        return result;
+    }
+
+
+    function scrollChatToBottom() {
+
+        const messages =
+            document.getElementById(
+                "unimind-chat-messages"
+            );
+
+
+        if (!messages) {
             return;
         }
 
-        const modal =
-            document.createElement("div");
 
-        modal.id =
-            "unimind-chat-modal";
+        messages.scrollTop =
+            messages.scrollHeight;
+    }
 
-        buildChatModal(modal);
 
-        document.body.appendChild(modal);
+    function formatFileSize(bytes) {
+
+        if (!bytes) {
+            return "0 Bytes";
+        }
+
+
+        const units = [
+            "Bytes",
+            "KB",
+            "MB",
+            "GB"
+        ];
+
+
+        const index =
+            Math.floor(
+                Math.log(bytes) /
+                Math.log(1024)
+            );
+
+
+        return (
+            parseFloat(
+                (
+                    bytes /
+                    Math.pow(
+                        1024,
+                        index
+                    )
+                ).toFixed(2)
+            ) +
+            " " +
+            units[index]
+        );
+    }
+
+
+    // =========================================================
+    // CHAT MODAL
+    // =========================================================
+
+
+    function createChatModal() {
+
+        let modal =
+            document.getElementById(
+                "unimind-chat-modal"
+            );
+
+
+        if (!modal) {
+
+            modal =
+                document.createElement("div");
+
+            modal.id =
+                "unimind-chat-modal";
+
+            document.body.appendChild(
+                modal
+            );
+        }
+
+
+        if (
+            !modal.querySelector(
+                ".unimind-chat-window"
+            )
+        ) {
+
+            buildChatModal(modal);
+        }
+
+
+        return modal;
     }
 
 
     function buildChatModal(modal) {
 
-        if (
-            modal.querySelector(
-                ".unimind-chat-window"
-            )
-        ) {
-            return;
-        }
-
         modal.innerHTML = `
 
             <div class="unimind-chat-overlay"></div>
 
-            <div class="unimind-chat-window">
+            <div
+                class="unimind-chat-window"
+                role="dialog"
+                aria-modal="true"
+                aria-label="مساعد الدراسة الذكي"
+            >
 
                 <div class="unimind-chat-header">
 
                     <div class="unimind-chat-brand">
 
                         <div class="unimind-chat-logo">
-                            ✨
+                            🧠
                         </div>
 
                         <div>
@@ -86,17 +190,14 @@
 
                     </div>
 
-                    <div class="unimind-chat-actions">
 
-                        <button
-                            type="button"
-                            id="unimind-chat-close"
-                            aria-label="إغلاق"
-                        >
-                            ×
-                        </button>
-
-                    </div>
+                    <button
+                        type="button"
+                        id="unimind-chat-close"
+                        aria-label="إغلاق"
+                    >
+                        ×
+                    </button>
 
                 </div>
 
@@ -109,7 +210,7 @@
                     <div class="unimind-welcome-message">
 
                         <div class="unimind-ai-mini-icon">
-                            ✨
+                            🧠
                         </div>
 
                         <div>
@@ -120,7 +221,7 @@
 
                             <p>
                                 أنا مساعدك الدراسي الذكي.
-                                اسألني عن المحاضرات أو البرمجة
+                                اسألني عن البرمجة أو المحاضرات
                                 أو أي موضوع جامعي.
                             </p>
 
@@ -155,7 +256,7 @@
                         id="unimind-chat-input"
                         placeholder="اكتب سؤالك هنا..."
                         autocomplete="off"
-                    />
+                    >
 
                     <button
                         type="button"
@@ -176,6 +277,7 @@
             </div>
         `;
 
+
         initializeChat();
     }
 
@@ -183,71 +285,64 @@
     function openChat() {
 
         console.log(
-            "UniMind: openChat() START"
+            "UniMind: opening study assistant..."
         );
 
-        try {
 
+        const modal =
             createChatModal();
 
-            const modal =
-                document.getElementById(
-                    "unimind-chat-modal"
-                );
 
-            if (!modal) {
-
-                console.error(
-                    "UniMind: Chat modal was not created"
-                );
-
-                return;
-            }
-
-            savedScrollY =
-                window.scrollY;
-
-            modal.classList.add("active");
-
-            document.body.classList.add(
-                "unimind-chat-open"
-            );
-
-            document.body.style.top =
-                `-${savedScrollY}px`;
-
-            const input =
-                document.getElementById(
-                    "unimind-chat-input"
-                );
-
-            if (input) {
-
-                setTimeout(
-                    function () {
-
-                        input.focus();
-
-                    },
-                    150
-                );
-            }
-
-            console.log(
-                "UniMind: Chat opened successfully"
-            );
-
-        } catch (error) {
-
-            console.error(
-                "UniMind: openChat ERROR:",
-                error
-            );
+        if (!modal) {
 
             alert(
-                "حدث خطأ أثناء فتح مساعد الدراسة. افتح Console لمعرفة التفاصيل."
+                "تعذر فتح مساعد الدراسة."
+            );
+
+            return;
+        }
+
+
+        savedScrollY =
+            window.scrollY;
+
+
+        modal.classList.add(
+            "active"
+        );
+
+
+        document.body.classList.add(
+            "unimind-chat-open"
+        );
+
+
+        document.body.style.top =
+            `-${savedScrollY}px`;
+
+
+        const input =
+            document.getElementById(
+                "unimind-chat-input"
+            );
+
+
+        if (input) {
+
+            setTimeout(
+                function () {
+
+                    input.focus();
+
+                },
+                150
             );
         }
+
+
+        console.log(
+            "UniMind: study assistant opened"
+        );
     }
 
 
@@ -258,17 +353,25 @@
                 "unimind-chat-modal"
             );
 
+
         if (!modal) {
             return;
         }
 
-        modal.classList.remove("active");
+
+        modal.classList.remove(
+            "active"
+        );
+
 
         document.body.classList.remove(
             "unimind-chat-open"
         );
 
-        document.body.style.top = "";
+
+        document.body.style.top =
+            "";
+
 
         window.scrollTo(
             0,
@@ -284,63 +387,62 @@
                 "unimind-chat-close"
             );
 
+
         const overlay =
             document.querySelector(
                 "#unimind-chat-modal .unimind-chat-overlay"
             );
+
 
         const sendButton =
             document.getElementById(
                 "unimind-chat-send"
             );
 
+
         const input =
             document.getElementById(
                 "unimind-chat-input"
             );
 
+
         if (closeButton) {
 
-            closeButton.addEventListener(
-                "click",
-                closeChat
-            );
+            closeButton.onclick =
+                closeChat;
         }
+
 
         if (overlay) {
 
-            overlay.addEventListener(
-                "click",
-                closeChat
-            );
+            overlay.onclick =
+                closeChat;
         }
+
 
         if (sendButton) {
 
-            sendButton.addEventListener(
-                "click",
-                sendMessage
-            );
+            sendButton.onclick =
+                sendMessage;
         }
+
 
         if (input) {
 
-            input.addEventListener(
-                "keydown",
+            input.onkeydown =
                 function (event) {
 
                     if (
-                        event.key === "Enter" &&
-                        !event.shiftKey
+                        event.key === "Enter"
                     ) {
 
                         event.preventDefault();
 
                         sendMessage();
                     }
-                }
-            );
+                };
         }
+
 
         initializeSuggestions();
     }
@@ -352,40 +454,37 @@
             .querySelectorAll(
                 "#unimind-chat-modal .unimind-suggestions button"
             )
-            .forEach(function (button) {
+            .forEach(
+                function (button) {
 
-                if (
-                    button.dataset
-                        .unimindSuggestionBound
-                ) {
-                    return;
+                    button.onclick =
+                        function () {
+
+                            const input =
+                                document.getElementById(
+                                    "unimind-chat-input"
+                                );
+
+
+                            if (!input) {
+                                return;
+                            }
+
+
+                            input.value =
+                                button.textContent.trim();
+
+
+                            input.focus();
+                        };
                 }
-
-                button.dataset
-                    .unimindSuggestionBound =
-                    "true";
-
-                button.addEventListener(
-                    "click",
-                    function () {
-
-                        const input =
-                            document.getElementById(
-                                "unimind-chat-input"
-                            );
-
-                        if (!input) {
-                            return;
-                        }
-
-                        input.value =
-                            button.textContent.trim();
-
-                        input.focus();
-                    }
-                );
-            });
+            );
     }
+
+
+    // =========================================================
+    // SEND MESSAGE
+    // =========================================================
 
 
     async function sendMessage() {
@@ -395,33 +494,65 @@
                 "unimind-chat-input"
             );
 
+
         const messages =
             document.getElementById(
                 "unimind-chat-messages"
             );
 
-        if (!input || !messages) {
+
+        const sendButton =
+            document.getElementById(
+                "unimind-chat-send"
+            );
+
+
+        if (
+            !input ||
+            !messages
+        ) {
             return;
         }
+
 
         const message =
             input.value.trim();
 
+
         if (!message) {
             return;
         }
+
 
         addChatMessage(
             message,
             "user"
         );
 
+
         input.value = "";
+
+
+        if (sendButton) {
+
+            sendButton.disabled =
+                true;
+
+            sendButton.textContent =
+                "جاري...";
+        }
+
 
         const loading =
             addLoadingMessage();
 
+
         try {
+
+            console.log(
+                "UniMind: sending request to Supabase..."
+            );
+
 
             const response =
                 await fetch(
@@ -431,41 +562,111 @@
 
                         headers: {
                             "Content-Type":
+                                "application/json",
+
+                            "Accept":
                                 "application/json"
                         },
 
                         body:
                             JSON.stringify({
-                                message: message
+                                message:
+                                    message
                             })
                     }
                 );
 
-            if (!response.ok) {
+
+            const rawText =
+                await response.text();
+
+
+            console.log(
+                "UniMind API status:",
+                response.status
+            );
+
+
+            console.log(
+                "UniMind API response:",
+                rawText
+            );
+
+
+            let data = {};
+
+
+            try {
+
+                data =
+                    rawText
+                        ? JSON.parse(rawText)
+                        : {};
+
+            } catch (jsonError) {
+
+                console.error(
+                    "UniMind JSON error:",
+                    jsonError
+                );
 
                 throw new Error(
-                    "HTTP " +
-                    response.status
+                    "استجابة غير صالحة من الخادم."
                 );
             }
 
-            const data =
-                await response.json();
+
+            if (!response.ok) {
+
+                const serverMessage =
+                    data.error ||
+                    data.message ||
+                    data.error_description ||
+                    rawText ||
+                    "فشل الاتصال بالخادم.";
+
+
+                throw new Error(
+                    serverMessage
+                );
+            }
+
 
             removeLoadingMessage(
                 loading
             );
 
+
             const reply =
                 data.reply ||
                 data.message ||
                 data.response ||
-                "لم أتمكن من الحصول على إجابة.";
+                data.answer ||
+                data.content ||
+                "";
 
-            addChatMessage(
-                reply,
-                "ai"
-            );
+
+            if (!reply) {
+
+                console.warn(
+                    "UniMind: empty AI response",
+                    data
+                );
+
+
+                addChatMessage(
+                    "وصلت الاستجابة من الخادم، لكن لم يتم العثور على نص الإجابة.",
+                    "ai"
+                );
+
+            } else {
+
+                addChatMessage(
+                    reply,
+                    "ai"
+                );
+            }
+
 
         } catch (error) {
 
@@ -474,14 +675,45 @@
                 error
             );
 
+
             removeLoadingMessage(
                 loading
             );
 
+
+            let errorMessage =
+                "حدث خطأ أثناء الاتصال بالمساعد الذكي.";
+
+
+            if (
+                error &&
+                error.message
+            ) {
+
+                errorMessage +=
+                    "\n\nالتفاصيل: " +
+                    error.message;
+            }
+
+
             addChatMessage(
-                "حدث خطأ أثناء الاتصال بالمساعد الذكي. حاول مرة أخرى.",
+                errorMessage,
                 "ai"
             );
+
+        } finally {
+
+            if (sendButton) {
+
+                sendButton.disabled =
+                    false;
+
+                sendButton.textContent =
+                    "إرسال";
+            }
+
+
+            input.focus();
         }
     }
 
@@ -496,12 +728,15 @@
                 "unimind-chat-messages"
             );
 
+
         if (!messages) {
             return;
         }
 
+
         const wrapper =
             document.createElement("div");
+
 
         wrapper.className =
             "unimind-message " +
@@ -511,59 +746,92 @@
                     : "unimind-ai-message"
             );
 
+
         if (type === "ai") {
 
             const header =
                 document.createElement("div");
 
+
             header.className =
                 "unimind-message-header";
+
 
             const icon =
                 document.createElement("span");
 
+
             icon.className =
                 "unimind-ai-mini-icon";
 
+
             icon.textContent =
-                "✨";
+                "🧠";
+
 
             const name =
                 document.createElement("strong");
 
+
             name.textContent =
                 "UniMind AI";
 
-            header.appendChild(icon);
-            header.appendChild(name);
+
+            header.appendChild(
+                icon
+            );
+
+
+            header.appendChild(
+                name
+            );
+
 
             const content =
                 document.createElement("div");
 
+
             content.className =
                 "unimind-message-content";
+
 
             content.innerHTML =
                 formatMessage(text);
 
-            wrapper.appendChild(header);
-            wrapper.appendChild(content);
+
+            wrapper.appendChild(
+                header
+            );
+
+
+            wrapper.appendChild(
+                content
+            );
 
         } else {
 
             const content =
                 document.createElement("div");
 
+
             content.className =
                 "unimind-message-content";
+
 
             content.textContent =
                 text;
 
-            wrapper.appendChild(content);
+
+            wrapper.appendChild(
+                content
+            );
         }
 
-        messages.appendChild(wrapper);
+
+        messages.appendChild(
+            wrapper
+        );
+
 
         scrollChatToBottom();
     }
@@ -576,22 +844,26 @@
                 "unimind-chat-messages"
             );
 
+
         if (!messages) {
             return null;
         }
 
+
         const loading =
             document.createElement("div");
 
+
         loading.className =
             "unimind-message unimind-ai-message";
+
 
         loading.innerHTML = `
 
             <div class="unimind-message-header">
 
                 <span class="unimind-ai-mini-icon">
-                    ✨
+                    🧠
                 </span>
 
                 <strong>
@@ -609,9 +881,14 @@
             </div>
         `;
 
-        messages.appendChild(loading);
+
+        messages.appendChild(
+            loading
+        );
+
 
         scrollChatToBottom();
+
 
         return loading;
     }
@@ -633,260 +910,51 @@
     }
 
 
-    function scrollChatToBottom() {
-
-        const messages =
-            document.getElementById(
-                "unimind-chat-messages"
-            );
-
-        if (!messages) {
-            return;
-        }
-
-        messages.scrollTop =
-            messages.scrollHeight;
-    }
-
-
-    function formatMessage(text) {
-
-        let result =
-            escapeHTML(
-                String(text)
-            );
-
-        result =
-            result.replace(
-                /\*\*(.*?)\*\*/g,
-                "<strong>$1</strong>"
-            );
-
-        result =
-            result.replace(
-                /\n/g,
-                "<br>"
-            );
-
-        return result;
-    }
-
-
-    function escapeHTML(text) {
-
-        const div =
-            document.createElement("div");
-
-        div.textContent =
-            text;
-
-        return div.innerHTML;
-    }
-
-
     // =========================================================
     // LECTURE SUMMARIZER
     // =========================================================
 
-    function createLectureModal() {
-
-        if (
-            document.getElementById(
-                "unimind-lecture-modal"
-            )
-        ) {
-            return;
-        }
-
-        const modal =
-            document.createElement("div");
-
-        modal.id =
-            "unimind-lecture-modal";
-
-        modal.innerHTML = `
-
-            <div class="unimind-lecture-overlay"></div>
-
-            <div class="unimind-lecture-window">
-
-                <div class="unimind-lecture-header">
-
-                    <div>
-
-                        <strong>
-                            📄 تلخيص المحاضرات
-                        </strong>
-
-                        <small>
-                            ارفع محاضرتك للحصول على ملخص
-                        </small>
-
-                    </div>
-
-                    <button
-                        type="button"
-                        id="unimind-lecture-close"
-                    >
-                        ×
-                    </button>
-
-                </div>
-
-                <div class="unimind-lecture-body">
-
-                    <div
-                        class="unimind-upload-area"
-                        id="unimind-upload-area"
-                    >
-
-                        <div class="unimind-upload-icon">
-                            📄
-                        </div>
-
-                        <h3>
-                            ارفع ملف المحاضرة
-                        </h3>
-
-                        <p>
-                            PDF أو Word أو TXT
-                        </p>
-
-                        <button
-                            type="button"
-                            id="unimind-choose-file"
-                        >
-                            اختيار ملف
-                        </button>
-
-                        <input
-                            type="file"
-                            id="unimind-lecture-file"
-                            accept=".pdf,.doc,.docx,.txt"
-                            hidden
-                        />
-
-                    </div>
-
-                    <div
-                        id="unimind-selected-file"
-                        style="display:none;"
-                    >
-
-                        <div>
-
-                            <strong
-                                id="unimind-file-name"
-                            ></strong>
-
-                            <small
-                                id="unimind-file-size"
-                            ></small>
-
-                        </div>
-
-                        <button
-                            type="button"
-                            id="unimind-remove-file"
-                        >
-                            حذف
-                        </button>
-
-                    </div>
-
-                    <div
-                        id="unimind-file-status"
-                    ></div>
-
-                    <div
-                        id="unimind-text-preview"
-                        style="display:none;"
-                    >
-
-                        <h4>
-                            معاينة النص
-                        </h4>
-
-                        <div
-                            id="unimind-text-content"
-                        ></div>
-
-                    </div>
-
-                    <button
-                        type="button"
-                        id="unimind-summarize-button"
-                        disabled
-                    >
-                        ✨ تلخيص المحاضرة
-                    </button>
-
-                    <div
-                        id="unimind-summary-result"
-                        style="display:none;"
-                    >
-
-                        <h3>
-                            📝 ملخص المحاضرة
-                        </h3>
-
-                        <div
-                            id="unimind-summary-content"
-                        ></div>
-
-                        <button
-                            type="button"
-                            id="unimind-copy-summary"
-                        >
-                            نسخ الملخص
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        initializeLectureModal();
-    }
-
 
     function openLectureModal() {
-
-        console.log(
-            "UniMind: openLectureModal()"
-        );
-
-        createLectureModal();
 
         const modal =
             document.getElementById(
                 "unimind-lecture-modal"
             );
+
 
         if (!modal) {
 
             console.error(
-                "UniMind: Lecture modal was not created"
+                "UniMind: lecture modal not found"
             );
 
             return;
         }
 
+
         savedScrollY =
             window.scrollY;
 
-        modal.classList.add("active");
 
-        document.body.classList.add(
-            "unimind-lecture-open"
+        modal.classList.add(
+            "active"
         );
+
+
+        modal.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
 
         document.body.style.top =
             `-${savedScrollY}px`;
+
+
+        console.log(
+            "UniMind: lecture modal opened"
+        );
     }
 
 
@@ -897,17 +965,26 @@
                 "unimind-lecture-modal"
             );
 
+
         if (!modal) {
             return;
         }
 
-        modal.classList.remove("active");
 
-        document.body.classList.remove(
-            "unimind-lecture-open"
+        modal.classList.remove(
+            "active"
         );
 
-        document.body.style.top = "";
+
+        modal.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+
+        document.body.style.top =
+            "";
+
 
         window.scrollTo(
             0,
@@ -916,96 +993,116 @@
     }
 
 
-    function initializeLectureModal() {
+    function setupLectureFeature() {
 
-        const modal =
+        const button =
             document.getElementById(
-                "unimind-lecture-modal"
+                "lectureSummarizerButton"
             );
 
-        if (!modal) {
-            return;
+
+        if (button) {
+
+            button.onclick =
+                function (event) {
+
+                    event.preventDefault();
+
+                    openLectureModal();
+                };
         }
 
+
         const closeButton =
-            modal.querySelector(
-                "#unimind-lecture-close"
+            document.getElementById(
+                "unimind-lecture-close"
             );
+
 
         const overlay =
-            modal.querySelector(
-                ".unimind-lecture-overlay"
+            document.getElementById(
+                "unimind-lecture-overlay"
             );
 
-        const chooseButton =
-            modal.querySelector(
-                "#unimind-choose-file"
-            );
-
-        const fileInput =
-            modal.querySelector(
-                "#unimind-lecture-file"
-            );
-
-        const uploadArea =
-            modal.querySelector(
-                "#unimind-upload-area"
-            );
-
-        const removeButton =
-            modal.querySelector(
-                "#unimind-remove-file"
-            );
-
-        const summarizeButton =
-            modal.querySelector(
-                "#unimind-summarize-button"
-            );
-
-        const copyButton =
-            modal.querySelector(
-                "#unimind-copy-summary"
-            );
 
         if (closeButton) {
 
-            closeButton.addEventListener(
-                "click",
-                closeLectureModal
-            );
+            closeButton.onclick =
+                closeLectureModal;
         }
+
 
         if (overlay) {
 
-            overlay.addEventListener(
-                "click",
-                closeLectureModal
-            );
+            overlay.onclick =
+                closeLectureModal;
         }
+
+
+        setupLectureFileUpload();
+    }
+
+
+    function setupLectureFileUpload() {
+
+        const fileInput =
+            document.getElementById(
+                "unimind-lecture-file"
+            );
+
+
+        const chooseButton =
+            document.getElementById(
+                "unimind-choose-file"
+            );
+
+
+        const uploadArea =
+            document.getElementById(
+                "unimind-upload-area"
+            );
+
+
+        const removeButton =
+            document.getElementById(
+                "unimind-remove-file"
+            );
+
+
+        const summarizeButton =
+            document.getElementById(
+                "unimind-summarize-button"
+            );
+
+
+        const copyButton =
+            document.getElementById(
+                "unimind-copy-summary"
+            );
+
 
         if (
             chooseButton &&
             fileInput
         ) {
 
-            chooseButton.addEventListener(
-                "click",
+            chooseButton.onclick =
                 function () {
 
                     fileInput.click();
-
-                }
-            );
+                };
         }
+
 
         if (fileInput) {
 
-            fileInput.addEventListener(
-                "change",
-                function (event) {
+            fileInput.onchange =
+                function () {
 
                     const file =
-                        event.target.files[0];
+                        fileInput.files &&
+                        fileInput.files[0];
+
 
                     if (file) {
 
@@ -1013,46 +1110,46 @@
                             file
                         );
                     }
-                }
-            );
+                };
         }
+
 
         if (uploadArea) {
 
-            uploadArea.addEventListener(
-                "dragover",
+            uploadArea.ondragover =
                 function (event) {
 
                     event.preventDefault();
 
                     uploadArea.classList.add(
-                        "dragging"
+                        "dragover"
                     );
-                }
-            );
+                };
 
-            uploadArea.addEventListener(
-                "dragleave",
+
+            uploadArea.ondragleave =
                 function () {
 
                     uploadArea.classList.remove(
-                        "dragging"
+                        "dragover"
                     );
-                }
-            );
+                };
 
-            uploadArea.addEventListener(
-                "drop",
+
+            uploadArea.ondrop =
                 function (event) {
 
                     event.preventDefault();
 
                     uploadArea.classList.remove(
-                        "dragging"
+                        "dragover"
                     );
 
+
                     const file =
+                        event.dataTransfer.files &&
                         event.dataTransfer.files[0];
+
 
                     if (file) {
 
@@ -1060,32 +1157,28 @@
                             file
                         );
                     }
-                }
-            );
+                };
         }
+
 
         if (removeButton) {
 
-            removeButton.addEventListener(
-                "click",
-                resetLectureFile
-            );
+            removeButton.onclick =
+                resetLectureFile;
         }
+
 
         if (summarizeButton) {
 
-            summarizeButton.addEventListener(
-                "click",
-                summarizeLecture
-            );
+            summarizeButton.onclick =
+                summarizeLecture;
         }
+
 
         if (copyButton) {
 
-            copyButton.addEventListener(
-                "click",
-                copySummary
-            );
+            copyButton.onclick =
+                copySummary;
         }
     }
 
@@ -1098,15 +1191,18 @@
                 .pop()
                 .toLowerCase();
 
-        const allowedExtensions = [
-            "pdf",
-            "doc",
-            "docx",
-            "txt"
-        ];
+
+        const allowed =
+            [
+                "pdf",
+                "doc",
+                "docx",
+                "txt"
+            ];
+
 
         if (
-            !allowedExtensions.includes(
+            !allowed.includes(
                 extension
             )
         ) {
@@ -1118,6 +1214,7 @@
 
             return;
         }
+
 
         if (
             file.size >
@@ -1132,98 +1229,121 @@
             return;
         }
 
+
         selectedLectureFile =
             file;
+
 
         const selected =
             document.getElementById(
                 "unimind-selected-file"
             );
 
+
         const name =
             document.getElementById(
                 "unimind-file-name"
             );
+
 
         const size =
             document.getElementById(
                 "unimind-file-size"
             );
 
+
+        const status =
+            document.getElementById(
+                "unimind-file-status"
+            );
+
+
         const summarize =
             document.getElementById(
                 "unimind-summarize-button"
             );
 
+
+        const preview =
+            document.getElementById(
+                "unimind-text-preview"
+            );
+
+
+        const content =
+            document.getElementById(
+                "unimind-text-content"
+            );
+
+
         if (selected) {
+
             selected.style.display =
-                "flex";
+                "block";
         }
 
+
         if (name) {
+
             name.textContent =
                 file.name;
         }
 
+
         if (size) {
+
             size.textContent =
                 formatFileSize(
                     file.size
                 );
         }
 
+
         if (summarize) {
+
             summarize.disabled =
                 false;
         }
 
-        showLectureStatus(
-            "تم اختيار الملف بنجاح ✓",
-            "success"
-        );
 
-        if (extension === "txt") {
+        if (status) {
+
+            status.textContent =
+                "تم اختيار الملف بنجاح ✓";
+        }
+
+
+        if (
+            extension === "txt" &&
+            preview &&
+            content
+        ) {
+
+            preview.style.display =
+                "block";
+
 
             const reader =
                 new FileReader();
 
+
             reader.onload =
                 function (event) {
 
-                    const preview =
-                        document.getElementById(
-                            "unimind-text-preview"
-                        );
-
-                    const content =
-                        document.getElementById(
-                            "unimind-text-content"
-                        );
-
-                    if (preview) {
-                        preview.style.display =
-                            "block";
-                    }
-
-                    if (content) {
-                        content.textContent =
-                            event.target.result;
-                    }
+                    content.value =
+                        event.target.result ||
+                        "";
                 };
 
-            reader.readAsText(file);
 
-        } else {
+            reader.readAsText(
+                file
+            );
 
-            const preview =
-                document.getElementById(
-                    "unimind-text-preview"
-                );
+        } else if (preview) {
 
-            if (preview) {
-                preview.style.display =
-                    "none";
-            }
+            preview.style.display =
+                "none";
         }
     }
 
@@ -1233,56 +1353,90 @@
         selectedLectureFile =
             null;
 
+
         const fileInput =
             document.getElementById(
                 "unimind-lecture-file"
             );
+
 
         const selected =
             document.getElementById(
                 "unimind-selected-file"
             );
 
+
         const summarize =
             document.getElementById(
                 "unimind-summarize-button"
             );
+
 
         const preview =
             document.getElementById(
                 "unimind-text-preview"
             );
 
+
         const content =
             document.getElementById(
                 "unimind-text-content"
             );
 
+
+        const result =
+            document.getElementById(
+                "unimind-summary-result"
+            );
+
+
         if (fileInput) {
-            fileInput.value = "";
+
+            fileInput.value =
+                "";
         }
 
+
         if (selected) {
+
             selected.style.display =
                 "none";
         }
 
+
         if (summarize) {
+
             summarize.disabled =
                 true;
+
+            summarize.textContent =
+                "✨ تلخيص المحاضرة";
         }
 
+
         if (preview) {
+
             preview.style.display =
                 "none";
         }
 
+
         if (content) {
-            content.textContent = "";
+
+            content.value =
+                "";
         }
 
+
+        if (result) {
+
+            result.style.display =
+                "none";
+        }
+
+
         showLectureStatus(
-            "",
+            "لم يتم اختيار ملف بعد.",
             ""
         );
     }
@@ -1298,12 +1452,15 @@
                 "unimind-file-status"
             );
 
+
         if (!status) {
             return;
         }
 
+
         status.textContent =
             message;
+
 
         status.className =
             type
@@ -1312,115 +1469,188 @@
     }
 
 
-    function formatFileSize(bytes) {
-
-        if (bytes === 0) {
-            return "0 Bytes";
-        }
-
-        const sizes = [
-            "Bytes",
-            "KB",
-            "MB",
-            "GB"
-        ];
-
-        const i =
-            Math.floor(
-                Math.log(bytes) /
-                Math.log(1024)
-            );
-
-        return (
-            parseFloat(
-                (
-                    bytes /
-                    Math.pow(
-                        1024,
-                        i
-                    )
-                ).toFixed(2)
-            ) +
-            " " +
-            sizes[i]
-        );
-    }
-
-
     async function summarizeLecture() {
 
         if (!selectedLectureFile) {
+
+            alert(
+                "اختر ملف المحاضرة أولًا."
+            );
+
             return;
         }
+
 
         const button =
             document.getElementById(
                 "unimind-summarize-button"
             );
 
+
         const result =
             document.getElementById(
                 "unimind-summary-result"
             );
+
 
         const content =
             document.getElementById(
                 "unimind-summary-content"
             );
 
+
         if (button) {
 
-            button.disabled = true;
+            button.disabled =
+                true;
 
             button.textContent =
-                "⏳ جاري تجهيز المحاضرة...";
+                "⏳ جاري تجهيز الملخص...";
         }
 
+
         if (result) {
+
             result.style.display =
                 "block";
         }
+
+
+        const extension =
+            selectedLectureFile.name
+                .split(".")
+                .pop()
+                .toLowerCase();
+
+
+        if (
+            extension === "txt"
+        ) {
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload =
+                function (event) {
+
+                    const text =
+                        String(
+                            event.target.result ||
+                            ""
+                        ).trim();
+
+
+                    if (!text) {
+
+                        if (content) {
+
+                            content.textContent =
+                                "الملف النصي فارغ.";
+                        }
+
+                    } else {
+
+                        const words =
+                            text.split(
+                                /\s+/
+                            );
+
+
+                        const preview =
+                            words
+                                .slice(
+                                    0,
+                                    220
+                                )
+                                .join(" ");
+
+
+                        if (content) {
+
+                            content.textContent =
+                                "📚 ملخص أولي:\n\n" +
+                                preview +
+                                (
+                                    words.length > 220
+                                        ? "\n\n... تم عرض جزء من النص."
+                                        : ""
+                                );
+                        }
+                    }
+
+
+                    if (button) {
+
+                        button.disabled =
+                            false;
+
+                        button.textContent =
+                            "✨ تلخيص المحاضرة";
+                    }
+                };
+
+
+            reader.onerror =
+                function () {
+
+                    if (content) {
+
+                        content.textContent =
+                            "تعذر قراءة الملف النصي.";
+                    }
+
+
+                    if (button) {
+
+                        button.disabled =
+                            false;
+
+                        button.textContent =
+                            "✨ تلخيص المحاضرة";
+                    }
+                };
+
+
+            reader.readAsText(
+                selectedLectureFile
+            );
+
+
+            return;
+        }
+
 
         if (content) {
 
             content.innerHTML = `
 
-                <div>
-                    ⏳ تم رفع المحاضرة بنجاح.
-                </div>
+                <strong>
+                    تم رفع الملف بنجاح ✓
+                </strong>
 
-                <br>
+                <br><br>
 
-                <div>
-                    📄 الملف:
-                    <strong>
-                        ${escapeHTML(
-                            selectedLectureFile.name
-                        )}
-                    </strong>
-                </div>
+                📄 الملف:
+                ${escapeHTML(
+                    selectedLectureFile.name
+                )}
 
-                <br>
+                <br><br>
 
-                <div>
-                    ⚠️ محرك استخراج النص وتلخيص
-                    ملفات PDF وWord يحتاج إلى ربط
-                    خدمة المعالجة الخلفية.
-                </div>
-
-                <br>
-
-                <div>
-                    يمكنك حاليًا تجربة رفع ملف TXT
-                    ومعاينته داخل UniMind AI.
-                </div>
+                ℹ️ واجهة رفع الملفات تعمل حاليًا.
+                أما استخراج النص من PDF وWord وتلخيصه
+                بالذكاء الاصطناعي فيحتاج إلى خدمة معالجة
+                ملفات في الخلفية.
 
             `;
         }
 
+
         if (button) {
 
-            button.disabled = false;
+            button.disabled =
+                false;
 
             button.textContent =
                 "✨ تلخيص المحاضرة";
@@ -1435,14 +1665,22 @@
                 "unimind-summary-content"
             );
 
+
         if (!content) {
             return;
         }
+
 
         const text =
             content.innerText ||
             content.textContent ||
             "";
+
+
+        if (!text.trim()) {
+            return;
+        }
+
 
         try {
 
@@ -1450,13 +1688,42 @@
                 text
             );
 
-            alert(
-                "تم نسخ الملخص بنجاح ✓"
-            );
+
+            const button =
+                document.getElementById(
+                    "unimind-copy-summary"
+                );
+
+
+            if (button) {
+
+                const oldText =
+                    button.textContent;
+
+
+                button.textContent =
+                    "تم النسخ ✓";
+
+
+                setTimeout(
+                    function () {
+
+                        button.textContent =
+                            oldText;
+
+                    },
+                    1500
+                );
+            }
+
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Copy error:",
+                error
+            );
+
 
             alert(
                 "تعذر نسخ الملخص."
@@ -1469,352 +1736,201 @@
     // BUTTONS
     // =========================================================
 
-    function setupStudyAssistantButton() {
 
-        const button =
+    function setupButtons() {
+
+        const studyButton =
             document.getElementById(
                 "studyAssistantButton"
             );
 
-        if (!button) {
 
-            console.warn(
-                "UniMind: studyAssistantButton not found"
-            );
+        if (studyButton) {
 
-            return;
+            studyButton.onclick =
+                function (event) {
+
+                    event.preventDefault();
+
+                    console.log(
+                        "UniMind: Study Assistant clicked"
+                    );
+
+                    openChat();
+                };
         }
 
-        // إزالة أي onclick قديم من HTML
-        button.removeAttribute("onclick");
 
-        // منع التكرار
-        if (
-            button.dataset
-                .unimindStudyBound === "true"
-        ) {
-            return;
-        }
-
-        button.dataset
-            .unimindStudyBound =
-            "true";
-
-        button.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                console.log(
-                    "UniMind: STUDY ASSISTANT CLICKED"
-                );
-
-                openChat();
-
-            },
-            false
-        );
-
-        console.log(
-            "UniMind: Study Assistant connected"
-        );
-    }
-
-
-    function setupLectureButton() {
-
-        const button =
+        const lectureButton =
             document.getElementById(
                 "lectureSummarizerButton"
             );
 
-        if (!button) {
 
-            console.warn(
-                "UniMind: lectureSummarizerButton not found"
+        if (lectureButton) {
+
+            lectureButton.onclick =
+                function (event) {
+
+                    event.preventDefault();
+
+                    openLectureModal();
+                };
+        }
+
+
+        const startButton =
+            document.getElementById(
+                "ctaStartButton"
             );
 
-            return;
+
+        if (startButton) {
+
+            startButton.onclick =
+                function () {
+
+                    openChat();
+                };
         }
 
-        if (
-            button.dataset
-                .unimindLectureBound === "true"
-        ) {
-            return;
+
+        const bottomButton =
+            document.getElementById(
+                "ctaBottomButton"
+            );
+
+
+        if (bottomButton) {
+
+            bottomButton.onclick =
+                function () {
+
+                    openChat();
+                };
         }
 
-        button.dataset
-            .unimindLectureBound =
-            "true";
 
-        button.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                console.log(
-                    "UniMind: Lecture Summarizer clicked"
-                );
-
-                openLectureModal();
-
-            },
-            false
-        );
-
-        console.log(
-            "UniMind: Lecture Summarizer connected"
-        );
-    }
+        const demoButton =
+            document.getElementById(
+                "heroDemoButton"
+            );
 
 
-    function connectButton(
-        id,
-        callback
-    ) {
+        if (demoButton) {
 
-        const button =
-            document.getElementById(id);
+            demoButton.onclick =
+                function () {
 
-        if (!button) {
-            return;
+                    openChat();
+                };
         }
 
-        if (
-            button.dataset.unimindBound
-        ) {
-            return;
+
+        const heroChatButton =
+            document.getElementById(
+                "heroChatButton"
+            );
+
+
+        if (heroChatButton) {
+
+            heroChatButton.onclick =
+                function () {
+
+                    openChat();
+                };
         }
 
-        button.dataset.unimindBound =
-            "true";
 
-        button.addEventListener(
-            "click",
-            callback,
-            false
-        );
-    }
+        const quizButton =
+            document.getElementById(
+                "quizButton"
+            );
 
 
-    function setupButtons() {
+        if (quizButton) {
 
-        setupStudyAssistantButton();
+            quizButton.onclick =
+                function () {
 
-        setupLectureButton();
-
-        connectButton(
-            "ctaBottomButton",
-            function (event) {
-
-                event.preventDefault();
-
-                openChat();
-
-            }
-        );
-
-        connectButton(
-            "heroDemoButton",
-            function (event) {
-
-                event.preventDefault();
-
-                openChat();
-
-            }
-        );
-
-        connectButton(
-            "heroChatButton",
-            function (event) {
-
-                event.preventDefault();
-
-                openChat();
-
-            }
-        );
-
-        document
-            .querySelectorAll("[data-action]")
-            .forEach(function (button) {
-
-                if (
-                    button.dataset
-                        .unimindActionBound
-                ) {
-                    return;
-                }
-
-                button.dataset
-                    .unimindActionBound =
-                    "true";
-
-                button.addEventListener(
-                    "click",
-                    function (event) {
-
-                        const action =
-                            button.dataset.action;
-
-                        if (!action) {
-                            return;
-                        }
-
-                        if (
-                            action === "chat"
-                        ) {
-
-                            event.preventDefault();
-
-                            openChat();
-
-                            return;
-                        }
-
-                        if (
-                            action === "lecture"
-                        ) {
-
-                            event.preventDefault();
-
-                            openLectureModal();
-
-                        }
-                    }
-                );
-            });
+                    alert(
+                        "ميزة الاختبارات الذكية ستكون متاحة قريبًا."
+                    );
+                };
+        }
 
 
-        document
-            .querySelectorAll(
-                ".feature-placeholder"
-            )
-            .forEach(function (button) {
+        const flashcardsButton =
+            document.getElementById(
+                "flashcardsButton"
+            );
 
-                if (
-                    button.dataset
-                        .unimindPlaceholderBound
-                ) {
-                    return;
-                }
 
-                button.dataset
-                    .unimindPlaceholderBound =
-                    "true";
+        if (flashcardsButton) {
 
-                button.addEventListener(
-                    "click",
-                    function (event) {
+            flashcardsButton.onclick =
+                function () {
 
-                        event.preventDefault();
+                    alert(
+                        "ميزة البطاقات التعليمية ستكون متاحة قريبًا."
+                    );
+                };
+        }
 
-                        const card =
-                            button.closest(
-                                ".feature-card"
-                            );
 
-                        if (!card) {
-                            return;
-                        }
+        const plannerButton =
+            document.getElementById(
+                "plannerButton"
+            );
 
-                        const text =
-                            card.textContent || "";
 
-                        if (
-                            text.includes(
-                                "تلخيص المحاضرات"
-                            ) ||
-                            text.includes(
-                                "تلخيص المحاضرة"
-                            )
-                        ) {
+        if (plannerButton) {
 
-                            openLectureModal();
+            plannerButton.onclick =
+                function () {
 
-                            return;
-                        }
+                    alert(
+                        "ميزة مخطط الدراسة ستكون متاحة قريبًا."
+                    );
+                };
+        }
 
-                        alert(
-                            "هذه الميزة ستكون متاحة قريبًا في UniMind AI."
-                        );
-                    }
-                );
-            });
+
+        const cvButton =
+            document.getElementById(
+                "cvButton"
+            );
+
+
+        if (cvButton) {
+
+            cvButton.onclick =
+                function () {
+
+                    alert(
+                        "ميزة مساعد السيرة الذاتية ستكون متاحة قريبًا."
+                    );
+                };
+        }
 
 
         document
             .querySelectorAll(
                 ".pricing-card button"
             )
-            .forEach(function (button) {
+            .forEach(
+                function (button) {
 
-                if (
-                    button.dataset
-                        .unimindPricingBound
-                ) {
-                    return;
-                }
+                    button.onclick =
+                        function () {
 
-                button.dataset
-                    .unimindPricingBound =
-                    "true";
-
-                button.addEventListener(
-                    "click",
-                    function (event) {
-
-                        event.preventDefault();
-
-                        alert(
-                            "اختيار الخطة سيتم تفعيله قريبًا."
-                        );
-                    }
-                );
-            });
-
-
-        document
-            .querySelectorAll(
-                ".footer-links a"
-            )
-            .forEach(function (link) {
-
-                if (
-                    link.dataset
-                        .unimindFooterBound
-                ) {
-                    return;
-                }
-
-                link.dataset
-                    .unimindFooterBound =
-                    "true";
-
-                link.addEventListener(
-                    "click",
-                    function (event) {
-
-                        const href =
-                            link.getAttribute(
-                                "href"
+                            alert(
+                                "اختيار الخطة سيتم تفعيله قريبًا."
                             );
-
-                        if (
-                            !href ||
-                            href === "#"
-                        ) {
-                            event.preventDefault();
-                        }
-                    }
-                );
-            });
+                        };
+                }
+            );
     }
 
 
@@ -1822,63 +1938,66 @@
     // THEME
     // =========================================================
 
+
     function setupTheme() {
 
         const button =
-            document.querySelector(
-                ".theme-btn"
+            document.getElementById(
+                "themeToggle"
             );
+
 
         if (!button) {
             return;
         }
 
+
+        const saved =
+            localStorage.getItem(
+                "unimind-theme"
+            );
+
+
         if (
-            button.dataset
-                .unimindThemeBound
+            saved === "dark"
         ) {
-            return;
+
+            document.body.classList.add(
+                "dark-mode"
+            );
+
+            button.textContent =
+                "☀️";
         }
 
-        button.dataset
-            .unimindThemeBound =
-            "true";
 
-        button.addEventListener(
-            "click",
+        button.onclick =
             function () {
 
                 document.body.classList.toggle(
                     "dark-mode"
                 );
 
-                const isDark =
+
+                const dark =
                     document.body.classList.contains(
                         "dark-mode"
                     );
 
+
                 localStorage.setItem(
                     "unimind-theme",
-                    isDark
+                    dark
                         ? "dark"
                         : "light"
                 );
-            }
-        );
 
-        const savedTheme =
-            localStorage.getItem(
-                "unimind-theme"
-            );
 
-        if (
-            savedTheme === "dark"
-        ) {
-
-            document.body.classList.add(
-                "dark-mode"
-            );
-        }
+                button.textContent =
+                    dark
+                        ? "☀️"
+                        : "🌙";
+            };
     }
 
 
@@ -1886,37 +2005,27 @@
     // LANGUAGE
     // =========================================================
 
+
     function setupLanguage() {
 
         const button =
-            document.querySelector(
-                ".language-btn"
+            document.getElementById(
+                "languageToggle"
             );
+
 
         if (!button) {
             return;
         }
 
-        if (
-            button.dataset
-                .unimindLanguageBound
-        ) {
-            return;
-        }
 
-        button.dataset
-            .unimindLanguageBound =
-            "true";
-
-        button.addEventListener(
-            "click",
+        button.onclick =
             function () {
 
                 alert(
                     "اللغة العربية هي اللغة الأساسية حاليًا في UniMind AI."
                 );
-            }
-        );
+            };
     }
 
 
@@ -1924,56 +2033,36 @@
     // LOGIN
     // =========================================================
 
+
     function setupLogin() {
 
         const button =
-            document.querySelector(
-                ".login-btn"
+            document.getElementById(
+                "loginButton"
             );
+
 
         if (!button) {
             return;
         }
 
-        if (
-            button.dataset
-                .unimindLoginBound
-        ) {
-            return;
-        }
 
-        button.dataset
-            .unimindLoginBound =
-            "true";
-
-        button.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
+        button.onclick =
+            function () {
 
                 alert(
                     "نظام تسجيل الدخول سيتم تفعيله قريبًا."
                 );
-            }
-        );
+            };
     }
 
 
     // =========================================================
-    // KEYBOARD
+    // ESCAPE KEY
     // =========================================================
 
+
     function setupKeyboard() {
-
-        if (
-            window.__UNIMIND_KEYBOARD_READY__
-        ) {
-            return;
-        }
-
-        window.__UNIMIND_KEYBOARD_READY__ =
-            true;
 
         document.addEventListener(
             "keydown",
@@ -1985,19 +2074,22 @@
                     return;
                 }
 
-                const chatModal =
+
+                const chat =
                     document.getElementById(
                         "unimind-chat-modal"
                     );
 
-                const lectureModal =
+
+                const lecture =
                     document.getElementById(
                         "unimind-lecture-modal"
                     );
 
+
                 if (
-                    chatModal &&
-                    chatModal.classList.contains(
+                    chat &&
+                    chat.classList.contains(
                         "active"
                     )
                 ) {
@@ -2007,9 +2099,10 @@
                     return;
                 }
 
+
                 if (
-                    lectureModal &&
-                    lectureModal.classList.contains(
+                    lecture &&
+                    lecture.classList.contains(
                         "active"
                     )
                 ) {
@@ -2022,19 +2115,21 @@
 
 
     // =========================================================
-    // GLOBAL EXPORTS
+    // GLOBAL FUNCTIONS
     // =========================================================
-    // مهم جدًا:
-    // نضع التصدير هنا بعد تعريف جميع الدوال.
+
 
     window.openChat =
         openChat;
 
+
     window.closeUniMindChat =
         closeChat;
 
+
     window.openLectureSummarizer =
         openLectureModal;
+
 
     window.closeLectureSummarizer =
         closeLectureModal;
@@ -2044,80 +2139,32 @@
     // START
     // =========================================================
 
+
     function startUniMind() {
 
-        if (
-            window.__UNIMIND_STARTED__
-        ) {
-            return;
-        }
-
-        window.__UNIMIND_STARTED__ =
-            true;
-
         console.log(
-            "UniMind AI JavaScript loaded successfully - v22"
+            "UniMind AI v30 loading..."
         );
 
-        try {
-            setupButtons();
-        } catch (error) {
 
-            console.error(
-                "UniMind setupButtons error:",
-                error
-            );
-        }
+        setupButtons();
 
-        try {
-            setupTheme();
-        } catch (error) {
+        setupLectureFeature();
 
-            console.error(
-                "UniMind setupTheme error:",
-                error
-            );
-        }
+        setupTheme();
 
-        try {
-            setupLanguage();
-        } catch (error) {
+        setupLanguage();
 
-            console.error(
-                "UniMind setupLanguage error:",
-                error
-            );
-        }
+        setupLogin();
 
-        try {
-            setupLogin();
-        } catch (error) {
+        setupKeyboard();
 
-            console.error(
-                "UniMind setupLogin error:",
-                error
-            );
-        }
-
-        try {
-            setupKeyboard();
-        } catch (error) {
-
-            console.error(
-                "UniMind setupKeyboard error:",
-                error
-            );
-        }
 
         console.log(
-            "UniMind AI initialized - v22"
+            "UniMind AI v30 initialized successfully."
         );
     }
 
-
-    // =========================================================
-    // APPLICATION START
-    // =========================================================
 
     if (
         document.readyState ===
@@ -2137,5 +2184,5 @@
         startUniMind();
     }
 
+
 })();
-```
