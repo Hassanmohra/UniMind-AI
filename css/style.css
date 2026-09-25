@@ -2257,5 +2257,235 @@ body.unimind-chat-open {
     .unimind-message {
         max-width: 92%;
     }
+   /* =========================================================
+   ARABIC TEXT FIX
+   Prevent Arabic letters from being visually clipped
+   ========================================================= */
+
+html,
+body {
+    overflow-x: hidden;
+}
+
+/* تحسين عرض النصوص العربية */
+body,
+button,
+input,
+textarea,
+a,
+p,
+span,
+strong,
+small,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* منع قص الحروف العربية داخل العناصر */
+button,
+a,
+.primary-btn,
+.secondary-btn,
+.small-btn,
+.login-btn,
+.theme-btn,
+.language-btn {
+    overflow: visible;
+    min-width: 0;
+}
+
+/* النصوص داخل عناصر Flex */
+.primary-btn,
+.secondary-btn,
+.small-btn,
+.login-btn {
+    line-height: 1.6;
+}
+
+/* تحسين الأزرار العربية */
+.primary-btn,
+.secondary-btn {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+/* إصلاح النصوص داخل البطاقات */
+.feature-card,
+.pricing-card,
+.step,
+.cta-box,
+.workspace-card,
+.unimind-message,
+.unimind-suggestions button {
+    min-width: 0;
+}
+
+/* السماح للنص العربي بالنزول لسطر جديد بدل القص */
+.feature-card h3,
+.feature-card p,
+.pricing-card p,
+.pricing-card li,
+.step h3,
+.step p,
+.cta-box h2,
+.cta-box p,
+.unimind-message,
+.unimind-message-content,
+.unimind-welcome-message h2,
+.unimind-welcome-message p {
+    overflow-wrap: break-word;
+    word-break: normal;
+    white-space: normal;
+}
+
+/* إصلاح خاص لعناصر Flex التي تحتوي نصًا */
+.logo,
+.nav-links,
+.nav-actions,
+.workspace-title,
+.ai-message-header,
+.ai-points div,
+.floating-card,
+.footer-content,
+.footer-links,
+.hero-buttons,
+.hero-trust,
+.unimind-chat-brand,
+.unimind-chat-actions,
+.unimind-chat-input-area {
+    min-width: 0;
+}
+
+/* النص داخل عناصر Flex يجب أن يستطيع التمدد */
+.logo strong,
+.workspace-title strong,
+.workspace-title small,
+.floating-card strong,
+.floating-card small,
+.footer-brand,
+.footer-links,
+.unimind-chat-brand strong,
+.unimind-chat-brand span {
+    min-width: 0;
+}
+
+/* تحسين الخط العربي للعناوين */
+.hero h1,
+.section-heading h2,
+.cta-box h2 {
+    line-height: 1.45;
+}
+
+/* تحسين النص العربي في الأزرار */
+button {
+    line-height: 1.7;
+}
+
+/* =========================================================
+   ARABIC CHAT FIX
+   ========================================================= */
+
+.unimind-chat-window,
+.unimind-chat-header,
+.unimind-chat-messages,
+.unimind-chat-input-area,
+.unimind-chat-footer {
+    direction: rtl;
+}
+
+.unimind-chat-brand strong,
+.unimind-chat-brand span,
+.unimind-message-content,
+.unimind-message-header,
+.unimind-welcome-message h2,
+.unimind-welcome-message p {
+    line-height: 1.8;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+/* منع قص النص داخل أزرار الاقتراحات */
+.unimind-suggestions button {
+    min-height: 48px;
+    line-height: 1.7;
+    overflow: visible;
+    white-space: normal;
+}
+
+/* حقل الكتابة */
+#unimind-chat-input {
+    overflow-y: auto;
+    line-height: 1.8;
+}
+
+/* زر الإرسال */
+#unimind-chat-send {
+    line-height: 1;
+    overflow: visible;
+}
+
+/* =========================================================
+   MOBILE ARABIC TEXT FIX
+   ========================================================= */
+
+@media (max-width: 650px) {
+
+    .primary-btn,
+    .secondary-btn {
+        min-height: 50px;
+        line-height: 1.7;
+    }
+
+    .hero h1 {
+        line-height: 1.48;
+    }
+
+    .hero-description {
+        line-height: 2.15;
+    }
+
+    .feature-card h3,
+    .step h3 {
+        line-height: 1.7;
+    }
+
+    .feature-card p,
+    .step p {
+        line-height: 2;
+    }
+}
+
+@media (max-width: 600px) {
+
+    .unimind-chat-brand strong {
+        line-height: 1.6;
+    }
+
+    .unimind-chat-brand span {
+        line-height: 1.7;
+    }
+
+    .unimind-message {
+        line-height: 1.9;
+    }
+
+    .unimind-message-content {
+        line-height: 2;
+    }
+
+    .unimind-welcome-message h2 {
+        line-height: 1.6;
+    }
+
+    .unimind-welcome-message p {
+        line-height: 2;
+    }
+}
 
 }
