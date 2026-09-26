@@ -34,7 +34,9 @@
     // =========================================================
 
     function escapeHTML(value) {
-        if (value === null || value === undefined) return "";
+        if (value === null || value === undefined) {
+            return "";
+        }
 
         return String(value)
             .replace(/&/g, "&amp;")
@@ -80,9 +82,12 @@
     // =========================================================
 
     function injectStyles() {
-        if (document.getElementById("unimindRuntimeStyles")) return;
+        if (document.getElementById("unimindRuntimeStyles")) {
+            return;
+        }
 
         const style = document.createElement("style");
+
         style.id = "unimindRuntimeStyles";
 
         style.textContent = `
@@ -191,6 +196,12 @@
                 transition: .2s;
             }
 
+            .unimind-btn:disabled {
+                opacity: .6;
+                cursor: not-allowed;
+                transform: none !important;
+            }
+
             .unimind-btn-primary {
                 background: #4f46e5;
                 color: white;
@@ -297,6 +308,7 @@
                     opacity: .25;
                     transform: translateY(0);
                 }
+
                 40% {
                     opacity: 1;
                     transform: translateY(-3px);
@@ -494,47 +506,529 @@
             throw new Error("الرجاء كتابة رسالة أولاً.");
         }
 
-        const response = await fetch(API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: message.trim()
-            })
-        });
+        let response;
 
-        if (!response.ok) {
-            let errorText = "";
+        try {
+            response = await fetch(API_URL, {
+                method: "POST",
 
-            try {
-                errorText = await response.text();
-            } catch (_) {}
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+
+                body: JSON.stringify({
+                    message: message.trim()
+                })
+            });
+        } catch (networkError) {
+            console.error(
+                "❌ UniMind AI network error:",
+                networkError
+            );
 
             throw new Error(
-                errorText ||
+                "تعذر الاتصال بخادم UniMind AI. تأكد من اتصال الإنترنت ثم حاول مرة أخرى."
+            );
+        }
+
+        // -----------------------------------------------------
+        // نقرأ الرد كنص أولاً
+        // حتى نستطيع التعامل مع:
+        // JSON / Text / JSON داخل body
+        // -----------------------------------------------------
+
+        let rawText = "";
+
+        try {
+            rawText = await response.text();
+        } catch (readError) {
+            console.error(
+                "❌ UniMind AI response read error:",
+                readError
+            );
+
+            throw new Error(
+                "تعذر قراءة الرد من خادم UniMind AI."
+            );
+        }
+
+        console.log(
+            "🧠 UniMind AI raw response:",
+            rawText
+        );
+
+        console.log(
+            "📡 UniMind AI status:",
+            response.status
+        );
+
+        if (!response.ok) {
+            let errorMessage = rawText;
+
+            // محاولة استخراج رسالة الخطأ من JSON
+            if (rawText) {
+                try {
+                    const errorData =
+                        JSON.parse(rawText);
+
+                    errorMessage =
+                        extractTextFromResponse(
+                            errorData
+                        ) ||
+                        rawText;
+                } catch (_) {}
+            }
+
+            throw new Error(
+                errorMessage ||
                 `تعذر الاتصال بمساعد UniMind AI. رمز الخطأ: ${response.status}`
             );
         }
 
-        const data = await response.json();
+        if (!rawText || !rawText.trim()) {
+            throw new Error(
+                "الخادم أرسل رداً فارغاً."
+            );
+        }
+
+        const cleanedRawText =
+            rawText.trim();
+
+        // -----------------------------------------------------
+        // أولاً: إذا كان الرد نصاً عادياً
+        // -----------------------------------------------------
+
+        if (
+            !looksLikeJSON(
+                cleanedRawText
+            )
+        ) {
+            return cleanedRawText;
+        }
+
+        // -----------------------------------------------------
+        // ثانياً: محاولة JSON
+        // -----------------------------------------------------
+
+        let data;
+
+        try {
+            data = JSON.parse(
+                cleanedRawText
+            );
+        } catch (jsonError) {
+            // أحياناً يأتي JSON داخل نص يحتوي على كلام إضافي
+            const extracted =
+                extractJSONFromText(
+                    cleanedRawText
+                );
+
+            if (extracted !== null) {
+                data = extracted;
+            } else {
+                // إذا فشل JSON ولكن النص موجود
+                return cleanedRawText;
+            }
+        }
+
+        console.log(
+            "📦 UniMind AI parsed response:",
+            data
+        );
+
+        // -----------------------------------------------------
+        // إذا كان الرد نفسه نصاً
+        // -----------------------------------------------------
+
+        if (typeof data === "string") {
+            const text = data.trim();
+
+            if (!text) {
+                throw new Error(
+                    "الخادم أرسل نصاً فارغاً."
+                );
+            }
+
+            // قد يكون النص نفسه JSON
+            if (looksLikeJSON(text)) {
+                try {
+                    const nested =
+                        JSON.parse(text);
+
+                    const nestedAnswer =
+                        extractTextFromResponse(
+                            nested
+                        );
+
+                    if (nestedAnswer) {
+                        return nestedAnswer;
+                    }
+
+                    // مفيد للاختبارات والبطاقات
+                    if (
+                        nested &&
+                        typeof nested === "object"
+                    ) {
+                        if (
+                            Array.isArray(
+                                nested.questions
+                            ) ||
+                            Array.isArray(
+                                nested.cards
+                            )
+                        ) {
+                            return JSON.stringify(
+                                nested
+                            );
+                        }
+                    }
+                } catch (_) {}
+            }
+
+            return text;
+        }
+
+        // -----------------------------------------------------
+        // استخراج الإجابة من الرد
+        // -----------------------------------------------------
 
         const answer =
-            data?.answer ??
-            data?.message ??
-            data?.response ??
-            data?.content ??
-            data?.result;
+            extractTextFromResponse(data);
 
-        if (typeof answer === "string" && answer.trim()) {
+        if (answer) {
             return answer.trim();
         }
 
-        if (data?.data?.answer) {
-            return String(data.data.answer);
+        // -----------------------------------------------------
+        // الاختبارات
+        // -----------------------------------------------------
+
+        if (
+            data &&
+            typeof data === "object" &&
+            Array.isArray(data.questions)
+        ) {
+            return JSON.stringify(data);
         }
 
-        throw new Error("وصل رد من الخادم، لكن لم يتم العثور على إجابة.");
+        // -----------------------------------------------------
+        // البطاقات
+        // -----------------------------------------------------
+
+        if (
+            data &&
+            typeof data === "object" &&
+            Array.isArray(data.cards)
+        ) {
+            return JSON.stringify(data);
+        }
+
+        // -----------------------------------------------------
+        // البحث عن أي قيمة نصية مفيدة
+        // -----------------------------------------------------
+
+        const fallback =
+            findFirstUsefulString(data);
+
+        if (fallback) {
+            return fallback;
+        }
+
+        console.error(
+            "❌ UniMind AI: response received but no answer found.",
+            data
+        );
+
+        throw new Error(
+            "وصل رد من الخادم، لكن لم يتم العثور على إجابة."
+        );
+    }
+
+    // =========================================================
+    // RESPONSE HELPERS
+    // =========================================================
+
+    function looksLikeJSON(text) {
+        if (!text || typeof text !== "string") {
+            return false;
+        }
+
+        const value = text.trim();
+
+        return (
+            (value.startsWith("{") &&
+                value.endsWith("}")) ||
+            (value.startsWith("[") &&
+                value.endsWith("]")) ||
+            value.startsWith("```json") ||
+            value.startsWith("```JSON")
+        );
+    }
+
+    function extractJSONFromText(text) {
+        if (!text) return null;
+
+        let cleaned = String(text)
+            .trim()
+            .replace(/^```json\s*/i, "")
+            .replace(/^```\s*/i, "")
+            .replace(/\s*```$/i, "")
+            .trim();
+
+        try {
+            return JSON.parse(cleaned);
+        } catch (_) {}
+
+        const objectStart =
+            cleaned.indexOf("{");
+
+        const objectEnd =
+            cleaned.lastIndexOf("}");
+
+        if (
+            objectStart !== -1 &&
+            objectEnd > objectStart
+        ) {
+            try {
+                return JSON.parse(
+                    cleaned.slice(
+                        objectStart,
+                        objectEnd + 1
+                    )
+                );
+            } catch (_) {}
+        }
+
+        const arrayStart =
+            cleaned.indexOf("[");
+
+        const arrayEnd =
+            cleaned.lastIndexOf("]");
+
+        if (
+            arrayStart !== -1 &&
+            arrayEnd > arrayStart
+        ) {
+            try {
+                return JSON.parse(
+                    cleaned.slice(
+                        arrayStart,
+                        arrayEnd + 1
+                    )
+                );
+            } catch (_) {}
+        }
+
+        return null;
+    }
+
+    function extractTextFromResponse(
+        value,
+        depth = 0
+    ) {
+        if (
+            depth > 8 ||
+            value === null ||
+            value === undefined
+        ) {
+            return null;
+        }
+
+        // نص مباشر
+        if (typeof value === "string") {
+            const text = value.trim();
+
+            if (!text) {
+                return null;
+            }
+
+            return text;
+        }
+
+        // الأرقام والقيم المنطقية ليست إجابة نصية
+        if (
+            typeof value !== "object"
+        ) {
+            return null;
+        }
+
+        // الحقول الأكثر شيوعاً
+        const possibleKeys = [
+            "answer",
+            "message",
+            "response",
+            "content",
+            "result",
+            "text",
+            "output",
+            "reply",
+            "completion",
+            "generated_text",
+            "assistant",
+            "ai_response",
+            "aiResponse",
+            "response_text",
+            "responseText"
+        ];
+
+        for (const key of possibleKeys) {
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    value,
+                    key
+                )
+            ) {
+                const result =
+                    extractTextFromResponse(
+                        value[key],
+                        depth + 1
+                    );
+
+                if (result) {
+                    return result;
+                }
+            }
+        }
+
+        // data
+        if (
+            Object.prototype.hasOwnProperty.call(
+                value,
+                "data"
+            )
+        ) {
+            const result =
+                extractTextFromResponse(
+                    value.data,
+                    depth + 1
+                );
+
+            if (result) {
+                return result;
+            }
+        }
+
+        // body
+        if (
+            Object.prototype.hasOwnProperty.call(
+                value,
+                "body"
+            )
+        ) {
+            const bodyValue =
+                value.body;
+
+            // body قد يكون JSON كنص
+            if (
+                typeof bodyValue ===
+                "string"
+            ) {
+                const bodyText =
+                    bodyValue.trim();
+
+                if (
+                    looksLikeJSON(
+                        bodyText
+                    )
+                ) {
+                    try {
+                        const bodyJSON =
+                            JSON.parse(
+                                bodyText
+                            );
+
+                        const result =
+                            extractTextFromResponse(
+                                bodyJSON,
+                                depth + 1
+                            );
+
+                        if (result) {
+                            return result;
+                        }
+                    } catch (_) {}
+                }
+
+                if (bodyText) {
+                    return bodyText;
+                }
+            }
+
+            const result =
+                extractTextFromResponse(
+                    bodyValue,
+                    depth + 1
+                );
+
+            if (result) {
+                return result;
+            }
+        }
+
+        return null;
+    }
+
+    function findFirstUsefulString(
+        value,
+        depth = 0
+    ) {
+        if (
+            depth > 6 ||
+            value === null ||
+            value === undefined
+        ) {
+            return null;
+        }
+
+        if (
+            typeof value === "string"
+        ) {
+            const text =
+                value.trim();
+
+            return text || null;
+        }
+
+        if (
+            typeof value !== "object"
+        ) {
+            return null;
+        }
+
+        // تجاهل بعض الحقول التي لا تمثل إجابة
+        const ignoredKeys = [
+            "status",
+            "success",
+            "ok",
+            "code",
+            "error",
+            "id",
+            "created_at",
+            "updated_at"
+        ];
+
+        for (const key of Object.keys(value)) {
+            if (
+                ignoredKeys.includes(
+                    key
+                )
+            ) {
+                continue;
+            }
+
+            const result =
+                findFirstUsefulString(
+                    value[key],
+                    depth + 1
+                );
+
+            if (result) {
+                return result;
+            }
+        }
+
+        return null;
     }
 
     // =========================================================
@@ -542,62 +1036,124 @@
     // =========================================================
 
     function createModal(options = {}) {
-        const overlay = document.createElement("div");
-        overlay.className = "unimind-overlay";
+        const overlay =
+            document.createElement("div");
 
-        const modal = document.createElement("div");
-        modal.className = "unimind-modal";
+        overlay.className =
+            "unimind-overlay";
 
-        const header = document.createElement("div");
-        header.className = "unimind-modal-header";
+        const modal =
+            document.createElement("div");
 
-        const title = document.createElement("h2");
-        title.className = "unimind-modal-title";
-        title.textContent = options.title || "UniMind AI";
+        modal.className =
+            "unimind-modal";
 
-        const closeButton = document.createElement("button");
-        closeButton.className = "unimind-close";
-        closeButton.type = "button";
-        closeButton.innerHTML = "×";
-        closeButton.setAttribute("aria-label", "إغلاق");
+        const header =
+            document.createElement("div");
 
-        const body = document.createElement("div");
-        body.className = "unimind-modal-body";
+        header.className =
+            "unimind-modal-header";
+
+        const title =
+            document.createElement("h2");
+
+        title.className =
+            "unimind-modal-title";
+
+        title.textContent =
+            options.title ||
+            "UniMind AI";
+
+        const closeButton =
+            document.createElement(
+                "button"
+            );
+
+        closeButton.className =
+            "unimind-close";
+
+        closeButton.type =
+            "button";
+
+        closeButton.innerHTML =
+            "×";
+
+        closeButton.setAttribute(
+            "aria-label",
+            "إغلاق"
+        );
+
+        const body =
+            document.createElement("div");
+
+        body.className =
+            "unimind-modal-body";
 
         header.appendChild(title);
         header.appendChild(closeButton);
 
         modal.appendChild(header);
         modal.appendChild(body);
+
         overlay.appendChild(modal);
 
-        document.body.appendChild(overlay);
+        document.body.appendChild(
+            overlay
+        );
+
+        let closed = false;
 
         function close() {
+            if (closed) return;
+
+            closed = true;
+
             overlay.remove();
+
             unlockBody();
 
-            if (typeof options.onClose === "function") {
+            if (
+                typeof options.onClose ===
+                "function"
+            ) {
                 options.onClose();
             }
         }
 
-        closeButton.addEventListener("click", close);
+        closeButton.addEventListener(
+            "click",
+            close
+        );
 
-        overlay.addEventListener("click", event => {
-            if (event.target === overlay) {
-                close();
+        overlay.addEventListener(
+            "click",
+            event => {
+                if (
+                    event.target ===
+                    overlay
+                ) {
+                    close();
+                }
             }
-        });
+        );
+
+        function escHandler(event) {
+            if (
+                event.key ===
+                "Escape"
+            ) {
+                close();
+
+                document.removeEventListener(
+                    "keydown",
+                    escHandler
+                );
+            }
+        }
 
         document.addEventListener(
             "keydown",
-            function escHandler(event) {
-                if (event.key === "Escape") {
-                    close();
-                    document.removeEventListener("keydown", escHandler);
-                }
-            }
+            escHandler
         );
 
         lockBody();
@@ -616,33 +1172,71 @@
     // =========================================================
 
     function createChatModal() {
-        const modal = createModal({
-            title: "🤖 مساعد الدراسة الذكي"
-        });
+        const modal =
+            createModal({
+                title:
+                    "🤖 مساعد الدراسة الذكي"
+            });
 
-        const chat = document.createElement("div");
-        chat.className = "unimind-chat";
-        chat.id = "unimindChatMessages";
+        const chat =
+            document.createElement("div");
 
-        const welcome = document.createElement("div");
-        welcome.className = "unimind-message unimind-message-ai";
+        chat.className =
+            "unimind-chat";
+
+        chat.id =
+            "unimindChatMessages";
+
+        const welcome =
+            document.createElement(
+                "div"
+            );
+
+        welcome.className =
+            "unimind-message unimind-message-ai";
+
         welcome.textContent =
             "مرحباً بك 👋\nأنا مساعد الدراسة الذكي في UniMind AI.\nاسألني عن أي موضوع دراسي وسأساعدك في فهمه.";
 
-        chat.appendChild(welcome);
+        chat.appendChild(
+            welcome
+        );
 
-        const form = document.createElement("form");
-        form.className = "unimind-chat-form";
+        const form =
+            document.createElement(
+                "form"
+            );
 
-        const input = document.createElement("input");
-        input.className = "unimind-input";
-        input.placeholder = "اكتب سؤالك هنا...";
-        input.autocomplete = "off";
+        form.className =
+            "unimind-chat-form";
 
-        const button = document.createElement("button");
-        button.type = "submit";
-        button.className = "unimind-btn unimind-btn-primary";
-        button.textContent = "إرسال";
+        const input =
+            document.createElement(
+                "input"
+            );
+
+        input.className =
+            "unimind-input";
+
+        input.placeholder =
+            "اكتب سؤالك هنا...";
+
+        input.autocomplete =
+            "off";
+
+        const button =
+            document.createElement(
+                "button"
+            );
+
+        button.type =
+            "submit";
+
+        button.className =
+            "unimind-btn unimind-btn-primary";
+
+        button.textContent =
+            "إرسال";
 
         form.appendChild(input);
         form.appendChild(button);
@@ -650,72 +1244,121 @@
         modal.body.appendChild(chat);
         modal.body.appendChild(form);
 
-        form.addEventListener("submit", async event => {
-            event.preventDefault();
+        form.addEventListener(
+            "submit",
+            async event => {
+                event.preventDefault();
 
-            const message = input.value.trim();
+                const message =
+                    input.value.trim();
 
-            if (!message) return;
-
-            addChatMessage(chat, message, "user");
-
-            input.value = "";
-            input.disabled = true;
-            button.disabled = true;
-
-            const loading = addLoadingMessage(chat);
-
-            try {
-                const answer = await askAI(message);
-
-                loading.remove();
+                if (!message) {
+                    return;
+                }
 
                 addChatMessage(
                     chat,
-                    answer,
-                    "ai"
+                    message,
+                    "user"
                 );
-            } catch (error) {
-                loading.remove();
 
-                addChatMessage(
-                    chat,
-                    "حدث خطأ أثناء الاتصال بالمساعد:\n" +
-                    (error.message || "خطأ غير معروف"),
-                    "ai"
-                );
-            } finally {
-                input.disabled = false;
-                button.disabled = false;
-                input.focus();
+                input.value = "";
+
+                input.disabled =
+                    true;
+
+                button.disabled =
+                    true;
+
+                const loading =
+                    addLoadingMessage(
+                        chat
+                    );
+
+                try {
+                    const answer =
+                        await askAI(
+                            message
+                        );
+
+                    loading.remove();
+
+                    addChatMessage(
+                        chat,
+                        answer,
+                        "ai"
+                    );
+                } catch (error) {
+                    loading.remove();
+
+                    addChatMessage(
+                        chat,
+                        "حدث خطأ أثناء الاتصال بالمساعد:\n" +
+                        (
+                            error.message ||
+                            "خطأ غير معروف"
+                        ),
+                        "ai"
+                    );
+                } finally {
+                    input.disabled =
+                        false;
+
+                    button.disabled =
+                        false;
+
+                    input.focus();
+                }
             }
-        });
+        );
 
-        setTimeout(() => input.focus(), 100);
+        setTimeout(
+            () => input.focus(),
+            100
+        );
 
         return modal;
     }
 
-    function addChatMessage(container, text, type) {
-        const message = document.createElement("div");
+    function addChatMessage(
+        container,
+        text,
+        type
+    ) {
+        const message =
+            document.createElement(
+                "div"
+            );
 
         message.className =
             "unimind-message " +
-            (type === "user"
-                ? "unimind-message-user"
-                : "unimind-message-ai");
+            (
+                type === "user"
+                    ? "unimind-message-user"
+                    : "unimind-message-ai"
+            );
 
-        message.textContent = text;
+        message.textContent =
+            text;
 
-        container.appendChild(message);
+        container.appendChild(
+            message
+        );
 
-        container.scrollTop = container.scrollHeight;
+        container.scrollTop =
+            container.scrollHeight;
 
         return message;
     }
 
-    function addLoadingMessage(container) {
-        const message = document.createElement("div");
+    function addLoadingMessage(
+        container
+    ) {
+        const message =
+            document.createElement(
+                "div"
+            );
+
         message.className =
             "unimind-message unimind-message-ai";
 
@@ -728,9 +1371,12 @@
             </span>
         `;
 
-        container.appendChild(message);
+        container.appendChild(
+            message
+        );
 
-        container.scrollTop = container.scrollHeight;
+        container.scrollTop =
+            container.scrollHeight;
 
         return message;
     }
@@ -748,46 +1394,70 @@
             return window.pdfjsLib;
         }
 
-        if (window.__unimindPDFLoading) {
+        if (
+            window.__unimindPDFLoading
+        ) {
             return window.__unimindPDFLoading;
         }
 
-        window.__unimindPDFLoading = new Promise((resolve, reject) => {
-            const script = document.createElement("script");
+        window.__unimindPDFLoading =
+            new Promise(
+                (
+                    resolve,
+                    reject
+                ) => {
+                    const script =
+                        document.createElement(
+                            "script"
+                        );
 
-            script.src =
-                "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+                    script.src =
+                        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
 
-            script.async = true;
+                    script.async =
+                        true;
 
-            script.onload = () => {
-                if (!window.pdfjsLib) {
-                    reject(
-                        new Error(
-                            "تم تحميل PDF.js ولكن المكتبة غير متاحة."
-                        )
+                    script.onload =
+                        () => {
+                            if (
+                                !window.pdfjsLib
+                            ) {
+                                reject(
+                                    new Error(
+                                        "تم تحميل PDF.js ولكن المكتبة غير متاحة."
+                                    )
+                                );
+
+                                return;
+                            }
+
+                            try {
+                                window
+                                    .pdfjsLib
+                                    .GlobalWorkerOptions
+                                    .workerSrc =
+                                    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+                            } catch (_) {}
+
+                            resolve(
+                                window.pdfjsLib
+                            );
+                        };
+
+                    script.onerror =
+                        () => {
+                            reject(
+                                new Error(
+                                    "تعذر تحميل مكتبة قراءة ملفات PDF."
+                                )
+                            );
+                        };
+
+                    document.head.appendChild(
+                        script
                     );
-                    return;
                 }
-
-                try {
-                    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-                        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-                } catch (_) {}
-
-                resolve(window.pdfjsLib);
-            };
-
-            script.onerror = () => {
-                reject(
-                    new Error(
-                        "تعذر تحميل مكتبة قراءة ملفات PDF."
-                    )
-                );
-            };
-
-            document.head.appendChild(script);
-        });
+            );
 
         return window.__unimindPDFLoading;
     }
@@ -801,42 +1471,60 @@
             return window.mammoth;
         }
 
-        if (window.__unimindMammothLoading) {
+        if (
+            window.__unimindMammothLoading
+        ) {
             return window.__unimindMammothLoading;
         }
 
-        window.__unimindMammothLoading = new Promise(
-            (resolve, reject) => {
-                const script = document.createElement("script");
-
-                script.src =
-                    "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js";
-
-                script.async = true;
-
-                script.onload = () => {
-                    if (window.mammoth) {
-                        resolve(window.mammoth);
-                    } else {
-                        reject(
-                            new Error(
-                                "تعذر تشغيل مكتبة Mammoth."
-                            )
+        window.__unimindMammothLoading =
+            new Promise(
+                (
+                    resolve,
+                    reject
+                ) => {
+                    const script =
+                        document.createElement(
+                            "script"
                         );
-                    }
-                };
 
-                script.onerror = () => {
-                    reject(
-                        new Error(
-                            "تعذر تحميل مكتبة Word."
-                        )
+                    script.src =
+                        "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js";
+
+                    script.async =
+                        true;
+
+                    script.onload =
+                        () => {
+                            if (
+                                window.mammoth
+                            ) {
+                                resolve(
+                                    window.mammoth
+                                );
+                            } else {
+                                reject(
+                                    new Error(
+                                        "تعذر تشغيل مكتبة Mammoth."
+                                    )
+                                );
+                            }
+                        };
+
+                    script.onerror =
+                        () => {
+                            reject(
+                                new Error(
+                                    "تعذر تحميل مكتبة Word."
+                                )
+                            );
+                        };
+
+                    document.head.appendChild(
+                        script
                     );
-                };
-
-                document.head.appendChild(script);
-            }
-        );
+                }
+            );
 
         return window.__unimindMammothLoading;
     }
@@ -845,12 +1533,17 @@
     // FILE TEXT EXTRACTION
     // =========================================================
 
-    async function extractLectureText(file) {
+    async function extractLectureText(
+        file
+    ) {
         if (!file) {
-            throw new Error("لم يتم اختيار ملف.");
+            throw new Error(
+                "لم يتم اختيار ملف."
+            );
         }
 
-        const name = file.name.toLowerCase();
+        const name =
+            file.name.toLowerCase();
 
         // TXT / MD
         if (
@@ -861,27 +1554,49 @@
         }
 
         // PDF
-        if (name.endsWith(".pdf")) {
-            const pdfjs = await loadPDFJS();
+        if (
+            name.endsWith(".pdf")
+        ) {
+            const pdfjs =
+                await loadPDFJS();
 
-            const arrayBuffer = await file.arrayBuffer();
+            const arrayBuffer =
+                await file.arrayBuffer();
 
-            const typedArray = new Uint8Array(arrayBuffer);
+            const typedArray =
+                new Uint8Array(
+                    arrayBuffer
+                );
 
-            const pdf = await pdfjs.getDocument({
-                data: typedArray
-            }).promise;
+            const pdf =
+                await pdfjs.getDocument({
+                    data: typedArray
+                }).promise;
 
             let fullText = "";
 
-            for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-                const page = await pdf.getPage(pageNumber);
+            for (
+                let pageNumber = 1;
+                pageNumber <=
+                pdf.numPages;
+                pageNumber++
+            ) {
+                const page =
+                    await pdf.getPage(
+                        pageNumber
+                    );
 
-                const content = await page.getTextContent();
+                const content =
+                    await page.getTextContent();
 
-                const pageText = content.items
-                    .map(item => item.str || "")
-                    .join(" ");
+                const pageText =
+                    content.items
+                        .map(
+                            item =>
+                                item.str ||
+                                ""
+                        )
+                        .join(" ");
 
                 fullText +=
                     `\n\n--- الصفحة ${pageNumber} ---\n\n` +
@@ -896,9 +1611,11 @@
             name.endsWith(".doc") ||
             name.endsWith(".docx")
         ) {
-            const mammoth = await loadMammoth();
+            const mammoth =
+                await loadMammoth();
 
-            const arrayBuffer = await file.arrayBuffer();
+            const arrayBuffer =
+                await file.arrayBuffer();
 
             const result =
                 await mammoth.extractRawText({
@@ -920,11 +1637,16 @@
     // =========================================================
 
     function openLectureSummarizer() {
-        const modal = createModal({
-            title: "📄 تلخيص المحاضرات"
-        });
+        const modal =
+            createModal({
+                title:
+                    "📄 تلخيص المحاضرات"
+            });
 
-        const wrapper = document.createElement("div");
+        const wrapper =
+            document.createElement(
+                "div"
+            );
 
         wrapper.innerHTML = `
             <div class="unimind-card">
@@ -967,7 +1689,9 @@
 
             <div class="unimind-card">
                 <label>
-                    <strong>أو الصق نص المحاضرة مباشرة</strong>
+                    <strong>
+                        أو الصق نص المحاضرة مباشرة
+                    </strong>
                 </label>
 
                 <textarea
@@ -1006,107 +1730,178 @@
             ></div>
         `;
 
-        modal.body.appendChild(wrapper);
+        modal.body.appendChild(
+            wrapper
+        );
 
         const dropzone =
-            document.getElementById("unimindLectureDropzone");
+            document.getElementById(
+                "unimindLectureDropzone"
+            );
 
         const fileInput =
-            document.getElementById("unimindLectureFile");
+            document.getElementById(
+                "unimindLectureFile"
+            );
 
         const fileName =
-            document.getElementById("unimindLectureFileName");
+            document.getElementById(
+                "unimindLectureFileName"
+            );
 
         const textInput =
-            document.getElementById("unimindLectureText");
+            document.getElementById(
+                "unimindLectureText"
+            );
 
         const summarizeBtn =
-            document.getElementById("unimindSummarizeBtn");
+            document.getElementById(
+                "unimindSummarizeBtn"
+            );
 
         const keyPointsBtn =
-            document.getElementById("unimindKeyPointsBtn");
+            document.getElementById(
+                "unimindKeyPointsBtn"
+            );
 
         const status =
-            document.getElementById("unimindLectureStatus");
+            document.getElementById(
+                "unimindLectureStatus"
+            );
 
         const result =
-            document.getElementById("unimindLectureResult");
+            document.getElementById(
+                "unimindLectureResult"
+            );
 
-        dropzone.addEventListener("click", () => {
-            fileInput.click();
-        });
+        dropzone.addEventListener(
+            "click",
+            () => {
+                fileInput.click();
+            }
+        );
 
-        fileInput.addEventListener("change", () => {
-            if (fileInput.files && fileInput.files[0]) {
-                handleLectureFile(
-                    fileInput.files[0],
-                    fileName,
-                    status
+        fileInput.addEventListener(
+            "change",
+            () => {
+                if (
+                    fileInput.files &&
+                    fileInput.files[0]
+                ) {
+                    handleLectureFile(
+                        fileInput.files[0],
+                        fileName,
+                        status
+                    );
+                }
+            }
+        );
+
+        dropzone.addEventListener(
+            "dragover",
+            event => {
+                event.preventDefault();
+
+                dropzone.style.borderColor =
+                    "#6366f1";
+            }
+        );
+
+        dropzone.addEventListener(
+            "dragleave",
+            () => {
+                dropzone.style.borderColor =
+                    "";
+            }
+        );
+
+        dropzone.addEventListener(
+            "drop",
+            event => {
+                event.preventDefault();
+
+                dropzone.style.borderColor =
+                    "";
+
+                const file =
+                    event.dataTransfer
+                        .files?.[0];
+
+                if (file) {
+                    selectedLectureFile =
+                        file;
+
+                    handleLectureFile(
+                        file,
+                        fileName,
+                        status
+                    );
+                }
+            }
+        );
+
+        summarizeBtn.addEventListener(
+            "click",
+            async () => {
+                await processLecture(
+                    "summary",
+                    textInput,
+                    result,
+                    status,
+                    summarizeBtn,
+                    keyPointsBtn
                 );
             }
-        });
+        );
 
-        dropzone.addEventListener("dragover", event => {
-            event.preventDefault();
-            dropzone.style.borderColor = "#6366f1";
-        });
-
-        dropzone.addEventListener("dragleave", () => {
-            dropzone.style.borderColor = "";
-        });
-
-        dropzone.addEventListener("drop", event => {
-            event.preventDefault();
-
-            dropzone.style.borderColor = "";
-
-            const file = event.dataTransfer.files?.[0];
-
-            if (file) {
-                selectedLectureFile = file;
-
-                handleLectureFile(
-                    file,
-                    fileName,
-                    status
+        keyPointsBtn.addEventListener(
+            "click",
+            async () => {
+                await processLecture(
+                    "keypoints",
+                    textInput,
+                    result,
+                    status,
+                    summarizeBtn,
+                    keyPointsBtn
                 );
             }
-        });
-
-        summarizeBtn.addEventListener("click", async () => {
-            await processLecture(
-                "summary",
-                textInput,
-                result,
-                status,
-                summarizeBtn,
-                keyPointsBtn
-            );
-        });
-
-        keyPointsBtn.addEventListener("click", async () => {
-            await processLecture(
-                "keypoints",
-                textInput,
-                result,
-                status,
-                summarizeBtn,
-                keyPointsBtn
-            );
-        });
+        );
     }
 
-    function handleLectureFile(file, fileNameElement, statusElement) {
-        selectedLectureFile = file;
+    function handleLectureFile(
+        file,
+        fileNameElement,
+        statusElement
+    ) {
+        selectedLectureFile =
+            file;
 
         const extension =
-            file.name.split(".").pop().toLowerCase();
+            file.name
+                .split(".")
+                .pop()
+                .toLowerCase();
 
         let icon = "📄";
 
-        if (extension === "pdf") icon = "📕";
-        if (extension === "doc" || extension === "docx") icon = "📘";
-        if (extension === "txt" || extension === "md") icon = "📝";
+        if (extension === "pdf") {
+            icon = "📕";
+        }
+
+        if (
+            extension === "doc" ||
+            extension === "docx"
+        ) {
+            icon = "📘";
+        }
+
+        if (
+            extension === "txt" ||
+            extension === "md"
+        ) {
+            icon = "📝";
+        }
 
         fileNameElement.textContent =
             `${icon} ${file.name}`;
@@ -1129,10 +1924,14 @@
     ) {
         result.innerHTML = "";
 
-        let text = textInput.value.trim();
+        let text =
+            textInput.value.trim();
 
-        summarizeBtn.disabled = true;
-        keyPointsBtn.disabled = true;
+        summarizeBtn.disabled =
+            true;
+
+        keyPointsBtn.disabled =
+            true;
 
         status.innerHTML = `
             <div class="unimind-loading">
@@ -1142,24 +1941,38 @@
         `;
 
         try {
-            if (!text && selectedLectureFile) {
-                text = await extractLectureText(
-                    selectedLectureFile
-                );
+            if (
+                !text &&
+                selectedLectureFile
+            ) {
+                text =
+                    await extractLectureText(
+                        selectedLectureFile
+                    );
             }
 
-            if (!text || !text.trim()) {
+            if (
+                !text ||
+                !text.trim()
+            ) {
                 throw new Error(
                     "لم يتم العثور على نص.\n" +
                     "اختر ملفاً أو الصق نص المحاضرة."
                 );
             }
 
-            text = text.trim();
+            text =
+                text.trim();
 
-            // الحد الآمن للنص المرسل
-            if (text.length > 30000) {
-                text = text.slice(0, 30000);
+            if (
+                text.length >
+                30000
+            ) {
+                text =
+                    text.slice(
+                        0,
+                        30000
+                    );
 
                 status.innerHTML = `
                     <div class="unimind-success">
@@ -1171,7 +1984,9 @@
 
             let prompt = "";
 
-            if (mode === "summary") {
+            if (
+                mode === "summary"
+            ) {
                 prompt = `
 أنت مساعد دراسي جامعي.
 
@@ -1218,10 +2033,17 @@ ${text}
                 `;
             }
 
-            const answer = await askAI(prompt);
+            const answer =
+                await askAI(
+                    prompt
+                );
 
             result.innerHTML = `
-                <div class="unimind-result">${escapeHTML(answer)}</div>
+                <div class="unimind-result">
+                    ${escapeHTML(
+                        answer
+                    )}
+                </div>
             `;
 
             status.innerHTML = `
@@ -1239,8 +2061,11 @@ ${text}
                 </div>
             `;
         } finally {
-            summarizeBtn.disabled = false;
-            keyPointsBtn.disabled = false;
+            summarizeBtn.disabled =
+                false;
+
+            keyPointsBtn.disabled =
+                false;
         }
     }
 
@@ -1249,15 +2074,20 @@ ${text}
     // =========================================================
 
     function openQuiz() {
-        const modal = createModal({
-            title: "🧠 الاختبار الذكي"
-        });
+        const modal =
+            createModal({
+                title:
+                    "🧠 الاختبار الذكي"
+            });
 
-        const body = modal.body;
+        const body =
+            modal.body;
 
         body.innerHTML = `
             <div class="unimind-card">
-                <h3>أنشئ اختباراً من موضوعك</h3>
+                <h3>
+                    أنشئ اختباراً من موضوعك
+                </h3>
 
                 <textarea
                     id="unimindQuizTopic"
@@ -1266,15 +2096,28 @@ ${text}
                 ></textarea>
 
                 <div style="margin-top:15px;">
-                    <label>عدد الأسئلة</label>
+                    <label>
+                        عدد الأسئلة
+                    </label>
 
                     <select
                         id="unimindQuizCount"
                         class="unimind-select"
                     >
-                        <option value="5">5 أسئلة</option>
-                        <option value="10" selected>10 أسئلة</option>
-                        <option value="15">15 سؤالاً</option>
+                        <option value="5">
+                            5 أسئلة
+                        </option>
+
+                        <option
+                            value="10"
+                            selected
+                        >
+                            10 أسئلة
+                        </option>
+
+                        <option value="15">
+                            15 سؤالاً
+                        </option>
                     </select>
                 </div>
 
@@ -1282,6 +2125,7 @@ ${text}
                     id="unimindGenerateQuiz"
                     class="unimind-btn unimind-btn-primary"
                     style="margin-top:15px;"
+                    type="button"
                 >
                     ✨ إنشاء الاختبار
                 </button>
@@ -1291,39 +2135,52 @@ ${text}
         `;
 
         const topic =
-            document.getElementById("unimindQuizTopic");
+            document.getElementById(
+                "unimindQuizTopic"
+            );
 
         const count =
-            document.getElementById("unimindQuizCount");
+            document.getElementById(
+                "unimindQuizCount"
+            );
 
         const generate =
-            document.getElementById("unimindGenerateQuiz");
+            document.getElementById(
+                "unimindGenerateQuiz"
+            );
 
         const area =
-            document.getElementById("unimindQuizArea");
+            document.getElementById(
+                "unimindQuizArea"
+            );
 
-        generate.addEventListener("click", async () => {
-            const topicText = topic.value.trim();
+        generate.addEventListener(
+            "click",
+            async () => {
+                const topicText =
+                    topic.value.trim();
 
-            if (!topicText) {
+                if (!topicText) {
+                    area.innerHTML = `
+                        <div class="unimind-error">
+                            اكتب موضوع الاختبار أولاً.
+                        </div>
+                    `;
+
+                    return;
+                }
+
+                generate.disabled =
+                    true;
+
                 area.innerHTML = `
-                    <div class="unimind-error">
-                        اكتب موضوع الاختبار أولاً.
+                    <div class="unimind-card">
+                        ⏳ جاري إنشاء الاختبار...
                     </div>
                 `;
-                return;
-            }
 
-            generate.disabled = true;
-
-            area.innerHTML = `
-                <div class="unimind-card">
-                    ⏳ جاري إنشاء الاختبار...
-                </div>
-            `;
-
-            try {
-                const prompt = `
+                try {
+                    const prompt = `
 أنشئ اختباراً تعليمياً باللغة العربية عن الموضوع التالي:
 
 ${topicText}
@@ -1350,104 +2207,173 @@ ${topicText}
 
 مهم:
 answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
-                `;
+                    `;
 
-                const answer = await askAI(prompt);
+                    const answer =
+                        await askAI(
+                            prompt
+                        );
 
-                const questions =
-                    parseQuizResponse(answer);
-
-                if (!questions.length) {
-                    throw new Error(
-                        "تعذر استخراج أسئلة صحيحة من رد الذكاء الاصطناعي."
+                    console.log(
+                        "🧪 Quiz AI response:",
+                        answer
                     );
+
+                    const questions =
+                        parseQuizResponse(
+                            answer
+                        );
+
+                    if (
+                        !questions.length
+                    ) {
+                        throw new Error(
+                            "تعذر استخراج أسئلة صحيحة من رد الذكاء الاصطناعي."
+                        );
+                    }
+
+                    quizState = {
+                        questions,
+                        current: 0,
+                        score: 0,
+                        answered: false
+                    };
+
+                    renderQuiz(
+                        area
+                    );
+                } catch (error) {
+                    area.innerHTML = `
+                        <div class="unimind-error">
+                            ❌ ${escapeHTML(
+                                error.message ||
+                                "حدث خطأ أثناء إنشاء الاختبار."
+                            )}
+                        </div>
+                    `;
+                } finally {
+                    generate.disabled =
+                        false;
                 }
-
-                quizState = {
-                    questions,
-                    current: 0,
-                    score: 0,
-                    answered: false
-                };
-
-                renderQuiz(area);
-            } catch (error) {
-                area.innerHTML = `
-                    <div class="unimind-error">
-                        ❌ ${escapeHTML(
-                            error.message ||
-                            "حدث خطأ أثناء إنشاء الاختبار."
-                        )}
-                    </div>
-                `;
-            } finally {
-                generate.disabled = false;
             }
-        });
+        );
     }
 
-    function parseQuizResponse(text) {
-        if (!text) return [];
+    function parseQuizResponse(
+        text
+    ) {
+        if (!text) {
+            return [];
+        }
 
-        let cleaned = String(text).trim();
+        let cleaned =
+            String(text)
+                .trim();
 
-        cleaned = cleaned
-            .replace(/^```json/i, "")
-            .replace(/^```/i, "")
-            .replace(/```$/i, "")
-            .trim();
+        cleaned =
+            cleaned
+                .replace(
+                    /^```json/i,
+                    ""
+                )
+                .replace(
+                    /^```/i,
+                    ""
+                )
+                .replace(
+                    /```$/i,
+                    ""
+                )
+                .trim();
 
         try {
-            const data = JSON.parse(cleaned);
+            const data =
+                JSON.parse(
+                    cleaned
+                );
 
             return normalizeQuestions(
-                data.questions || data
+                data.questions ||
+                data
             );
         } catch (_) {}
 
-        const start = cleaned.indexOf("{");
-        const end = cleaned.lastIndexOf("}");
+        const start =
+            cleaned.indexOf(
+                "{"
+            );
 
-        if (start !== -1 && end !== -1) {
+        const end =
+            cleaned.lastIndexOf(
+                "}"
+            );
+
+        if (
+            start !== -1 &&
+            end !== -1
+        ) {
             try {
-                const data = JSON.parse(
-                    cleaned.slice(start, end + 1)
-                );
+                const data =
+                    JSON.parse(
+                        cleaned.slice(
+                            start,
+                            end + 1
+                        )
+                    );
 
                 return normalizeQuestions(
-                    data.questions || data
+                    data.questions ||
+                    data
                 );
             } catch (_) {}
         }
 
-        const arrayStart = cleaned.indexOf("[");
-        const arrayEnd = cleaned.lastIndexOf("]");
+        const arrayStart =
+            cleaned.indexOf(
+                "["
+            );
+
+        const arrayEnd =
+            cleaned.lastIndexOf(
+                "]"
+            );
 
         if (
             arrayStart !== -1 &&
             arrayEnd !== -1
         ) {
             try {
-                const data = JSON.parse(
-                    cleaned.slice(
-                        arrayStart,
-                        arrayEnd + 1
-                    )
-                );
+                const data =
+                    JSON.parse(
+                        cleaned.slice(
+                            arrayStart,
+                            arrayEnd + 1
+                        )
+                    );
 
-                return normalizeQuestions(data);
+                return normalizeQuestions(
+                    data
+                );
             } catch (_) {}
         }
 
         return [];
     }
 
-    function normalizeQuestions(items) {
-        if (!Array.isArray(items)) return [];
+    function normalizeQuestions(
+        items
+    ) {
+        if (
+            !Array.isArray(items)
+        ) {
+            return [];
+        }
 
         return items
             .map(item => {
-                if (!item) return null;
+                if (!item) {
+                    return null;
+                }
 
                 const question =
                     item.question ||
@@ -1468,40 +2394,64 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
                     0;
 
                 if (
-                    typeof answer === "string" &&
-                    !/^\d+$/.test(answer)
+                    typeof answer ===
+                    "string" &&
+                    !/^\d+$/.test(
+                        answer
+                    )
                 ) {
                     const index =
                         options.findIndex(
                             option =>
-                                String(option).trim() ===
+                                String(
+                                    option
+                                ).trim() ===
                                 answer.trim()
                         );
 
                     answer =
-                        index >= 0 ? index : 0;
+                        index >= 0
+                            ? index
+                            : 0;
                 } else {
-                    answer = Number(answer);
+                    answer =
+                        Number(
+                            answer
+                        );
                 }
 
                 if (
                     !question ||
-                    !Array.isArray(options) ||
-                    options.length < 2
+                    !Array.isArray(
+                        options
+                    ) ||
+                    options.length <
+                        2
                 ) {
                     return null;
                 }
 
                 return {
-                    question: String(question),
-                    options: options.map(String),
-                    answer: Math.max(
-                        0,
-                        Math.min(
-                            answer,
-                            options.length - 1
-                        )
-                    ),
+                    question:
+                        String(
+                            question
+                        ),
+
+                    options:
+                        options.map(
+                            String
+                        ),
+
+                    answer:
+                        Math.max(
+                            0,
+                            Math.min(
+                                answer,
+                                options.length -
+                                    1
+                            )
+                        ),
+
                     explanation:
                         item.explanation ||
                         item.explain ||
@@ -1511,14 +2461,19 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
             .filter(Boolean);
     }
 
-    function renderQuiz(area) {
+    function renderQuiz(
+        area
+    ) {
         const question =
             quizState.questions[
                 quizState.current
             ];
 
         if (!question) {
-            renderQuizResult(area);
+            renderQuizResult(
+                area
+            );
+
             return;
         }
 
@@ -1526,15 +2481,19 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
             quizState.questions.length;
 
         const current =
-            quizState.current + 1;
+            quizState.current +
+            1;
 
         const progress =
-            ((current - 1) / total) * 100;
+            ((current - 1) /
+                total) *
+            100;
 
         area.innerHTML = `
             <div class="unimind-card">
                 <div>
-                    السؤال ${current} من ${total}
+                    السؤال ${current}
+                    من ${total}
                 </div>
 
                 <div class="unimind-progress">
@@ -1545,10 +2504,14 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
                 </div>
 
                 <h3>
-                    ${escapeHTML(question.question)}
+                    ${escapeHTML(
+                        question.question
+                    )}
                 </h3>
 
-                <div id="unimindQuizOptions"></div>
+                <div
+                    id="unimindQuizOptions"
+                ></div>
 
                 <div
                     id="unimindQuizExplanation"
@@ -1563,11 +2526,17 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
             );
 
         question.options.forEach(
-            (option, index) => {
+            (
+                option,
+                index
+            ) => {
                 const button =
-                    document.createElement("button");
+                    document.createElement(
+                        "button"
+                    );
 
-                button.type = "button";
+                button.type =
+                    "button";
 
                 button.className =
                     "unimind-option";
@@ -1577,21 +2546,32 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
 
                 button.addEventListener(
                     "click",
-                    () => answerQuiz(
-                        index,
-                        area
-                    )
+                    () =>
+                        answerQuiz(
+                            index,
+                            area
+                        )
                 );
 
-                options.appendChild(button);
+                options.appendChild(
+                    button
+                );
             }
         );
     }
 
-    function answerQuiz(index, area) {
-        if (quizState.answered) return;
+    function answerQuiz(
+        index,
+        area
+    ) {
+        if (
+            quizState.answered
+        ) {
+            return;
+        }
 
-        quizState.answered = true;
+        quizState.answered =
+            true;
 
         const question =
             quizState.questions[
@@ -1603,29 +2583,40 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
                 "#unimindQuizOptions .unimind-option"
             );
 
-        buttons.forEach((button, buttonIndex) => {
-            if (
-                buttonIndex ===
-                question.answer
-            ) {
-                button.classList.add(
-                    "correct"
-                );
+        buttons.forEach(
+            (
+                button,
+                buttonIndex
+            ) => {
+                if (
+                    buttonIndex ===
+                    question.answer
+                ) {
+                    button.classList.add(
+                        "correct"
+                    );
+                }
+
+                if (
+                    buttonIndex ===
+                        index &&
+                    index !==
+                        question.answer
+                ) {
+                    button.classList.add(
+                        "wrong"
+                    );
+                }
+
+                button.disabled =
+                    true;
             }
+        );
 
-            if (
-                buttonIndex === index &&
-                index !== question.answer
-            ) {
-                button.classList.add(
-                    "wrong"
-                );
-            }
-
-            button.disabled = true;
-        });
-
-        if (index === question.answer) {
+        if (
+            index ===
+            question.answer
+        ) {
             quizState.score++;
         }
 
@@ -1636,13 +2627,15 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
 
         explanation.innerHTML = `
             <div class="${
-                index === question.answer
+                index ===
+                question.answer
                     ? "unimind-success"
                     : "unimind-error"
             }">
                 <strong>
                     ${
-                        index === question.answer
+                        index ===
+                        question.answer
                             ? "✅ إجابة صحيحة!"
                             : "❌ إجابة غير صحيحة"
                     }
@@ -1661,9 +2654,11 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
                 <button
                     id="unimindNextQuestion"
                     class="unimind-btn unimind-btn-primary"
+                    type="button"
                 >
                     ${
-                        quizState.current + 1 <
+                        quizState.current +
+                            1 <
                         quizState.questions.length
                             ? "السؤال التالي ←"
                             : "عرض النتيجة"
@@ -1680,13 +2675,20 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
                 "click",
                 () => {
                     quizState.current++;
-                    quizState.answered = false;
-                    renderQuiz(area);
+
+                    quizState.answered =
+                        false;
+
+                    renderQuiz(
+                        area
+                    );
                 }
             );
     }
 
-    function renderQuizResult(area) {
+    function renderQuizResult(
+        area
+    ) {
         const total =
             quizState.questions.length;
 
@@ -1695,12 +2697,18 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
 
         const percentage =
             total
-                ? Math.round((score / total) * 100)
+                ? Math.round(
+                      (score /
+                          total) *
+                          100
+                  )
                 : 0;
 
         area.innerHTML = `
             <div class="unimind-card">
-                <h2>🎉 انتهى الاختبار</h2>
+                <h2>
+                    🎉 انتهى الاختبار
+                </h2>
 
                 <div class="unimind-success">
                     النتيجة:
@@ -1720,6 +2728,7 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
                     id="unimindRestartQuiz"
                     class="unimind-btn unimind-btn-primary"
                     style="margin-top:15px;"
+                    type="button"
                 >
                     🔄 إعادة الاختبار
                 </button>
@@ -1733,10 +2742,18 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
             .addEventListener(
                 "click",
                 () => {
-                    quizState.current = 0;
-                    quizState.score = 0;
-                    quizState.answered = false;
-                    renderQuiz(area);
+                    quizState.current =
+                        0;
+
+                    quizState.score =
+                        0;
+
+                    quizState.answered =
+                        false;
+
+                    renderQuiz(
+                        area
+                    );
                 }
             );
     }
@@ -1746,13 +2763,17 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
     // =========================================================
 
     function openFlashcards() {
-        const modal = createModal({
-            title: "🗂️ البطاقات التعليمية"
-        });
+        const modal =
+            createModal({
+                title:
+                    "🗂️ البطاقات التعليمية"
+            });
 
         modal.body.innerHTML = `
             <div class="unimind-card">
-                <h3>أنشئ بطاقات تعليمية</h3>
+                <h3>
+                    أنشئ بطاقات تعليمية
+                </h3>
 
                 <textarea
                     id="unimindFlashcardTopic"
@@ -1764,12 +2785,15 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
                     id="unimindGenerateFlashcards"
                     class="unimind-btn unimind-btn-primary"
                     style="margin-top:15px;"
+                    type="button"
                 >
                     ✨ إنشاء البطاقات
                 </button>
             </div>
 
-            <div id="unimindFlashcardArea"></div>
+            <div
+                id="unimindFlashcardArea"
+            ></div>
         `;
 
         const topic =
@@ -1799,10 +2823,12 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
                             اكتب موضوع البطاقات أولاً.
                         </div>
                     `;
+
                     return;
                 }
 
-                button.disabled = true;
+                button.disabled =
+                    true;
 
                 area.innerHTML = `
                     <div class="unimind-card">
@@ -1831,12 +2857,23 @@ ${value}
                     `;
 
                     const answer =
-                        await askAI(prompt);
+                        await askAI(
+                            prompt
+                        );
+
+                    console.log(
+                        "🗂️ Flashcards AI response:",
+                        answer
+                    );
 
                     const cards =
-                        parseFlashcards(answer);
+                        parseFlashcards(
+                            answer
+                        );
 
-                    if (!cards.length) {
+                    if (
+                        !cards.length
+                    ) {
                         throw new Error(
                             "تعذر إنشاء البطاقات."
                         );
@@ -1847,7 +2884,9 @@ ${value}
                         current: 0
                     };
 
-                    renderFlashcards(area);
+                    renderFlashcards(
+                        area
+                    );
                 } catch (error) {
                     area.innerHTML = `
                         <div class="unimind-error">
@@ -1857,40 +2896,103 @@ ${value}
                         </div>
                     `;
                 } finally {
-                    button.disabled = false;
+                    button.disabled =
+                        false;
                 }
             }
         );
     }
 
-    function parseFlashcards(text) {
-        if (!text) return [];
+    function parseFlashcards(
+        text
+    ) {
+        if (!text) {
+            return [];
+        }
 
-        let cleaned = String(text)
-            .replace(/^```json/i, "")
-            .replace(/^```/i, "")
-            .replace(/```$/i, "")
-            .trim();
+        let cleaned =
+            String(text)
+                .replace(
+                    /^```json/i,
+                    ""
+                )
+                .replace(
+                    /^```/i,
+                    ""
+                )
+                .replace(
+                    /```$/i,
+                    ""
+                )
+                .trim();
 
         try {
-            const data = JSON.parse(cleaned);
+            const data =
+                JSON.parse(
+                    cleaned
+                );
 
             return normalizeFlashcards(
-                data.cards || data
+                data.cards ||
+                data
             );
         } catch (_) {}
 
-        const start = cleaned.indexOf("{");
-        const end = cleaned.lastIndexOf("}");
+        const start =
+            cleaned.indexOf(
+                "{"
+            );
 
-        if (start !== -1 && end !== -1) {
+        const end =
+            cleaned.lastIndexOf(
+                "}"
+            );
+
+        if (
+            start !== -1 &&
+            end !== -1
+        ) {
             try {
-                const data = JSON.parse(
-                    cleaned.slice(start, end + 1)
-                );
+                const data =
+                    JSON.parse(
+                        cleaned.slice(
+                            start,
+                            end + 1
+                        )
+                    );
 
                 return normalizeFlashcards(
-                    data.cards || data
+                    data.cards ||
+                    data
+                );
+            } catch (_) {}
+        }
+
+        const arrayStart =
+            cleaned.indexOf(
+                "["
+            );
+
+        const arrayEnd =
+            cleaned.lastIndexOf(
+                "]"
+            );
+
+        if (
+            arrayStart !== -1 &&
+            arrayEnd !== -1
+        ) {
+            try {
+                const data =
+                    JSON.parse(
+                        cleaned.slice(
+                            arrayStart,
+                            arrayEnd + 1
+                        )
+                    );
+
+                return normalizeFlashcards(
+                    data
                 );
             } catch (_) {}
         }
@@ -1898,8 +3000,14 @@ ${value}
         return [];
     }
 
-    function normalizeFlashcards(items) {
-        if (!Array.isArray(items)) return [];
+    function normalizeFlashcards(
+        items
+    ) {
+        if (
+            !Array.isArray(items)
+        ) {
+            return [];
+        }
 
         return items
             .map(item => ({
@@ -1909,6 +3017,7 @@ ${value}
                     item.term ||
                     ""
                 ),
+
                 back: String(
                     item.back ||
                     item.answer ||
@@ -1923,7 +3032,9 @@ ${value}
             );
     }
 
-    function renderFlashcards(area) {
+    function renderFlashcards(
+        area
+    ) {
         if (
             !flashcardState.cards.length
         ) {
@@ -1935,12 +3046,16 @@ ${value}
                 flashcardState.current
             ];
 
-        let showingBack = false;
+        let showingBack =
+            false;
 
         area.innerHTML = `
             <div class="unimind-muted">
                 البطاقة
-                ${flashcardState.current + 1}
+                ${
+                    flashcardState.current +
+                    1
+                }
                 من
                 ${flashcardState.cards.length}
             </div>
@@ -1950,10 +3065,15 @@ ${value}
                 class="unimind-flashcard"
                 style="margin-top:10px;"
             >
-                ${escapeHTML(card.front)}
+                ${escapeHTML(
+                    card.front
+                )}
             </div>
 
-            <p class="unimind-muted" style="text-align:center;">
+            <p
+                class="unimind-muted"
+                style="text-align:center;"
+            >
                 اضغط على البطاقة لقلبها
             </p>
 
@@ -1961,6 +3081,7 @@ ${value}
                 <button
                     id="unimindPrevCard"
                     class="unimind-btn unimind-btn-secondary"
+                    type="button"
                 >
                     → السابقة
                 </button>
@@ -1968,6 +3089,7 @@ ${value}
                 <button
                     id="unimindNextCard"
                     class="unimind-btn unimind-btn-primary"
+                    type="button"
                 >
                     التالية ←
                 </button>
@@ -2004,7 +3126,10 @@ ${value}
                         0
                     ) {
                         flashcardState.current--;
-                        renderFlashcards(area);
+
+                        renderFlashcards(
+                            area
+                        );
                     }
                 }
             );
@@ -2018,10 +3143,14 @@ ${value}
                 () => {
                     if (
                         flashcardState.current <
-                        flashcardState.cards.length - 1
+                        flashcardState.cards.length -
+                            1
                     ) {
                         flashcardState.current++;
-                        renderFlashcards(area);
+
+                        renderFlashcards(
+                            area
+                        );
                     }
                 }
             );
@@ -2032,13 +3161,17 @@ ${value}
     // =========================================================
 
     function openPlanner() {
-        const modal = createModal({
-            title: "📅 مخطط الدراسة الذكي"
-        });
+        const modal =
+            createModal({
+                title:
+                    "📅 مخطط الدراسة الذكي"
+            });
 
         modal.body.innerHTML = `
             <div class="unimind-card">
-                <h3>أنشئ خطة دراسية</h3>
+                <h3>
+                    أنشئ خطة دراسية
+                </h3>
 
                 <input
                     id="unimindPlanSubjects"
@@ -2071,12 +3204,15 @@ ${value}
                     id="unimindGeneratePlan"
                     class="unimind-btn unimind-btn-primary"
                     style="margin-top:15px;"
+                    type="button"
                 >
                     ✨ إنشاء الخطة
                 </button>
             </div>
 
-            <div id="unimindPlanResult"></div>
+            <div
+                id="unimindPlanResult"
+            ></div>
         `;
 
         const subjects =
@@ -2116,10 +3252,12 @@ ${value}
                             اكتب المواد الدراسية أولاً.
                         </div>
                     `;
+
                     return;
                 }
 
-                button.disabled = true;
+                button.disabled =
+                    true;
 
                 result.innerHTML = `
                     <div class="unimind-card">
@@ -2150,13 +3288,18 @@ ${hours.value}
                     `;
 
                     const answer =
-                        await askAI(prompt);
+                        await askAI(
+                            prompt
+                        );
 
-                    studyPlan = answer;
+                    studyPlan =
+                        answer;
 
                     result.innerHTML = `
                         <div class="unimind-result">
-                            ${escapeHTML(answer)}
+                            ${escapeHTML(
+                                answer
+                            )}
                         </div>
                     `;
                 } catch (error) {
@@ -2168,7 +3311,8 @@ ${hours.value}
                         </div>
                     `;
                 } finally {
-                    button.disabled = false;
+                    button.disabled =
+                        false;
                 }
             }
         );
@@ -2179,13 +3323,17 @@ ${hours.value}
     // =========================================================
 
     function openCVAssistant() {
-        const modal = createModal({
-            title: "📄 مساعد السيرة الذاتية"
-        });
+        const modal =
+            createModal({
+                title:
+                    "📄 مساعد السيرة الذاتية"
+            });
 
         modal.body.innerHTML = `
             <div class="unimind-card">
-                <h3>أنشئ أو حسّن سيرتك الذاتية</h3>
+                <h3>
+                    أنشئ أو حسّن سيرتك الذاتية
+                </h3>
 
                 <textarea
                     id="unimindCVInput"
@@ -2211,12 +3359,15 @@ ${hours.value}
                     id="unimindGenerateCV"
                     class="unimind-btn unimind-btn-primary"
                     style="margin-top:15px;"
+                    type="button"
                 >
                     ✨ تحسين السيرة الذاتية
                 </button>
             </div>
 
-            <div id="unimindCVResult"></div>
+            <div
+                id="unimindCVResult"
+            ></div>
         `;
 
         const input =
@@ -2251,10 +3402,12 @@ ${hours.value}
                             اكتب بيانات سيرتك الذاتية أولاً.
                         </div>
                     `;
+
                     return;
                 }
 
-                button.disabled = true;
+                button.disabled =
+                    true;
 
                 result.innerHTML = `
                     <div class="unimind-card">
@@ -2284,11 +3437,15 @@ ${value}
                     `;
 
                     const answer =
-                        await askAI(prompt);
+                        await askAI(
+                            prompt
+                        );
 
                     result.innerHTML = `
                         <div class="unimind-result">
-                            ${escapeHTML(answer)}
+                            ${escapeHTML(
+                                answer
+                            )}
                         </div>
                     `;
                 } catch (error) {
@@ -2300,7 +3457,8 @@ ${value}
                         </div>
                     `;
                 } finally {
-                    button.disabled = false;
+                    button.disabled =
+                        false;
                 }
             }
         );
@@ -2310,12 +3468,18 @@ ${value}
     // BUTTON BINDING
     // =========================================================
 
-    function bindOnce(element, handler) {
-        if (!element) return false;
+    function bindOnce(
+        element,
+        handler
+    ) {
+        if (!element) {
+            return false;
+        }
 
         if (
             element.dataset &&
-            element.dataset.unimindBound === "true"
+            element.dataset.unimindBound ===
+                "true"
         ) {
             return false;
         }
@@ -2338,7 +3502,8 @@ ${value}
         );
 
         if (element.dataset) {
-            element.dataset.unimindBound = "true";
+            element.dataset.unimindBound =
+                "true";
         }
 
         return true;
@@ -2350,20 +3515,27 @@ ${value}
     ) {
         let found = false;
 
-        selectors.forEach(selector => {
-            document
-                .querySelectorAll(selector)
-                .forEach(element => {
-                    if (
-                        bindOnce(
-                            element,
-                            handler
-                        )
-                    ) {
-                        found = true;
-                    }
-                });
-        });
+        selectors.forEach(
+            selector => {
+                document
+                    .querySelectorAll(
+                        selector
+                    )
+                    .forEach(
+                        element => {
+                            if (
+                                bindOnce(
+                                    element,
+                                    handler
+                                )
+                            ) {
+                                found =
+                                    true;
+                            }
+                        }
+                    );
+            }
+        );
 
         return found;
     }
@@ -2376,17 +3548,25 @@ ${value}
                 "button, a, [role='button'], .feature-card, .feature-item, .tool-card, .tool-item"
             );
 
-        for (const element of elements) {
+        for (
+            const element of elements
+        ) {
             const text =
-                (element.innerText ||
+                (
+                    element.innerText ||
                     element.textContent ||
-                    "")
+                    ""
+                )
                     .trim()
                     .toLowerCase();
 
-            if (!text) continue;
+            if (!text) {
+                continue;
+            }
 
-            for (const phrase of phrases) {
+            for (
+                const phrase of phrases
+            ) {
                 if (
                     text.includes(
                         phrase.toLowerCase()
@@ -2641,30 +3821,39 @@ ${value}
                 "[data-theme], #themeToggle, #themeButton"
             );
 
-        themeButtons.forEach(button => {
-            bindOnce(button, () => {
-                document.body.classList.toggle(
-                    "dark-mode"
-                );
+        themeButtons.forEach(
+            button => {
+                bindOnce(
+                    button,
+                    () => {
+                        document.body.classList.toggle(
+                            "dark-mode"
+                        );
 
-                const isDark =
-                    document.body.classList.contains(
-                        "dark-mode"
-                    );
+                        const isDark =
+                            document.body.classList.contains(
+                                "dark-mode"
+                            );
 
-                localStorage.setItem(
-                    "unimind-theme",
-                    isDark ? "dark" : "light"
+                        localStorage.setItem(
+                            "unimind-theme",
+                            isDark
+                                ? "dark"
+                                : "light"
+                        );
+                    }
                 );
-            });
-        });
+            }
+        );
 
         const savedTheme =
             localStorage.getItem(
                 "unimind-theme"
             );
 
-        if (savedTheme === "dark") {
+        if (
+            savedTheme === "dark"
+        ) {
             document.body.classList.add(
                 "dark-mode"
             );
@@ -2681,31 +3870,44 @@ ${value}
                 "[data-language], #languageToggle, #languageButton"
             );
 
-        languageButtons.forEach(button => {
-            bindOnce(button, () => {
-                const current =
-                    document.documentElement.lang ||
-                    "ar";
+        languageButtons.forEach(
+            button => {
+                bindOnce(
+                    button,
+                    () => {
+                        const current =
+                            document
+                                .documentElement
+                                .lang ||
+                            "ar";
 
-                const next =
-                    current === "ar"
-                        ? "en"
-                        : "ar";
+                        const next =
+                            current ===
+                            "ar"
+                                ? "en"
+                                : "ar";
 
-                document.documentElement.lang =
-                    next;
+                        document
+                            .documentElement
+                            .lang =
+                            next;
 
-                document.documentElement.dir =
-                    next === "ar"
-                        ? "rtl"
-                        : "ltr";
+                        document
+                            .documentElement
+                            .dir =
+                            next ===
+                            "ar"
+                                ? "rtl"
+                                : "ltr";
 
-                localStorage.setItem(
-                    "unimind-language",
-                    next
+                        localStorage.setItem(
+                            "unimind-language",
+                            next
+                        );
+                    }
                 );
-            });
-        });
+            }
+        );
 
         const saved =
             localStorage.getItem(
@@ -2713,10 +3915,14 @@ ${value}
             );
 
         if (saved) {
-            document.documentElement.lang =
+            document
+                .documentElement
+                .lang =
                 saved;
 
-            document.documentElement.dir =
+            document
+                .documentElement
+                .dir =
                 saved === "ar"
                     ? "rtl"
                     : "ltr";
@@ -2733,13 +3939,18 @@ ${value}
                 "#loginButton, #studentLoginButton, [data-action='login']"
             );
 
-        buttons.forEach(button => {
-            bindOnce(button, () => {
-                alert(
-                    "ميزة تسجيل الدخول سيتم ربطها بقاعدة البيانات في المرحلة التالية."
+        buttons.forEach(
+            button => {
+                bindOnce(
+                    button,
+                    () => {
+                        alert(
+                            "ميزة تسجيل الدخول سيتم ربطها بقاعدة البيانات في المرحلة التالية."
+                        );
+                    }
                 );
-            });
-        });
+            }
+        );
     }
 
     // =========================================================
@@ -2753,9 +3964,11 @@ ${value}
                 if (
                     event.ctrlKey &&
                     event.shiftKey &&
-                    event.key.toLowerCase() === "a"
+                    event.key.toLowerCase() ===
+                        "a"
                 ) {
                     event.preventDefault();
+
                     openChat();
                 }
             }
@@ -2778,13 +3991,22 @@ ${value}
     };
 
     // دعم لو كان HTML يستدعي الدوال مباشرة
-    window.openChat = openChat;
+
+    window.openChat =
+        openChat;
+
     window.openLectureSummarizer =
         openLectureSummarizer;
-    window.openQuiz = openQuiz;
+
+    window.openQuiz =
+        openQuiz;
+
     window.openFlashcards =
         openFlashcards;
-    window.openPlanner = openPlanner;
+
+    window.openPlanner =
+        openPlanner;
+
     window.openCVAssistant =
         openCVAssistant;
 
@@ -2794,10 +4016,15 @@ ${value}
 
     function init() {
         injectStyles();
+
         setupButtons();
+
         setupTheme();
+
         setupLanguage();
+
         setupLogin();
+
         setupKeyboard();
 
         console.log(
