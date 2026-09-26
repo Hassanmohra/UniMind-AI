@@ -3,11 +3,26 @@
 
     // =========================================================
     // UniMind AI
-    // Complete Smart Tools Edition
+    // Complete Smart Tools + Supabase Authentication
+    // Phase 2
     // =========================================================
 
     const API_URL =
         "https://yzsfublvnwknjnayfosm.supabase.co/functions/v1/unimind-chat";
+
+    // =========================================================
+    // SUPABASE CONFIG
+    // =========================================================
+
+    const SUPABASE_URL =
+        "https://yzsfublvnwknjnayfosm.supabase.co";
+
+    const SUPABASE_ANON_KEY =
+        "sb_publishable_vTD_YtnzjdWQBmAK-6Dtkg_n0s_w18f";
+
+    let supabaseClient = null;
+    let supabaseLoadingPromise = null;
+    let currentUser = null;
 
     // =========================================================
     // GLOBAL STATE
@@ -30,24 +45,133 @@
     let studyPlan = [];
 
     // =========================================================
+    // SUPABASE LOADER
+    // =========================================================
+
+    function loadSupabase() {
+        if (window.supabase) {
+            return Promise.resolve(
+                window.supabase
+            );
+        }
+
+        if (supabaseLoadingPromise) {
+            return supabaseLoadingPromise;
+        }
+
+        supabaseLoadingPromise =
+            new Promise(
+                (
+                    resolve,
+                    reject
+                ) => {
+                    const script =
+                        document.createElement(
+                            "script"
+                        );
+
+                    script.src =
+                        "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+
+                    script.async = true;
+
+                    script.onload =
+                        () => {
+                            if (
+                                !window.supabase
+                            ) {
+                                reject(
+                                    new Error(
+                                        "تعذر تحميل مكتبة Supabase."
+                                    )
+                                );
+
+                                return;
+                            }
+
+                            resolve(
+                                window.supabase
+                            );
+                        };
+
+                    script.onerror =
+                        () => {
+                            reject(
+                                new Error(
+                                    "تعذر تحميل مكتبة Supabase."
+                                )
+                            );
+                        };
+
+                    document.head.appendChild(
+                        script
+                    );
+                }
+            );
+
+        return supabaseLoadingPromise;
+    }
+
+    async function getSupabase() {
+        if (supabaseClient) {
+            return supabaseClient;
+        }
+
+        const supabase =
+            await loadSupabase();
+
+        supabaseClient =
+            supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_ANON_KEY
+            );
+
+        return supabaseClient;
+    }
+
+    // =========================================================
     // BASIC HELPERS
     // =========================================================
 
     function escapeHTML(value) {
-        if (value === null || value === undefined) {
+        if (
+            value === null ||
+            value === undefined
+        ) {
             return "";
         }
 
         return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
     }
 
     function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise(
+            resolve =>
+                setTimeout(
+                    resolve,
+                    ms
+                )
+        );
     }
 
     function getElement(id) {
@@ -59,7 +183,9 @@
 
         el.style.display = "";
         el.hidden = false;
-        el.removeAttribute("hidden");
+        el.removeAttribute(
+            "hidden"
+        );
     }
 
     function hideElement(el) {
@@ -70,11 +196,15 @@
     }
 
     function lockBody() {
-        document.body.classList.add("unimind-modal-open");
+        document.body.classList.add(
+            "unimind-modal-open"
+        );
     }
 
     function unlockBody() {
-        document.body.classList.remove("unimind-modal-open");
+        document.body.classList.remove(
+            "unimind-modal-open"
+        );
     }
 
     // =========================================================
@@ -82,13 +212,21 @@
     // =========================================================
 
     function injectStyles() {
-        if (document.getElementById("unimindRuntimeStyles")) {
+        if (
+            document.getElementById(
+                "unimindRuntimeStyles"
+            )
+        ) {
             return;
         }
 
-        const style = document.createElement("style");
+        const style =
+            document.createElement(
+                "style"
+            );
 
-        style.id = "unimindRuntimeStyles";
+        style.id =
+            "unimindRuntimeStyles";
 
         style.textContent = `
             .unimind-modal-open {
@@ -458,6 +596,50 @@
                 background: #f8fafc;
             }
 
+            .unimind-auth-tabs {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 20px;
+                background: #f1f5f9;
+                padding: 5px;
+                border-radius: 14px;
+            }
+
+            .unimind-auth-tab {
+                flex: 1;
+                border: 0;
+                background: transparent;
+                padding: 11px;
+                border-radius: 10px;
+                cursor: pointer;
+                font-family: inherit;
+                font-weight: 700;
+            }
+
+            .unimind-auth-tab.active {
+                background: white;
+                color: #4f46e5;
+                box-shadow: 0 2px 8px rgba(15,23,42,.08);
+            }
+
+            .unimind-auth-status {
+                margin-top: 15px;
+            }
+
+            .unimind-account-avatar {
+                width: 64px;
+                height: 64px;
+                border-radius: 50%;
+                background: #eef2ff;
+                color: #4f46e5;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 26px;
+                font-weight: 800;
+                margin: 0 auto 15px;
+            }
+
             @media (max-width: 650px) {
                 .unimind-overlay {
                     padding: 10px;
@@ -494,7 +676,9 @@
             }
         `;
 
-        document.head.appendChild(style);
+        document.head.appendChild(
+            style
+        );
     }
 
     // =========================================================
@@ -502,26 +686,40 @@
     // =========================================================
 
     async function askAI(message) {
-        if (!message || !message.trim()) {
-            throw new Error("الرجاء كتابة رسالة أولاً.");
+        if (
+            !message ||
+            !message.trim()
+        ) {
+            throw new Error(
+                "الرجاء كتابة رسالة أولاً."
+            );
         }
 
         let response;
 
         try {
-            response = await fetch(API_URL, {
-                method: "POST",
+            response =
+                await fetch(
+                    API_URL,
+                    {
+                        method: "POST",
 
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
+                        headers: {
+                            "Content-Type":
+                                "application/json",
+                            "Accept":
+                                "application/json"
+                        },
 
-                body: JSON.stringify({
-                    message: message.trim()
-                })
-            });
-        } catch (networkError) {
+                        body: JSON.stringify({
+                            message:
+                                message.trim()
+                        })
+                    }
+                );
+        } catch (
+            networkError
+        ) {
             console.error(
                 "❌ UniMind AI network error:",
                 networkError
@@ -532,17 +730,14 @@
             );
         }
 
-        // -----------------------------------------------------
-        // نقرأ الرد كنص أولاً
-        // حتى نستطيع التعامل مع:
-        // JSON / Text / JSON داخل body
-        // -----------------------------------------------------
-
         let rawText = "";
 
         try {
-            rawText = await response.text();
-        } catch (readError) {
+            rawText =
+                await response.text();
+        } catch (
+            readError
+        ) {
             console.error(
                 "❌ UniMind AI response read error:",
                 readError
@@ -564,13 +759,15 @@
         );
 
         if (!response.ok) {
-            let errorMessage = rawText;
+            let errorMessage =
+                rawText;
 
-            // محاولة استخراج رسالة الخطأ من JSON
             if (rawText) {
                 try {
                     const errorData =
-                        JSON.parse(rawText);
+                        JSON.parse(
+                            rawText
+                        );
 
                     errorMessage =
                         extractTextFromResponse(
@@ -586,7 +783,10 @@
             );
         }
 
-        if (!rawText || !rawText.trim()) {
+        if (
+            !rawText ||
+            !rawText.trim()
+        ) {
             throw new Error(
                 "الخادم أرسل رداً فارغاً."
             );
@@ -594,10 +794,6 @@
 
         const cleanedRawText =
             rawText.trim();
-
-        // -----------------------------------------------------
-        // أولاً: إذا كان الرد نصاً عادياً
-        // -----------------------------------------------------
 
         if (
             !looksLikeJSON(
@@ -607,27 +803,27 @@
             return cleanedRawText;
         }
 
-        // -----------------------------------------------------
-        // ثانياً: محاولة JSON
-        // -----------------------------------------------------
-
         let data;
 
         try {
-            data = JSON.parse(
-                cleanedRawText
-            );
-        } catch (jsonError) {
-            // أحياناً يأتي JSON داخل نص يحتوي على كلام إضافي
+            data =
+                JSON.parse(
+                    cleanedRawText
+                );
+        } catch (
+            jsonError
+        ) {
             const extracted =
                 extractJSONFromText(
                     cleanedRawText
                 );
 
-            if (extracted !== null) {
-                data = extracted;
+            if (
+                extracted !== null
+            ) {
+                data =
+                    extracted;
             } else {
-                // إذا فشل JSON ولكن النص موجود
                 return cleanedRawText;
             }
         }
@@ -637,12 +833,12 @@
             data
         );
 
-        // -----------------------------------------------------
-        // إذا كان الرد نفسه نصاً
-        // -----------------------------------------------------
-
-        if (typeof data === "string") {
-            const text = data.trim();
+        if (
+            typeof data ===
+            "string"
+        ) {
+            const text =
+                data.trim();
 
             if (!text) {
                 throw new Error(
@@ -650,25 +846,32 @@
                 );
             }
 
-            // قد يكون النص نفسه JSON
-            if (looksLikeJSON(text)) {
+            if (
+                looksLikeJSON(
+                    text
+                )
+            ) {
                 try {
                     const nested =
-                        JSON.parse(text);
+                        JSON.parse(
+                            text
+                        );
 
                     const nestedAnswer =
                         extractTextFromResponse(
                             nested
                         );
 
-                    if (nestedAnswer) {
+                    if (
+                        nestedAnswer
+                    ) {
                         return nestedAnswer;
                     }
 
-                    // مفيد للاختبارات والبطاقات
                     if (
                         nested &&
-                        typeof nested === "object"
+                        typeof nested ===
+                            "object"
                     ) {
                         if (
                             Array.isArray(
@@ -689,56 +892,49 @@
             return text;
         }
 
-        // -----------------------------------------------------
-        // استخراج الإجابة من الرد
-        // -----------------------------------------------------
-
         const answer =
-            extractTextFromResponse(data);
+            extractTextFromResponse(
+                data
+            );
 
         if (answer) {
             return answer.trim();
         }
 
-        // -----------------------------------------------------
-        // الاختبارات
-        // -----------------------------------------------------
+        if (
+            data &&
+            typeof data ===
+                "object" &&
+            Array.isArray(
+                data.questions
+            )
+        ) {
+            return JSON.stringify(
+                data
+            );
+        }
 
         if (
             data &&
-            typeof data === "object" &&
-            Array.isArray(data.questions)
+            typeof data ===
+                "object" &&
+            Array.isArray(
+                data.cards
+            )
         ) {
-            return JSON.stringify(data);
+            return JSON.stringify(
+                data
+            );
         }
-
-        // -----------------------------------------------------
-        // البطاقات
-        // -----------------------------------------------------
-
-        if (
-            data &&
-            typeof data === "object" &&
-            Array.isArray(data.cards)
-        ) {
-            return JSON.stringify(data);
-        }
-
-        // -----------------------------------------------------
-        // البحث عن أي قيمة نصية مفيدة
-        // -----------------------------------------------------
 
         const fallback =
-            findFirstUsefulString(data);
+            findFirstUsefulString(
+                data
+            );
 
         if (fallback) {
             return fallback;
         }
-
-        console.error(
-            "❌ UniMind AI: response received but no answer found.",
-            data
-        );
 
         throw new Error(
             "وصل رد من الخادم، لكن لم يتم العثور على إجابة."
@@ -750,45 +946,85 @@
     // =========================================================
 
     function looksLikeJSON(text) {
-        if (!text || typeof text !== "string") {
+        if (
+            !text ||
+            typeof text !==
+                "string"
+        ) {
             return false;
         }
 
-        const value = text.trim();
+        const value =
+            text.trim();
 
         return (
-            (value.startsWith("{") &&
-                value.endsWith("}")) ||
-            (value.startsWith("[") &&
-                value.endsWith("]")) ||
-            value.startsWith("```json") ||
-            value.startsWith("```JSON")
+            (
+                value.startsWith(
+                    "{"
+                ) &&
+                value.endsWith(
+                    "}"
+                )
+            ) ||
+            (
+                value.startsWith(
+                    "["
+                ) &&
+                value.endsWith(
+                    "]"
+                )
+            ) ||
+            value.startsWith(
+                "```json"
+            ) ||
+            value.startsWith(
+                "```JSON"
+            )
         );
     }
 
-    function extractJSONFromText(text) {
+    function extractJSONFromText(
+        text
+    ) {
         if (!text) return null;
 
-        let cleaned = String(text)
-            .trim()
-            .replace(/^```json\s*/i, "")
-            .replace(/^```\s*/i, "")
-            .replace(/\s*```$/i, "")
-            .trim();
+        let cleaned =
+            String(text)
+                .trim()
+                .replace(
+                    /^```json\s*/i,
+                    ""
+                )
+                .replace(
+                    /^```\s*/i,
+                    ""
+                )
+                .replace(
+                    /\s*```$/i,
+                    ""
+                )
+                .trim();
 
         try {
-            return JSON.parse(cleaned);
+            return JSON.parse(
+                cleaned
+            );
         } catch (_) {}
 
         const objectStart =
-            cleaned.indexOf("{");
+            cleaned.indexOf(
+                "{"
+            );
 
         const objectEnd =
-            cleaned.lastIndexOf("}");
+            cleaned.lastIndexOf(
+                "}"
+            );
 
         if (
             objectStart !== -1 &&
-            objectEnd > objectStart
+            objectEnd >
+                objectStart
         ) {
             try {
                 return JSON.parse(
@@ -801,14 +1037,19 @@
         }
 
         const arrayStart =
-            cleaned.indexOf("[");
+            cleaned.indexOf(
+                "["
+            );
 
         const arrayEnd =
-            cleaned.lastIndexOf("]");
+            cleaned.lastIndexOf(
+                "]"
+            );
 
         if (
             arrayStart !== -1 &&
-            arrayEnd > arrayStart
+            arrayEnd >
+                arrayStart
         ) {
             try {
                 return JSON.parse(
@@ -835,25 +1076,23 @@
             return null;
         }
 
-        // نص مباشر
-        if (typeof value === "string") {
-            const text = value.trim();
+        if (
+            typeof value ===
+            "string"
+        ) {
+            const text =
+                value.trim();
 
-            if (!text) {
-                return null;
-            }
-
-            return text;
+            return text || null;
         }
 
-        // الأرقام والقيم المنطقية ليست إجابة نصية
         if (
-            typeof value !== "object"
+            typeof value !==
+            "object"
         ) {
             return null;
         }
 
-        // الحقول الأكثر شيوعاً
         const possibleKeys = [
             "answer",
             "message",
@@ -872,7 +1111,10 @@
             "responseText"
         ];
 
-        for (const key of possibleKeys) {
+        for (
+            const key of
+                possibleKeys
+        ) {
             if (
                 Object.prototype.hasOwnProperty.call(
                     value,
@@ -891,7 +1133,6 @@
             }
         }
 
-        // data
         if (
             Object.prototype.hasOwnProperty.call(
                 value,
@@ -909,7 +1150,6 @@
             }
         }
 
-        // body
         if (
             Object.prototype.hasOwnProperty.call(
                 value,
@@ -919,7 +1159,6 @@
             const bodyValue =
                 value.body;
 
-            // body قد يكون JSON كنص
             if (
                 typeof bodyValue ===
                 "string"
@@ -982,7 +1221,8 @@
         }
 
         if (
-            typeof value === "string"
+            typeof value ===
+            "string"
         ) {
             const text =
                 value.trim();
@@ -991,12 +1231,12 @@
         }
 
         if (
-            typeof value !== "object"
+            typeof value !==
+            "object"
         ) {
             return null;
         }
 
-        // تجاهل بعض الحقول التي لا تمثل إجابة
         const ignoredKeys = [
             "status",
             "success",
@@ -1008,7 +1248,10 @@
             "updated_at"
         ];
 
-        for (const key of Object.keys(value)) {
+        for (
+            const key of
+                Object.keys(value)
+        ) {
             if (
                 ignoredKeys.includes(
                     key
@@ -1035,27 +1278,37 @@
     // MODAL SYSTEM
     // =========================================================
 
-    function createModal(options = {}) {
+    function createModal(
+        options = {}
+    ) {
         const overlay =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         overlay.className =
             "unimind-overlay";
 
         const modal =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         modal.className =
             "unimind-modal";
 
         const header =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         header.className =
             "unimind-modal-header";
 
         const title =
-            document.createElement("h2");
+            document.createElement(
+                "h2"
+            );
 
         title.className =
             "unimind-modal-title";
@@ -1084,18 +1337,32 @@
         );
 
         const body =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         body.className =
             "unimind-modal-body";
 
-        header.appendChild(title);
-        header.appendChild(closeButton);
+        header.appendChild(
+            title
+        );
 
-        modal.appendChild(header);
-        modal.appendChild(body);
+        header.appendChild(
+            closeButton
+        );
 
-        overlay.appendChild(modal);
+        modal.appendChild(
+            header
+        );
+
+        modal.appendChild(
+            body
+        );
+
+        overlay.appendChild(
+            modal
+        );
 
         document.body.appendChild(
             overlay
@@ -1137,7 +1404,9 @@
             }
         );
 
-        function escHandler(event) {
+        function escHandler(
+            event
+        ) {
             if (
                 event.key ===
                 "Escape"
@@ -1168,6 +1437,1127 @@
     }
 
     // =========================================================
+    // AUTHENTICATION
+    // =========================================================
+
+    async function ensureUserProfile(
+        user
+    ) {
+        if (!user) return;
+
+        const client =
+            await getSupabase();
+
+        const {
+            data: existing,
+            error: selectError
+        } =
+            await client
+                .from("profiles")
+                .select(
+                    "id, full_name, avatar_url, language, theme"
+                )
+                .eq(
+                    "id",
+                    user.id
+                )
+                .maybeSingle();
+
+        if (selectError) {
+            console.error(
+                "Profile select error:",
+                selectError
+            );
+
+            throw selectError;
+        }
+
+        if (!existing) {
+            const {
+                error
+            } =
+                await client
+                    .from("profiles")
+                    .insert({
+                        id:
+                            user.id,
+
+                        full_name:
+                            user.user_metadata
+                                ?.full_name ||
+                            "",
+
+                        language:
+                            localStorage.getItem(
+                                "unimind-language"
+                            ) ||
+                            "ar",
+
+                        theme:
+                            document.body.classList.contains(
+                                "dark-mode"
+                            )
+                                ? "dark"
+                                : "light"
+                    });
+
+            if (
+                error &&
+                error.code !==
+                    "23505"
+            ) {
+                console.error(
+                    "Profile insert error:",
+                    error
+                );
+
+                throw error;
+            }
+        }
+    }
+
+    async function loadUserPreferences(
+        user
+    ) {
+        if (!user) return;
+
+        try {
+            const client =
+                await getSupabase();
+
+            const {
+                data: profile,
+                error
+            } =
+                await client
+                    .from("profiles")
+                    .select(
+                        "full_name, language, theme"
+                    )
+                    .eq(
+                        "id",
+                        user.id
+                    )
+                    .maybeSingle();
+
+            if (error) {
+                console.error(
+                    "Profile preference error:",
+                    error
+                );
+
+                return;
+            }
+
+            if (!profile) {
+                return;
+            }
+
+            if (
+                profile.language ===
+                    "ar" ||
+                profile.language ===
+                    "en"
+            ) {
+                localStorage.setItem(
+                    "unimind-language",
+                    profile.language
+                );
+
+                document.documentElement.lang =
+                    profile.language;
+
+                document.documentElement.dir =
+                    profile.language ===
+                    "ar"
+                        ? "rtl"
+                        : "ltr";
+            }
+
+            if (
+                profile.theme ===
+                    "dark" ||
+                profile.theme ===
+                    "light"
+            ) {
+                localStorage.setItem(
+                    "unimind-theme",
+                    profile.theme
+                );
+
+                document.body.classList.toggle(
+                    "dark-mode",
+                    profile.theme ===
+                        "dark"
+                );
+            }
+        } catch (
+            error
+        ) {
+            console.error(
+                "Failed to load user preferences:",
+                error
+            );
+        }
+    }
+
+    async function saveUserPreference(
+        field,
+        value
+    ) {
+        if (!currentUser) {
+            return;
+        }
+
+        if (
+            field !== "language" &&
+            field !== "theme"
+        ) {
+            return;
+        }
+
+        try {
+            const client =
+                await getSupabase();
+
+            const {
+                error
+            } =
+                await client
+                    .from("profiles")
+                    .update({
+                        [field]:
+                            value
+                    })
+                    .eq(
+                        "id",
+                        currentUser.id
+                    );
+
+            if (error) {
+                console.error(
+                    `Failed to save ${field}:`,
+                    error
+                );
+            }
+        } catch (
+            error
+        ) {
+            console.error(
+                `Failed to save ${field}:`,
+                error
+            );
+        }
+    }
+
+    async function handleLogin(
+        email,
+        password,
+        statusElement,
+        modal
+    ) {
+        if (
+            !email ||
+            !password
+        ) {
+            statusElement.innerHTML = `
+                <div class="unimind-error">
+                    الرجاء إدخال البريد الإلكتروني وكلمة المرور.
+                </div>
+            `;
+
+            return;
+        }
+
+        statusElement.innerHTML = `
+            <div class="unimind-loading">
+                <span class="unimind-dot"></span>
+                جاري تسجيل الدخول...
+            </div>
+        `;
+
+        try {
+            const client =
+                await getSupabase();
+
+            const {
+                data,
+                error
+            } =
+                await client.auth
+                    .signInWithPassword({
+                        email,
+                        password
+                    });
+
+            if (error) {
+                throw error;
+            }
+
+            currentUser =
+                data.user;
+
+            await ensureUserProfile(
+                currentUser
+            );
+
+            await loadUserPreferences(
+                currentUser
+            );
+
+            statusElement.innerHTML = `
+                <div class="unimind-success">
+                    ✅ تم تسجيل الدخول بنجاح.
+                </div>
+            `;
+
+            refreshAuthUI();
+
+            setTimeout(
+                () => {
+                    modal.close();
+                },
+                700
+            );
+        } catch (
+            error
+        ) {
+            console.error(
+                "Login error:",
+                error
+            );
+
+            let message =
+                "تعذر تسجيل الدخول.";
+
+            if (
+                error.message
+                    ?.toLowerCase()
+                    .includes(
+                        "invalid login credentials"
+                    )
+            ) {
+                message =
+                    "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+            } else if (
+                error.message
+                    ?.toLowerCase()
+                    .includes(
+                        "email not confirmed"
+                    )
+            ) {
+                message =
+                    "يجب تأكيد البريد الإلكتروني أولاً.";
+            } else if (
+                error.message
+            ) {
+                message =
+                    error.message;
+            }
+
+            statusElement.innerHTML = `
+                <div class="unimind-error">
+                    ❌ ${escapeHTML(
+                        message
+                    )}
+                </div>
+            `;
+        }
+    }
+
+    async function handleSignup(
+        fullName,
+        email,
+        password,
+        confirmPassword,
+        statusElement,
+        modal
+    ) {
+        if (
+            !fullName ||
+            !email ||
+            !password ||
+            !confirmPassword
+        ) {
+            statusElement.innerHTML = `
+                <div class="unimind-error">
+                    الرجاء تعبئة جميع الحقول.
+                </div>
+            `;
+
+            return;
+        }
+
+        if (
+            password !==
+            confirmPassword
+        ) {
+            statusElement.innerHTML = `
+                <div class="unimind-error">
+                    كلمتا المرور غير متطابقتين.
+                </div>
+            `;
+
+            return;
+        }
+
+        if (
+            password.length < 6
+        ) {
+            statusElement.innerHTML = `
+                <div class="unimind-error">
+                    كلمة المرور يجب أن تحتوي على 6 أحرف على الأقل.
+                </div>
+            `;
+
+            return;
+        }
+
+        statusElement.innerHTML = `
+            <div class="unimind-loading">
+                <span class="unimind-dot"></span>
+                جاري إنشاء الحساب...
+            </div>
+        `;
+
+        try {
+            const client =
+                await getSupabase();
+
+            const {
+                data,
+                error
+            } =
+                await client.auth
+                    .signUp({
+                        email,
+                        password,
+
+                        options: {
+                            data: {
+                                full_name:
+                                    fullName
+                            }
+                        }
+                    });
+
+            if (error) {
+                throw error;
+            }
+
+            if (data.user) {
+                currentUser =
+                    data.user;
+
+                if (
+                    data.session
+                ) {
+                    await ensureUserProfile(
+                        data.user
+                    );
+
+                    await loadUserPreferences(
+                        data.user
+                    );
+
+                    refreshAuthUI();
+
+                    statusElement.innerHTML = `
+                        <div class="unimind-success">
+                            ✅ تم إنشاء الحساب وتسجيل الدخول بنجاح.
+                        </div>
+                    `;
+
+                    setTimeout(
+                        () => {
+                            modal.close();
+                        },
+                        900
+                    );
+                } else {
+                    statusElement.innerHTML = `
+                        <div class="unimind-success">
+                            ✅ تم إنشاء الحساب بنجاح.
+                            <br><br>
+                            إذا كان تأكيد البريد الإلكتروني مفعلاً في Supabase،
+                            تحقق من بريدك الإلكتروني ثم سجل الدخول.
+                        </div>
+                    `;
+                }
+            }
+        } catch (
+            error
+        ) {
+            console.error(
+                "Signup error:",
+                error
+            );
+
+            let message =
+                "تعذر إنشاء الحساب.";
+
+            if (
+                error.message
+                    ?.toLowerCase()
+                    .includes(
+                        "user already registered"
+                    )
+            ) {
+                message =
+                    "هذا البريد الإلكتروني مسجل مسبقاً.";
+            } else if (
+                error.message
+            ) {
+                message =
+                    error.message;
+            }
+
+            statusElement.innerHTML = `
+                <div class="unimind-error">
+                    ❌ ${escapeHTML(
+                        message
+                    )}
+                </div>
+            `;
+        }
+    }
+
+    async function handleLogout() {
+        try {
+            const client =
+                await getSupabase();
+
+            const {
+                error
+            } =
+                await client.auth.signOut();
+
+            if (error) {
+                throw error;
+            }
+
+            currentUser =
+                null;
+
+            refreshAuthUI();
+
+            alert(
+                "تم تسجيل الخروج بنجاح."
+            );
+        } catch (
+            error
+        ) {
+            console.error(
+                "Logout error:",
+                error
+            );
+
+            alert(
+                "تعذر تسجيل الخروج."
+            );
+        }
+    }
+
+    function getUserDisplayName() {
+        if (!currentUser) {
+            return "المستخدم";
+        }
+
+        const metadata =
+            currentUser.user_metadata ||
+            {};
+
+        return (
+            metadata.full_name ||
+            currentUser.email ||
+            "المستخدم"
+        );
+    }
+
+    function getInitials() {
+        const name =
+            getUserDisplayName();
+
+        if (!name) {
+            return "U";
+        }
+
+        const parts =
+            name
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+        if (
+            parts.length >= 2
+        ) {
+            return (
+                parts[0][0] +
+                parts[1][0]
+            ).toUpperCase();
+        }
+
+        return name[0].toUpperCase();
+    }
+
+    function showAuthModal(
+        initialMode = "login"
+    ) {
+        const modal =
+            createModal({
+                title:
+                    initialMode ===
+                    "signup"
+                        ? "👤 إنشاء حساب"
+                        : "🔐 تسجيل الدخول"
+            });
+
+        renderAuthForm(
+            modal,
+            initialMode
+        );
+
+        return modal;
+    }
+
+    function renderAuthForm(
+        modal,
+        mode = "login"
+    ) {
+        const isSignup =
+            mode === "signup";
+
+        modal.title.textContent =
+            isSignup
+                ? "👤 إنشاء حساب"
+                : "🔐 تسجيل الدخول";
+
+        modal.body.innerHTML = `
+            <div
+                style="
+                    max-width:480px;
+                    margin:0 auto;
+                "
+            >
+
+                <div
+                    style="
+                        text-align:center;
+                        margin-bottom:20px;
+                    "
+                >
+                    <div
+                        class="unimind-account-avatar"
+                    >
+                        ${isSignup ? "👤" : "🔐"}
+                    </div>
+
+                    <h3 style="margin:0 0 6px;">
+                        ${
+                            isSignup
+                                ? "انضم إلى UniMind AI"
+                                : "مرحباً بعودتك"
+                        }
+                    </h3>
+
+                    <div class="unimind-muted">
+                        ${
+                            isSignup
+                                ? "أنشئ حسابك واحفظ إعداداتك وبياناتك."
+                                : "سجل الدخول للوصول إلى حسابك."
+                        }
+                    </div>
+                </div>
+
+                <div
+                    class="unimind-auth-tabs"
+                >
+                    <button
+                        type="button"
+                        id="unimindLoginTab"
+                        class="unimind-auth-tab ${
+                            !isSignup
+                                ? "active"
+                                : ""
+                        }"
+                    >
+                        تسجيل الدخول
+                    </button>
+
+                    <button
+                        type="button"
+                        id="unimindSignupTab"
+                        class="unimind-auth-tab ${
+                            isSignup
+                                ? "active"
+                                : ""
+                        }"
+                    >
+                        إنشاء حساب
+                    </button>
+                </div>
+
+                ${
+                    isSignup
+                        ? `
+                            <label>
+                                <strong>
+                                    الاسم الكامل
+                                </strong>
+                            </label>
+
+                            <input
+                                id="unimindAuthName"
+                                class="unimind-input"
+                                type="text"
+                                placeholder="اكتب اسمك الكامل"
+                                autocomplete="name"
+                            />
+
+                            <div style="height:12px;"></div>
+                        `
+                        : ""
+                }
+
+                <label>
+                    <strong>
+                        البريد الإلكتروني
+                    </strong>
+                </label>
+
+                <input
+                    id="unimindAuthEmail"
+                    class="unimind-input"
+                    type="email"
+                    placeholder="example@email.com"
+                    autocomplete="email"
+                />
+
+                <div style="height:12px;"></div>
+
+                <label>
+                    <strong>
+                        كلمة المرور
+                    </strong>
+                </label>
+
+                <input
+                    id="unimindAuthPassword"
+                    class="unimind-input"
+                    type="password"
+                    placeholder="••••••••"
+                    autocomplete="${
+                        isSignup
+                            ? "new-password"
+                            : "current-password"
+                    }"
+                />
+
+                ${
+                    isSignup
+                        ? `
+                            <div style="height:12px;"></div>
+
+                            <label>
+                                <strong>
+                                    تأكيد كلمة المرور
+                                </strong>
+                            </label>
+
+                            <input
+                                id="unimindAuthConfirmPassword"
+                                class="unimind-input"
+                                type="password"
+                                placeholder="••••••••"
+                                autocomplete="new-password"
+                            />
+                        `
+                        : ""
+                }
+
+                <button
+                    id="unimindAuthSubmit"
+                    type="button"
+                    class="unimind-btn unimind-btn-primary"
+                    style="
+                        width:100%;
+                        margin-top:18px;
+                    "
+                >
+                    ${
+                        isSignup
+                            ? "إنشاء الحساب"
+                            : "تسجيل الدخول"
+                    }
+                </button>
+
+                <div
+                    id="unimindAuthStatus"
+                    class="unimind-auth-status"
+                ></div>
+
+            </div>
+        `;
+
+        const loginTab =
+            document.getElementById(
+                "unimindLoginTab"
+            );
+
+        const signupTab =
+            document.getElementById(
+                "unimindSignupTab"
+            );
+
+        const submit =
+            document.getElementById(
+                "unimindAuthSubmit"
+            );
+
+        const status =
+            document.getElementById(
+                "unimindAuthStatus"
+            );
+
+        if (loginTab) {
+            loginTab.addEventListener(
+                "click",
+                () => {
+                    renderAuthForm(
+                        modal,
+                        "login"
+                    );
+                }
+            );
+        }
+
+        if (signupTab) {
+            signupTab.addEventListener(
+                "click",
+                () => {
+                    renderAuthForm(
+                        modal,
+                        "signup"
+                    );
+                }
+            );
+        }
+
+        submit.addEventListener(
+            "click",
+            async () => {
+                submit.disabled =
+                    true;
+
+                if (isSignup) {
+                    const name =
+                        document
+                            .getElementById(
+                                "unimindAuthName"
+                            )
+                            ?.value
+                            .trim();
+
+                    const email =
+                        document
+                            .getElementById(
+                                "unimindAuthEmail"
+                            )
+                            ?.value
+                            .trim();
+
+                    const password =
+                        document
+                            .getElementById(
+                                "unimindAuthPassword"
+                            )
+                            ?.value || "";
+
+                    const confirm =
+                        document
+                            .getElementById(
+                                "unimindAuthConfirmPassword"
+                            )
+                            ?.value || "";
+
+                    await handleSignup(
+                        name,
+                        email,
+                        password,
+                        confirm,
+                        status,
+                        modal
+                    );
+                } else {
+                    const email =
+                        document
+                            .getElementById(
+                                "unimindAuthEmail"
+                            )
+                            ?.value
+                            .trim();
+
+                    const password =
+                        document
+                            .getElementById(
+                                "unimindAuthPassword"
+                            )
+                            ?.value || "";
+
+                    await handleLogin(
+                        email,
+                        password,
+                        status,
+                        modal
+                    );
+                }
+
+                submit.disabled =
+                    false;
+            }
+        );
+    }
+
+    function showAccountModal() {
+        const modal =
+            createModal({
+                title:
+                    "👤 حسابي"
+            });
+
+        const displayName =
+            getUserDisplayName();
+
+        const email =
+            currentUser?.email ||
+            "";
+
+        modal.body.innerHTML = `
+            <div
+                style="
+                    max-width:480px;
+                    margin:0 auto;
+                    text-align:center;
+                "
+            >
+
+                <div
+                    class="unimind-account-avatar"
+                >
+                    ${escapeHTML(
+                        getInitials()
+                    )}
+                </div>
+
+                <h2 style="margin-bottom:6px;">
+                    ${escapeHTML(
+                        displayName
+                    )}
+                </h2>
+
+                <div
+                    class="unimind-muted"
+                    style="margin-bottom:20px;"
+                >
+                    ${escapeHTML(
+                        email
+                    )}
+                </div>
+
+                <div class="unimind-card">
+                    <div>
+                        <strong>
+                            حالة الحساب
+                        </strong>
+                    </div>
+
+                    <div
+                        style="
+                            margin-top:8px;
+                            color:#166534;
+                        "
+                    >
+                        ● مسجل الدخول
+                    </div>
+                </div>
+
+                <button
+                    id="unimindLogoutButton"
+                    type="button"
+                    class="unimind-btn unimind-btn-danger"
+                    style="
+                        width:100%;
+                        margin-top:10px;
+                    "
+                >
+                    🚪 تسجيل الخروج
+                </button>
+
+            </div>
+        `;
+
+        document
+            .getElementById(
+                "unimindLogoutButton"
+            )
+            .addEventListener(
+                "click",
+                async () => {
+                    await handleLogout();
+
+                    modal.close();
+                }
+            );
+    }
+
+    async function initializeAuth() {
+        try {
+            const client =
+                await getSupabase();
+
+            const {
+                data
+            } =
+                await client.auth.getSession();
+
+            currentUser =
+                data?.session?.user ||
+                null;
+
+            if (currentUser) {
+                try {
+                    await ensureUserProfile(
+                        currentUser
+                    );
+
+                    await loadUserPreferences(
+                        currentUser
+                    );
+                } catch (
+                    profileError
+                ) {
+                    console.error(
+                        "Profile initialization error:",
+                        profileError
+                    );
+                }
+            }
+
+            refreshAuthUI();
+
+            client.auth.onAuthStateChange(
+                async (
+                    event,
+                    session
+                ) => {
+                    currentUser =
+                        session?.user ||
+                        null;
+
+                    if (
+                        currentUser
+                    ) {
+                        try {
+                            await ensureUserProfile(
+                                currentUser
+                            );
+
+                            await loadUserPreferences(
+                                currentUser
+                            );
+                        } catch (
+                            error
+                        ) {
+                            console.error(
+                                "Auth profile error:",
+                                error
+                            );
+                        }
+                    }
+
+                    refreshAuthUI();
+                }
+            );
+
+            console.log(
+                "🔐 Supabase Authentication initialized."
+            );
+        } catch (
+            error
+        ) {
+            console.error(
+                "❌ Supabase initialization error:",
+                error
+            );
+
+            refreshAuthUI();
+        }
+    }
+
+    function refreshAuthUI() {
+        const buttons =
+            document.querySelectorAll(
+                "#loginButton, #studentLoginButton, [data-action='login']"
+            );
+
+        buttons.forEach(
+            button => {
+                if (
+                    currentUser
+                ) {
+                    button.textContent =
+                        "👤 حسابي";
+
+                    button.setAttribute(
+                        "aria-label",
+                        "فتح حسابي"
+                    );
+
+                    button.dataset.unimindAuthMode =
+                        "account";
+                } else {
+                    button.textContent =
+                        "تسجيل الدخول";
+
+                    button.setAttribute(
+                        "aria-label",
+                        "تسجيل الدخول"
+                    );
+
+                    button.dataset.unimindAuthMode =
+                        "login";
+                }
+            }
+        );
+    }
+
+    function setupLogin() {
+        const buttons =
+            document.querySelectorAll(
+                "#loginButton, #studentLoginButton, [data-action='login']"
+            );
+
+        buttons.forEach(
+            button => {
+                bindOnce(
+                    button,
+                    () => {
+                        if (
+                            currentUser
+                        ) {
+                            showAccountModal();
+                        } else {
+                            showAuthModal(
+                                "login"
+                            );
+                        }
+                    }
+                );
+            }
+        );
+    }
+
+    // =========================================================
     // CHAT
     // =========================================================
 
@@ -1179,7 +2569,9 @@
             });
 
         const chat =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         chat.className =
             "unimind-chat";
@@ -1238,11 +2630,21 @@
         button.textContent =
             "إرسال";
 
-        form.appendChild(input);
-        form.appendChild(button);
+        form.appendChild(
+            input
+        );
 
-        modal.body.appendChild(chat);
-        modal.body.appendChild(form);
+        form.appendChild(
+            button
+        );
+
+        modal.body.appendChild(
+            chat
+        );
+
+        modal.body.appendChild(
+            form
+        );
 
         form.addEventListener(
             "submit",
@@ -1288,16 +2690,18 @@
                         answer,
                         "ai"
                     );
-                } catch (error) {
+                } catch (
+                    error
+                ) {
                     loading.remove();
 
                     addChatMessage(
                         chat,
                         "حدث خطأ أثناء الاتصال بالمساعد:\n" +
-                        (
-                            error.message ||
-                            "خطأ غير معروف"
-                        ),
+                            (
+                                error.message ||
+                                "خطأ غير معروف"
+                            ),
                         "ai"
                     );
                 } finally {
@@ -1313,7 +2717,8 @@
         );
 
         setTimeout(
-            () => input.focus(),
+            () =>
+                input.focus(),
             100
         );
 
@@ -1545,7 +2950,6 @@
         const name =
             file.name.toLowerCase();
 
-        // TXT / MD
         if (
             name.endsWith(".txt") ||
             name.endsWith(".md")
@@ -1553,7 +2957,6 @@
             return await file.text();
         }
 
-        // PDF
         if (
             name.endsWith(".pdf")
         ) {
@@ -1606,7 +3009,6 @@
             return fullText.trim();
         }
 
-        // DOC / DOCX
         if (
             name.endsWith(".doc") ||
             name.endsWith(".docx")
@@ -1885,7 +3287,9 @@
 
         let icon = "📄";
 
-        if (extension === "pdf") {
+        if (
+            extension === "pdf"
+        ) {
             icon = "📕";
         }
 
@@ -2051,7 +3455,9 @@ ${text}
                     ✅ اكتمل تحليل المحاضرة بنجاح.
                 </div>
             `;
-        } catch (error) {
+        } catch (
+            error
+        ) {
             status.innerHTML = `
                 <div class="unimind-error">
                     ❌ ${escapeHTML(
@@ -2214,11 +3620,6 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
                             prompt
                         );
 
-                    console.log(
-                        "🧪 Quiz AI response:",
-                        answer
-                    );
-
                     const questions =
                         parseQuizResponse(
                             answer
@@ -2242,7 +3643,9 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
                     renderQuiz(
                         area
                     );
-                } catch (error) {
+                } catch (
+                    error
+                ) {
                     area.innerHTML = `
                         <div class="unimind-error">
                             ❌ ${escapeHTML(
@@ -2268,10 +3671,7 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
 
         let cleaned =
             String(text)
-                .trim();
-
-        cleaned =
-            cleaned
+                .trim()
                 .replace(
                     /^```json/i,
                     ""
@@ -2370,94 +3770,96 @@ answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
         }
 
         return items
-            .map(item => {
-                if (!item) {
-                    return null;
-                }
+            .map(
+                item => {
+                    if (!item) {
+                        return null;
+                    }
 
-                const question =
-                    item.question ||
-                    item.q ||
-                    item.text ||
-                    "";
+                    const question =
+                        item.question ||
+                        item.q ||
+                        item.text ||
+                        "";
 
-                const options =
-                    item.options ||
-                    item.choices ||
-                    item.answers ||
-                    [];
+                    const options =
+                        item.options ||
+                        item.choices ||
+                        item.answers ||
+                        [];
 
-                let answer =
-                    item.answer ??
-                    item.correctAnswer ??
-                    item.correct ??
-                    0;
+                    let answer =
+                        item.answer ??
+                        item.correctAnswer ??
+                        item.correct ??
+                        0;
 
-                if (
-                    typeof answer ===
-                    "string" &&
-                    !/^\d+$/.test(
-                        answer
-                    )
-                ) {
-                    const index =
-                        options.findIndex(
-                            option =>
-                                String(
-                                    option
-                                ).trim() ===
-                                answer.trim()
-                        );
-
-                    answer =
-                        index >= 0
-                            ? index
-                            : 0;
-                } else {
-                    answer =
-                        Number(
+                    if (
+                        typeof answer ===
+                            "string" &&
+                        !/^\d+$/.test(
                             answer
-                        );
+                        )
+                    ) {
+                        const index =
+                            options.findIndex(
+                                option =>
+                                    String(
+                                        option
+                                    ).trim() ===
+                                    answer.trim()
+                            );
+
+                        answer =
+                            index >= 0
+                                ? index
+                                : 0;
+                    } else {
+                        answer =
+                            Number(
+                                answer
+                            );
+                    }
+
+                    if (
+                        !question ||
+                        !Array.isArray(
+                            options
+                        ) ||
+                        options.length <
+                            2
+                    ) {
+                        return null;
+                    }
+
+                    return {
+                        question:
+                            String(
+                                question
+                            ),
+
+                        options:
+                            options.map(
+                                String
+                            ),
+
+                        answer:
+                            Math.max(
+                                0,
+                                Math.min(
+                                    answer,
+                                    options.length -
+                                        1
+                                )
+                            ),
+
+                        explanation:
+                            item.explanation ||
+                            item.explain ||
+                            ""
+                    };
                 }
-
-                if (
-                    !question ||
-                    !Array.isArray(
-                        options
-                    ) ||
-                    options.length <
-                        2
-                ) {
-                    return null;
-                }
-
-                return {
-                    question:
-                        String(
-                            question
-                        ),
-
-                    options:
-                        options.map(
-                            String
-                        ),
-
-                    answer:
-                        Math.max(
-                            0,
-                            Math.min(
-                                answer,
-                                options.length -
-                                    1
-                            )
-                        ),
-
-                    explanation:
-                        item.explanation ||
-                        item.explain ||
-                        ""
-                };
-            })
+            )
             .filter(Boolean);
     }
 
@@ -2861,11 +4263,6 @@ ${value}
                             prompt
                         );
 
-                    console.log(
-                        "🗂️ Flashcards AI response:",
-                        answer
-                    );
-
                     const cards =
                         parseFlashcards(
                             answer
@@ -2887,7 +4284,9 @@ ${value}
                     renderFlashcards(
                         area
                     );
-                } catch (error) {
+                } catch (
+                    error
+                ) {
                     area.innerHTML = `
                         <div class="unimind-error">
                             ❌ ${escapeHTML(
@@ -3010,21 +4409,23 @@ ${value}
         }
 
         return items
-            .map(item => ({
-                front: String(
-                    item.front ||
-                    item.question ||
-                    item.term ||
-                    ""
-                ),
+            .map(
+                item => ({
+                    front: String(
+                        item.front ||
+                        item.question ||
+                        item.term ||
+                        ""
+                    ),
 
-                back: String(
-                    item.back ||
-                    item.answer ||
-                    item.definition ||
-                    ""
-                )
-            }))
+                    back: String(
+                        item.back ||
+                        item.answer ||
+                        item.definition ||
+                        ""
+                    )
+                })
+            )
             .filter(
                 card =>
                     card.front &&
@@ -3302,7 +4703,9 @@ ${hours.value}
                             )}
                         </div>
                     `;
-                } catch (error) {
+                } catch (
+                    error
+                ) {
                     result.innerHTML = `
                         <div class="unimind-error">
                             ❌ ${escapeHTML(
@@ -3448,7 +4851,9 @@ ${value}
                             )}
                         </div>
                     `;
-                } catch (error) {
+                } catch (
+                    error
+                ) {
                     result.innerHTML = `
                         <div class="unimind-error">
                             ❌ ${escapeHTML(
@@ -3492,7 +4897,9 @@ ${value}
 
                 try {
                     handler(event);
-                } catch (error) {
+                } catch (
+                    error
+                ) {
                     console.error(
                         "UniMind button error:",
                         error
@@ -3549,7 +4956,8 @@ ${value}
             );
 
         for (
-            const element of elements
+            const element of
+                elements
         ) {
             const text =
                 (
@@ -3565,7 +4973,8 @@ ${value}
             }
 
             for (
-                const phrase of phrases
+                const phrase of
+                    phrases
             ) {
                 if (
                     text.includes(
@@ -3581,10 +4990,6 @@ ${value}
     }
 
     function setupButtons() {
-        // -----------------------------------------------------
-        // CHAT
-        // -----------------------------------------------------
-
         bindSelectors(
             [
                 "#studyAssistantButton",
@@ -3603,10 +5008,6 @@ ${value}
             ],
             openChat
         );
-
-        // -----------------------------------------------------
-        // LECTURE SUMMARIZER
-        // -----------------------------------------------------
 
         bindSelectors(
             [
@@ -3628,10 +5029,6 @@ ${value}
             openLectureSummarizer
         );
 
-        // -----------------------------------------------------
-        // QUIZ
-        // -----------------------------------------------------
-
         bindSelectors(
             [
                 "#quizButton",
@@ -3644,10 +5041,6 @@ ${value}
             ],
             openQuiz
         );
-
-        // -----------------------------------------------------
-        // FLASHCARDS
-        // -----------------------------------------------------
 
         bindSelectors(
             [
@@ -3663,10 +5056,6 @@ ${value}
             openFlashcards
         );
 
-        // -----------------------------------------------------
-        // PLANNER
-        // -----------------------------------------------------
-
         bindSelectors(
             [
                 "#plannerButton",
@@ -3680,10 +5069,6 @@ ${value}
             ],
             openPlanner
         );
-
-        // -----------------------------------------------------
-        // CV
-        // -----------------------------------------------------
 
         bindSelectors(
             [
@@ -3699,10 +5084,6 @@ ${value}
             openCVAssistant
         );
 
-        // -----------------------------------------------------
-        // CTA
-        // -----------------------------------------------------
-
         bindSelectors(
             [
                 "#ctaStartButton",
@@ -3714,10 +5095,6 @@ ${value}
             ],
             openChat
         );
-
-        // -----------------------------------------------------
-        // TEXT FALLBACK
-        // -----------------------------------------------------
 
         const chatElement =
             findClickableByText([
@@ -3835,11 +5212,19 @@ ${value}
                                 "dark-mode"
                             );
 
-                        localStorage.setItem(
-                            "unimind-theme",
+                        const theme =
                             isDark
                                 ? "dark"
-                                : "light"
+                                : "light";
+
+                        localStorage.setItem(
+                            "unimind-theme",
+                            theme
+                        );
+
+                        saveUserPreference(
+                            "theme",
+                            theme
                         );
                     }
                 );
@@ -3904,6 +5289,11 @@ ${value}
                             "unimind-language",
                             next
                         );
+
+                        saveUserPreference(
+                            "language",
+                            next
+                        );
                     }
                 );
             }
@@ -3927,30 +5317,6 @@ ${value}
                     ? "rtl"
                     : "ltr";
         }
-    }
-
-    // =========================================================
-    // LOGIN BUTTON
-    // =========================================================
-
-    function setupLogin() {
-        const buttons =
-            document.querySelectorAll(
-                "#loginButton, #studentLoginButton, [data-action='login']"
-            );
-
-        buttons.forEach(
-            button => {
-                bindOnce(
-                    button,
-                    () => {
-                        alert(
-                            "ميزة تسجيل الدخول سيتم ربطها بقاعدة البيانات في المرحلة التالية."
-                        );
-                    }
-                );
-            }
-        );
     }
 
     // =========================================================
@@ -3987,10 +5353,11 @@ ${value}
         openPlanner,
         openCVAssistant,
         askAI,
-        extractLectureText
+        extractLectureText,
+        showAuthModal,
+        showAccountModal,
+        handleLogout
     };
-
-    // دعم لو كان HTML يستدعي الدوال مباشرة
 
     window.openChat =
         openChat;
@@ -4014,7 +5381,7 @@ ${value}
     // STARTUP
     // =========================================================
 
-    function init() {
+    async function init() {
         injectStyles();
 
         setupButtons();
@@ -4030,6 +5397,8 @@ ${value}
         console.log(
             "🚀 UniMind AI initialized successfully."
         );
+
+        await initializeAuth();
     }
 
     if (
@@ -4043,5 +5412,4 @@ ${value}
     } else {
         init();
     }
-
 })();
