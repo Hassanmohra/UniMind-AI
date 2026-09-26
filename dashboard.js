@@ -1,3 +1,4 @@
+```javascript
 (function () {
     "use strict";
 
@@ -5,130 +6,141 @@
     // UniMind AI - Student Dashboard
     // =========================================================
 
-    const DASHBOARD_ID = "unimind-dashboard";
+    const STORAGE_KEY = "unimind_dashboard_stats";
 
-    function escapeHTML(value) {
-        return String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
+    // ---------------------------------------------------------
+    // الإحصائيات المحلية
+    // ---------------------------------------------------------
 
-    function getUserName() {
-        try {
-            if (window.UniMindAuth && typeof window.UniMindAuth.getUserName === "function") {
-                return window.UniMindAuth.getUserName();
-            }
-        } catch (error) {
-            console.warn("Dashboard user name error:", error);
-        }
-
-        return "الطالب";
-    }
-
-    function getInitial(name) {
-        const text = String(name || "ط").trim();
-        return text.charAt(0).toUpperCase();
-    }
+    const defaultStats = {
+        chats: 0,
+        summaries: 0,
+        quizzes: 0,
+        flashcards: 0,
+        planners: 0,
+        cv: 0
+    };
 
     function getStats() {
         try {
-            return JSON.parse(
-                localStorage.getItem("unimind_dashboard_stats") || "{}"
-            );
-        } catch {
-            return {};
+            const saved = localStorage.getItem(STORAGE_KEY);
+
+            if (!saved) {
+                return { ...defaultStats };
+            }
+
+            return {
+                ...defaultStats,
+                ...JSON.parse(saved)
+            };
+        } catch (error) {
+            return { ...defaultStats };
         }
     }
 
     function saveStats(stats) {
-        localStorage.setItem(
-            "unimind_dashboard_stats",
-            JSON.stringify(stats)
-        );
+        try {
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(stats)
+            );
+        } catch (error) {
+            console.warn(
+                "UniMind Dashboard: could not save stats."
+            );
+        }
     }
 
     function incrementStat(key) {
         const stats = getStats();
 
-        stats[key] = Number(stats[key] || 0) + 1;
+        if (typeof stats[key] !== "number") {
+            stats[key] = 0;
+        }
+
+        stats[key]++;
 
         saveStats(stats);
 
         updateDashboardStats();
     }
 
-    function updateDashboardStats() {
-        const stats = getStats();
+    // ---------------------------------------------------------
+    // اسم الطالب
+    // ---------------------------------------------------------
 
-        const values = {
-            chats: stats.chats || 0,
-            summaries: stats.summaries || 0,
-            quizzes: stats.quizzes || 0,
-            flashcards: stats.flashcards || 0,
-            planners: stats.planners || 0,
-            cv: stats.cv || 0
-        };
+    function getUserName() {
+        try {
+            if (
+                window.UniMindAuth &&
+                typeof window.UniMindAuth.getUserName === "function"
+            ) {
+                const name = window.UniMindAuth.getUserName();
 
-        Object.keys(values).forEach(function (key) {
-            const element = document.querySelector(
-                '[data-dashboard-stat="' + key + '"]'
-            );
-
-            if (element) {
-                element.textContent = values[key];
+                if (name) {
+                    return name;
+                }
             }
-        });
+        } catch (error) {}
+
+        return "الطالب";
     }
 
-    function createDashboard() {
-        if (document.getElementById(DASHBOARD_ID)) {
+    // ---------------------------------------------------------
+    // إنشاء CSS
+    // ---------------------------------------------------------
+
+    function createStyles() {
+        if (document.getElementById("unimind-dashboard-styles")) {
             return;
         }
 
         const style = document.createElement("style");
 
-        style.id = "unimind-dashboard-style";
+        style.id = "unimind-dashboard-styles";
 
         style.textContent = `
-            #${DASHBOARD_ID} {
+            #unimind-dashboard {
                 position: fixed;
                 inset: 0;
-                z-index: 99980;
+                z-index: 99999;
                 display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                direction: rtl;
+                font-family: inherit;
             }
 
-            #${DASHBOARD_ID}.active {
-                display: block;
+            #unimind-dashboard.active {
+                display: flex;
             }
 
             .unimind-dashboard-overlay {
                 position: absolute;
                 inset: 0;
-                background: rgba(15, 23, 42, 0.72);
+                background: rgba(15, 23, 42, .68);
                 backdrop-filter: blur(8px);
             }
 
-            .unimind-dashboard-window {
+            .unimind-dashboard-box {
                 position: relative;
-                width: min(950px, calc(100% - 30px));
-                max-height: calc(100vh - 40px);
+                z-index: 2;
+                width: min(900px, 100%);
+                max-height: 90vh;
                 overflow-y: auto;
-                margin: 20px auto;
+                background: var(--card-bg, #ffffff);
+                color: var(--text-color, #111827);
+                border-radius: 24px;
                 padding: 28px;
-                border-radius: 28px;
-                background: #ffffff;
-                box-shadow: 0 30px 80px rgba(0,0,0,.28);
-                box-sizing: border-box;
-                animation: unimindDashboardIn .25s ease;
+                box-shadow: 0 25px 80px rgba(0,0,0,.25);
+                animation: unimindDashboardShow .25s ease;
             }
 
-            @keyframes unimindDashboardIn {
+            @keyframes unimindDashboardShow {
                 from {
                     opacity: 0;
-                    transform: translateY(20px) scale(.97);
+                    transform: translateY(20px) scale(.98);
                 }
 
                 to {
@@ -141,50 +153,35 @@
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                gap: 20px;
+                gap: 15px;
                 margin-bottom: 25px;
             }
 
-            .unimind-dashboard-user {
-                display: flex;
-                align-items: center;
-                gap: 14px;
-            }
-
-            .unimind-dashboard-avatar {
-                width: 58px;
-                height: 58px;
-                border-radius: 18px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: #2563eb;
-                color: #ffffff;
-                font-size: 23px;
+            .unimind-dashboard-title {
+                margin: 0;
+                font-size: 28px;
                 font-weight: 800;
             }
 
-            .unimind-dashboard-user h2 {
-                margin: 0;
-                font-size: 22px;
-                color: #111827;
+            .unimind-dashboard-subtitle {
+                margin: 7px 0 0;
+                opacity: .7;
+                font-size: 14px;
             }
 
-            .unimind-dashboard-user p {
-                margin: 5px 0 0;
-                color: #64748b;
-                font-size: 13px;
-            }
-
-            #unimind-dashboard-close {
+            .unimind-dashboard-close {
                 width: 42px;
                 height: 42px;
                 border: 0;
                 border-radius: 12px;
-                background: #f1f5f9;
-                color: #374151;
-                font-size: 23px;
+                background: rgba(100,100,100,.1);
+                color: inherit;
                 cursor: pointer;
+                font-size: 20px;
+            }
+
+            .unimind-dashboard-close:hover {
+                background: rgba(100,100,100,.18);
             }
 
             .unimind-dashboard-grid {
@@ -194,123 +191,57 @@
             }
 
             .unimind-dashboard-card {
-                padding: 20px;
-                border: 1px solid #e5e7eb;
-                border-radius: 20px;
-                background: #ffffff;
+                padding: 22px;
+                border-radius: 18px;
+                background: rgba(99,102,241,.07);
+                border: 1px solid rgba(99,102,241,.12);
+                text-align: right;
+                transition: .2s ease;
             }
 
-            .unimind-dashboard-card-icon {
-                width: 44px;
-                height: 44px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 13px;
-                background: #eff6ff;
-                font-size: 21px;
+            .unimind-dashboard-card:hover {
+                transform: translateY(-3px);
+            }
+
+            .unimind-dashboard-icon {
+                font-size: 28px;
                 margin-bottom: 12px;
             }
 
-            .unimind-dashboard-card strong {
-                display: block;
-                color: #111827;
-                font-size: 14px;
-            }
-
             .unimind-dashboard-number {
-                margin-top: 7px;
-                font-size: 27px;
+                font-size: 30px;
                 font-weight: 800;
-                color: #2563eb;
+                line-height: 1;
+                margin-bottom: 8px;
             }
 
-            .unimind-dashboard-section {
+            .unimind-dashboard-label {
+                font-size: 14px;
+                opacity: .72;
+            }
+
+            .unimind-dashboard-note {
                 margin-top: 22px;
-                padding: 22px;
-                border-radius: 20px;
-                background: #f8fafc;
-                border: 1px solid #e5e7eb;
-            }
-
-            .unimind-dashboard-section h3 {
-                margin: 0 0 15px;
-                color: #111827;
-                font-size: 17px;
-            }
-
-            .unimind-dashboard-activity {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
-            }
-
-            .unimind-dashboard-activity-item {
-                padding: 13px;
-                border-radius: 13px;
-                background: #ffffff;
-                border: 1px solid #e5e7eb;
-                color: #374151;
+                padding: 15px 18px;
+                border-radius: 14px;
+                background: rgba(59,130,246,.08);
+                border: 1px solid rgba(59,130,246,.12);
                 font-size: 13px;
-            }
-
-            .unimind-dashboard-empty {
-                color: #64748b;
-                font-size: 13px;
-                padding: 8px 0;
-            }
-
-            body.dark-mode #${DASHBOARD_ID} .unimind-dashboard-window {
-                background: #0f172a;
-            }
-
-            body.dark-mode #${DASHBOARD_ID} .unimind-dashboard-user h2,
-            body.dark-mode #${DASHBOARD_ID} .unimind-dashboard-card strong,
-            body.dark-mode #${DASHBOARD_ID} .unimind-dashboard-section h3 {
-                color: #f8fafc;
-            }
-
-            body.dark-mode #${DASHBOARD_ID} .unimind-dashboard-user p,
-            body.dark-mode #${DASHBOARD_ID} .unimind-dashboard-empty {
-                color: #94a3b8;
-            }
-
-            body.dark-mode #${DASHBOARD_ID} .unimind-dashboard-card {
-                background: #111827;
-                border-color: #1e293b;
-            }
-
-            body.dark-mode #${DASHBOARD_ID} .unimind-dashboard-section {
-                background: #020617;
-                border-color: #1e293b;
-            }
-
-            body.dark-mode #${DASHBOARD_ID} .unimind-dashboard-activity-item {
-                background: #111827;
-                border-color: #1e293b;
-                color: #e5e7eb;
-            }
-
-            body.dark-mode #unimind-dashboard-close {
-                background: #1e293b;
-                color: #e5e7eb;
+                line-height: 1.8;
             }
 
             @media (max-width: 700px) {
-                .unimind-dashboard-window {
-                    width: calc(100% - 18px);
-                    margin: 9px auto;
-                    max-height: calc(100vh - 18px);
-                    padding: 18px;
-                    border-radius: 22px;
+                .unimind-dashboard-box {
+                    padding: 20px;
+                    border-radius: 20px;
                 }
 
                 .unimind-dashboard-grid {
                     grid-template-columns: repeat(2, 1fr);
                 }
 
-                .unimind-dashboard-activity {
-                    grid-template-columns: 1fr;
+                .unimind-dashboard-title {
+                    font-size: 23px;
                 }
             }
 
@@ -318,58 +249,51 @@
                 .unimind-dashboard-grid {
                     grid-template-columns: 1fr;
                 }
-
-                .unimind-dashboard-header {
-                    align-items: flex-start;
-                }
             }
         `;
 
         document.head.appendChild(style);
+    }
 
-        const modal = document.createElement("div");
+    // ---------------------------------------------------------
+    // إنشاء لوحة التحكم
+    // ---------------------------------------------------------
 
-        modal.id = DASHBOARD_ID;
+    function createDashboard() {
+        if (document.getElementById("unimind-dashboard")) {
+            return;
+        }
 
-        modal.innerHTML = `
+        createStyles();
+
+        const dashboard = document.createElement("div");
+
+        dashboard.id = "unimind-dashboard";
+
+        dashboard.innerHTML = `
             <div class="unimind-dashboard-overlay"></div>
 
-            <div
-                class="unimind-dashboard-window"
-                role="dialog"
-                aria-modal="true"
-                aria-label="لوحة الطالب"
-            >
+            <div class="unimind-dashboard-box">
 
                 <div class="unimind-dashboard-header">
 
-                    <div class="unimind-dashboard-user">
+                    <div>
+                        <h2 class="unimind-dashboard-title">
+                            🎓 لوحتي
+                        </h2>
 
-                        <div
-                            class="unimind-dashboard-avatar"
-                            id="unimind-dashboard-avatar"
-                        >
-                            ح
-                        </div>
-
-                        <div>
-                            <h2>
-                                مرحبًا،
-                                <span id="unimind-dashboard-name">
-                                    الطالب
-                                </span>
-                                👋
-                            </h2>
-
-                            <p>
-                                لوحة التحكم الدراسية الخاصة بك
-                            </p>
-                        </div>
-
+                        <p class="unimind-dashboard-subtitle">
+                            أهلاً بك،
+                            <strong id="unimind-dashboard-user">
+                                الطالب
+                            </strong>
+                            👋
+                        </p>
                     </div>
 
                     <button
                         type="button"
+                        class="unimind-dashboard-close"
                         id="unimind-dashboard-close"
                         aria-label="إغلاق"
                     >
@@ -378,321 +302,364 @@
 
                 </div>
 
-
                 <div class="unimind-dashboard-grid">
 
                     <div class="unimind-dashboard-card">
-
-                        <div class="unimind-dashboard-card-icon">
+                        <div class="unimind-dashboard-icon">
                             🤖
                         </div>
 
-                        <strong>
-                            مساعد الدراسة
-                        </strong>
-
                         <div
                             class="unimind-dashboard-number"
-                            data-dashboard-stat="chats"
+                            id="dashboard-chats"
                         >
                             0
                         </div>
 
+                        <div class="unimind-dashboard-label">
+                            جلسات مساعد الدراسة
+                        </div>
                     </div>
 
-
                     <div class="unimind-dashboard-card">
-
-                        <div class="unimind-dashboard-card-icon">
+                        <div class="unimind-dashboard-icon">
                             📄
                         </div>
 
-                        <strong>
-                            الملخصات
-                        </strong>
-
                         <div
                             class="unimind-dashboard-number"
-                            data-dashboard-stat="summaries"
+                            id="dashboard-summaries"
                         >
                             0
                         </div>
 
+                        <div class="unimind-dashboard-label">
+                            ملخصات المحاضرات
+                        </div>
                     </div>
 
-
                     <div class="unimind-dashboard-card">
-
-                        <div class="unimind-dashboard-card-icon">
+                        <div class="unimind-dashboard-icon">
                             🧠
                         </div>
 
-                        <strong>
-                            الاختبارات
-                        </strong>
-
                         <div
                             class="unimind-dashboard-number"
-                            data-dashboard-stat="quizzes"
+                            id="dashboard-quizzes"
                         >
                             0
                         </div>
 
+                        <div class="unimind-dashboard-label">
+                            الاختبارات الذكية
+                        </div>
                     </div>
 
-
                     <div class="unimind-dashboard-card">
-
-                        <div class="unimind-dashboard-card-icon">
-                            🃏
+                        <div class="unimind-dashboard-icon">
+                            🗂️
                         </div>
 
-                        <strong>
+                        <div
+                            class="unimind-dashboard-number"
+                            id="dashboard-flashcards"
+                        >
+                            0
+                        </div>
+
+                        <div class="unimind-dashboard-label">
                             البطاقات التعليمية
-                        </strong>
-
-                        <div
-                            class="unimind-dashboard-number"
-                            data-dashboard-stat="flashcards"
-                        >
-                            0
                         </div>
-
                     </div>
 
-
                     <div class="unimind-dashboard-card">
-
-                        <div class="unimind-dashboard-card-icon">
+                        <div class="unimind-dashboard-icon">
                             📅
                         </div>
 
-                        <strong>
-                            خطط الدراسة
-                        </strong>
-
                         <div
                             class="unimind-dashboard-number"
-                            data-dashboard-stat="planners"
+                            id="dashboard-planners"
                         >
                             0
                         </div>
 
+                        <div class="unimind-dashboard-label">
+                            خطط الدراسة
+                        </div>
                     </div>
-
 
                     <div class="unimind-dashboard-card">
-
-                        <div class="unimind-dashboard-card-icon">
-                            💼
+                        <div class="unimind-dashboard-icon">
+                            📄
                         </div>
-
-                        <strong>
-                            السير الذاتية
-                        </strong>
 
                         <div
                             class="unimind-dashboard-number"
-                            data-dashboard-stat="cv"
+                            id="dashboard-cv"
                         >
                             0
                         </div>
 
+                        <div class="unimind-dashboard-label">
+                            السير الذاتية
+                        </div>
                     </div>
 
                 </div>
 
-
-                <div class="unimind-dashboard-section">
-
-                    <h3>
-                        📊 نشاطك الدراسي
-                    </h3>
-
-                    <div class="unimind-dashboard-activity">
-
-                        <div class="unimind-dashboard-activity-item">
-                            🤖 استخدمت مساعد الدراسة
-                        </div>
-
-                        <div class="unimind-dashboard-activity-item">
-                            📄 أنشأت ملخصًا
-                        </div>
-
-                        <div class="unimind-dashboard-activity-item">
-                            🧠 أنشأت اختبارًا
-                        </div>
-
-                        <div class="unimind-dashboard-activity-item">
-                            🃏 أنشأت بطاقات تعليمية
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="unimind-dashboard-section">
-
-                    <h3>
-                        💡 ملاحظة
-                    </h3>
-
-                    <div class="unimind-dashboard-empty">
-                        سيتم تطوير هذه اللوحة لاحقًا لعرض البيانات
-                        الحقيقية المحفوظة في حسابك وقاعدة البيانات.
-                    </div>
-
+                <div class="unimind-dashboard-note">
+                    💡 هذه الإحصائيات محفوظة حاليًا على جهازك.
+                    في المرحلة القادمة يمكن ربطها بحسابك في Supabase
+                    لتظهر لك بياناتك من أي جهاز.
                 </div>
 
             </div>
         `;
 
-        document.body.appendChild(modal);
+        document.body.appendChild(dashboard);
 
         const closeButton = document.getElementById(
             "unimind-dashboard-close"
         );
 
-        const overlay = modal.querySelector(
+        const overlay = dashboard.querySelector(
             ".unimind-dashboard-overlay"
         );
 
         if (closeButton) {
-            closeButton.addEventListener("click", closeDashboard);
+            closeButton.addEventListener(
+                "click",
+                closeDashboard
+            );
         }
 
         if (overlay) {
-            overlay.addEventListener("click", closeDashboard);
+            overlay.addEventListener(
+                "click",
+                closeDashboard
+            );
         }
 
-        document.addEventListener("keydown", function (event) {
-            if (
-                event.key === "Escape" &&
-                modal.classList.contains("active")
-            ) {
-                closeDashboard();
+        updateDashboardStats();
+    }
+
+    // ---------------------------------------------------------
+    // تحديث الإحصائيات
+    // ---------------------------------------------------------
+
+    function updateDashboardStats() {
+        const stats = getStats();
+
+        const elements = {
+            chats: document.getElementById("dashboard-chats"),
+            summaries: document.getElementById("dashboard-summaries"),
+            quizzes: document.getElementById("dashboard-quizzes"),
+            flashcards: document.getElementById("dashboard-flashcards"),
+            planners: document.getElementById("dashboard-planners"),
+            cv: document.getElementById("dashboard-cv")
+        };
+
+        Object.keys(elements).forEach(function (key) {
+            if (elements[key]) {
+                elements[key].textContent =
+                    String(stats[key] || 0);
             }
         });
     }
 
+    // ---------------------------------------------------------
+    // فتح اللوحة
+    // ---------------------------------------------------------
+
     function openDashboard() {
         createDashboard();
 
-        const modal = document.getElementById(DASHBOARD_ID);
+        const dashboard =
+            document.getElementById("unimind-dashboard");
 
-        if (!modal) {
-            return;
-        }
+        const userElement =
+            document.getElementById(
+                "unimind-dashboard-user"
+            );
 
-        const name = getUserName();
-
-        const nameElement = document.getElementById(
-            "unimind-dashboard-name"
-        );
-
-        const avatarElement = document.getElementById(
-            "unimind-dashboard-avatar"
-        );
-
-        if (nameElement) {
-            nameElement.textContent = name;
-        }
-
-        if (avatarElement) {
-            avatarElement.textContent = getInitial(name);
+        if (userElement) {
+            userElement.textContent = getUserName();
         }
 
         updateDashboardStats();
 
-        modal.classList.add("active");
-
-        document.body.style.overflow = "hidden";
+        if (dashboard) {
+            dashboard.classList.add("active");
+            document.body.style.overflow = "hidden";
+        }
     }
 
+    // ---------------------------------------------------------
+    // إغلاق اللوحة
+    // ---------------------------------------------------------
+
     function closeDashboard() {
-        const modal = document.getElementById(DASHBOARD_ID);
+        const dashboard =
+            document.getElementById("unimind-dashboard");
 
-        if (!modal) {
-            return;
+        if (dashboard) {
+            dashboard.classList.remove("active");
         }
-
-        modal.classList.remove("active");
 
         document.body.style.overflow = "";
     }
 
+    // ---------------------------------------------------------
+    // إنشاء زر لوحة الطالب
+    // ---------------------------------------------------------
+
     function bindDashboardButton() {
-        const loginButton = document.getElementById("loginButton");
+        const loginButton =
+            document.getElementById("loginButton");
 
         if (!loginButton) {
+            setTimeout(bindDashboardButton, 500);
             return;
         }
 
-        if (document.getElementById("unimind-dashboard-button")) {
-            return;
+        let dashboardButton =
+            document.getElementById(
+                "unimind-dashboard-button"
+            );
+
+        if (!dashboardButton) {
+            dashboardButton =
+                document.createElement("button");
+
+            dashboardButton.id =
+                "unimind-dashboard-button";
+
+            dashboardButton.type = "button";
+
+            dashboardButton.innerHTML =
+                "🎓 لوحتي";
+
+            dashboardButton.style.cssText = `
+                display: none;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                padding: 9px 14px;
+                border: 1px solid rgba(99,102,241,.25);
+                border-radius: 12px;
+                background: rgba(99,102,241,.08);
+                color: inherit;
+                font-family: inherit;
+                font-size: 14px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: .2s ease;
+            `;
+
+            dashboardButton.addEventListener(
+                "mouseenter",
+                function () {
+                    dashboardButton.style.transform =
+                        "translateY(-1px)";
+                }
+            );
+
+            dashboardButton.addEventListener(
+                "mouseleave",
+                function () {
+                    dashboardButton.style.transform =
+                        "translateY(0)";
+                }
+            );
+
+            dashboardButton.addEventListener(
+                "click",
+                function () {
+                    openDashboard();
+                }
+            );
+
+            loginButton.insertAdjacentElement(
+                "afterend",
+                dashboardButton
+            );
         }
-
-        const button = document.createElement("button");
-
-        button.type = "button";
-        button.id = "unimind-dashboard-button";
-        button.className = "login-btn";
-        button.textContent = "لوحتي 🎓";
-
-        button.style.display = "none";
-
-        button.addEventListener("click", openDashboard);
-
-        loginButton.parentNode.insertBefore(
-            button,
-            loginButton.nextSibling
-        );
 
         function updateButton() {
-            let loggedIn = false;
+            const text =
+                (loginButton.textContent || "").trim();
 
-            try {
-                if (
-                    window.UniMindAuth &&
-                    typeof window.UniMindAuth.getCurrentSession === "function"
-                ) {
-                    loggedIn = !!window.UniMindAuth.getCurrentSession();
-                }
-            } catch {}
+            const loggedIn =
+                text.includes("👤") ||
+                (
+                    text !== "" &&
+                    text !== "تسجيل الدخول" &&
+                    text !== "Login"
+                );
 
-            button.style.display = loggedIn ? "inline-flex" : "none";
+            dashboardButton.style.display =
+                loggedIn
+                    ? "inline-flex"
+                    : "none";
         }
 
         updateButton();
 
-        window.addEventListener(
-            "unimind-auth-updated",
-            updateButton
-        );
+        const observer =
+            new MutationObserver(function () {
+                updateButton();
+            });
 
-        setInterval(updateButton, 3000);
+        observer.observe(loginButton, {
+            childList: true,
+            subtree: true,
+            characterData: true
+        });
     }
 
-    function exposeAPI() {
-        window.UniMindDashboard = {
-            open: openDashboard,
-            close: closeDashboard,
-            increment: incrementStat,
-            getStats: getStats
-        };
-    }
+    // ---------------------------------------------------------
+    // زر ESC لإغلاق اللوحة
+    // ---------------------------------------------------------
 
-    function start() {
-        createDashboard();
+    document.addEventListener(
+        "keydown",
+        function (event) {
+            if (event.key === "Escape") {
+                closeDashboard();
+            }
+        }
+    );
+
+    // ---------------------------------------------------------
+    // API عامة للمشروع
+    // ---------------------------------------------------------
+
+    window.UniMindDashboard = {
+        open: openDashboard,
+        close: closeDashboard,
+        increment: incrementStat,
+        getStats: getStats,
+        update: updateDashboardStats
+    };
+
+    // ---------------------------------------------------------
+    // التشغيل
+    // ---------------------------------------------------------
+
+    function initializeDashboard() {
+        createStyles();
         bindDashboardButton();
-        exposeAPI();
     }
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", start);
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeDashboard
+        );
     } else {
-        start();
+        initializeDashboard();
     }
 
 })();
+```
