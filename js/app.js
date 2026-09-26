@@ -391,7 +391,6 @@
                 border-radius: 16px;
                 line-height: 1.8;
                 white-space: pre-wrap;
-                word-break: break-word;
             }
 
             .unimind-message-user {
@@ -404,7 +403,7 @@
             .unimind-message-ai {
                 align-self: flex-end;
                 background: #f1f5f9;
-                color: #1e293b;
+                color: #172033;
                 border-bottom-right-radius: 5px;
             }
 
@@ -426,73 +425,23 @@
             }
 
             .unimind-dot {
-                width: 7px;
-                height: 7px;
-                background: currentColor;
+                width: 8px;
+                height: 8px;
                 border-radius: 50%;
+                background: #6366f1;
                 animation: unimindPulse 1s infinite;
             }
 
-            .unimind-dot:nth-child(2) {
-                animation-delay: .15s;
-            }
-
-            .unimind-dot:nth-child(3) {
-                animation-delay: .3s;
-            }
-
             @keyframes unimindPulse {
-                0%, 80%, 100% {
-                    opacity: .25;
-                    transform: translateY(0);
+                0%, 100% {
+                    opacity: .3;
+                    transform: scale(.8);
                 }
 
-                40% {
+                50% {
                     opacity: 1;
-                    transform: translateY(-3px);
+                    transform: scale(1);
                 }
-            }
-
-            .unimind-card {
-                background: #f8fafc;
-                border: 1px solid #e2e8f0;
-                border-radius: 18px;
-                padding: 18px;
-                margin-bottom: 15px;
-            }
-
-            .unimind-card h3,
-            .unimind-card h4 {
-                margin-top: 0;
-            }
-
-            .unimind-option {
-                display: block;
-                width: 100%;
-                text-align: right;
-                padding: 13px 15px;
-                margin-top: 10px;
-                border: 1px solid #dbe3ef;
-                border-radius: 12px;
-                background: white;
-                cursor: pointer;
-                font-family: inherit;
-                transition: .2s;
-            }
-
-            .unimind-option:hover {
-                border-color: #6366f1;
-                background: #f5f3ff;
-            }
-
-            .unimind-option.correct {
-                background: #dcfce7;
-                border-color: #22c55e;
-            }
-
-            .unimind-option.wrong {
-                background: #fee2e2;
-                border-color: #ef4444;
             }
 
             .unimind-progress {
@@ -500,7 +449,7 @@
                 background: #e2e8f0;
                 border-radius: 999px;
                 overflow: hidden;
-                margin: 10px 0 20px;
+                margin-top: 10px;
             }
 
             .unimind-progress-bar {
@@ -898,54 +847,38 @@
             );
 
         if (answer) {
-            return answer.trim();
+            return answer;
         }
 
         if (
             data &&
             typeof data ===
-                "object" &&
-            Array.isArray(
-                data.questions
-            )
+                "object"
         ) {
-            return JSON.stringify(
-                data
-            );
+            if (
+                Array.isArray(
+                    data.questions
+                ) ||
+                Array.isArray(
+                    data.cards
+                )
+            ) {
+                return JSON.stringify(
+                    data
+                );
+            }
         }
 
-        if (
-            data &&
-            typeof data ===
-                "object" &&
-            Array.isArray(
-                data.cards
-            )
-        ) {
-            return JSON.stringify(
-                data
-            );
-        }
-
-        const fallback =
-            findFirstUsefulString(
-                data
-            );
-
-        if (fallback) {
-            return fallback;
-        }
-
-        throw new Error(
-            "وصل رد من الخادم، لكن لم يتم العثور على إجابة."
+        return JSON.stringify(
+            data,
+            null,
+            2
         );
     }
 
-    // =========================================================
-    // RESPONSE HELPERS
-    // =========================================================
-
-    function looksLikeJSON(text) {
+    function looksLikeJSON(
+        text
+    ) {
         if (
             !text ||
             typeof text !==
@@ -954,31 +887,25 @@
             return false;
         }
 
-        const value =
+        const trimmed =
             text.trim();
 
         return (
             (
-                value.startsWith(
+                trimmed.startsWith(
                     "{"
                 ) &&
-                value.endsWith(
+                trimmed.endsWith(
                     "}"
                 )
             ) ||
             (
-                value.startsWith(
+                trimmed.startsWith(
                     "["
                 ) &&
-                value.endsWith(
+                trimmed.endsWith(
                     "]"
                 )
-            ) ||
-            value.startsWith(
-                "```json"
-            ) ||
-            value.startsWith(
-                "```JSON"
             )
         );
     }
@@ -986,76 +913,68 @@
     function extractJSONFromText(
         text
     ) {
-        if (!text) return null;
+        if (
+            !text ||
+            typeof text !==
+                "string"
+        ) {
+            return null;
+        }
 
-        let cleaned =
-            String(text)
-                .trim()
-                .replace(
-                    /^```json\s*/i,
-                    ""
-                )
-                .replace(
-                    /^```\s*/i,
-                    ""
-                )
-                .replace(
-                    /\s*```$/i,
-                    ""
-                )
-                .trim();
+        const trimmed =
+            text.trim();
 
         try {
             return JSON.parse(
-                cleaned
+                trimmed
             );
         } catch (_) {}
 
-        const objectStart =
-            cleaned.indexOf(
+        const firstObject =
+            trimmed.indexOf(
                 "{"
             );
 
-        const objectEnd =
-            cleaned.lastIndexOf(
+        const lastObject =
+            trimmed.lastIndexOf(
                 "}"
             );
 
         if (
-            objectStart !== -1 &&
-            objectEnd >
-                objectStart
+            firstObject !== -1 &&
+            lastObject >
+                firstObject
         ) {
             try {
                 return JSON.parse(
-                    cleaned.slice(
-                        objectStart,
-                        objectEnd + 1
+                    trimmed.slice(
+                        firstObject,
+                        lastObject + 1
                     )
                 );
             } catch (_) {}
         }
 
-        const arrayStart =
-            cleaned.indexOf(
+        const firstArray =
+            trimmed.indexOf(
                 "["
             );
 
-        const arrayEnd =
-            cleaned.lastIndexOf(
+        const lastArray =
+            trimmed.lastIndexOf(
                 "]"
             );
 
         if (
-            arrayStart !== -1 &&
-            arrayEnd >
-                arrayStart
+            firstArray !== -1 &&
+            lastArray >
+                firstArray
         ) {
             try {
                 return JSON.parse(
-                    cleaned.slice(
-                        arrayStart,
-                        arrayEnd + 1
+                    trimmed.slice(
+                        firstArray,
+                        lastArray + 1
                     )
                 );
             } catch (_) {}
@@ -1065,213 +984,127 @@
     }
 
     function extractTextFromResponse(
-        value,
-        depth = 0
+        data
     ) {
         if (
-            depth > 8 ||
-            value === null ||
-            value === undefined
+            data === null ||
+            data === undefined
         ) {
-            return null;
+            return "";
         }
 
         if (
-            typeof value ===
+            typeof data ===
             "string"
         ) {
-            const text =
-                value.trim();
-
-            return text || null;
+            return data.trim();
         }
 
         if (
-            typeof value !==
-            "object"
+            Array.isArray(data)
         ) {
-            return null;
+            for (
+                const item of data
+            ) {
+                const text =
+                    extractTextFromResponse(
+                        item
+                    );
+
+                if (text) {
+                    return text;
+                }
+            }
+
+            return "";
         }
 
-        const possibleKeys = [
+        if (
+            typeof data !==
+            "object"
+        ) {
+            return String(data);
+        }
+
+        const preferredKeys = [
             "answer",
-            "message",
             "response",
+            "reply",
+            "message",
             "content",
-            "result",
             "text",
             "output",
-            "reply",
-            "completion",
-            "generated_text",
-            "assistant",
-            "ai_response",
-            "aiResponse",
-            "response_text",
-            "responseText"
+            "result"
         ];
 
         for (
-            const key of
-                possibleKeys
+            const key of preferredKeys
         ) {
             if (
                 Object.prototype.hasOwnProperty.call(
-                    value,
+                    data,
                     key
                 )
             ) {
-                const result =
-                    extractTextFromResponse(
-                        value[key],
-                        depth + 1
-                    );
-
-                if (result) {
-                    return result;
-                }
-            }
-        }
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                value,
-                "data"
-            )
-        ) {
-            const result =
-                extractTextFromResponse(
-                    value.data,
-                    depth + 1
-                );
-
-            if (result) {
-                return result;
-            }
-        }
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                value,
-                "body"
-            )
-        ) {
-            const bodyValue =
-                value.body;
-
-            if (
-                typeof bodyValue ===
-                "string"
-            ) {
-                const bodyText =
-                    bodyValue.trim();
+                const value =
+                    data[key];
 
                 if (
-                    looksLikeJSON(
-                        bodyText
-                    )
+                    typeof value ===
+                        "string" &&
+                    value.trim()
                 ) {
-                    try {
-                        const bodyJSON =
-                            JSON.parse(
-                                bodyText
-                            );
-
-                        const result =
-                            extractTextFromResponse(
-                                bodyJSON,
-                                depth + 1
-                            );
-
-                        if (result) {
-                            return result;
-                        }
-                    } catch (_) {}
+                    return value.trim();
                 }
 
-                if (bodyText) {
-                    return bodyText;
+                const nested =
+                    extractTextFromResponse(
+                        value
+                    );
+
+                if (nested) {
+                    return nested;
                 }
             }
-
-            const result =
-                extractTextFromResponse(
-                    bodyValue,
-                    depth + 1
-                );
-
-            if (result) {
-                return result;
-            }
-        }
-
-        return null;
-    }
-
-    function findFirstUsefulString(
-        value,
-        depth = 0
-    ) {
-        if (
-            depth > 6 ||
-            value === null ||
-            value === undefined
-        ) {
-            return null;
         }
 
         if (
-            typeof value ===
-            "string"
+            data.choices &&
+            Array.isArray(
+                data.choices
+            )
         ) {
-            const text =
-                value.trim();
-
-            return text || null;
-        }
-
-        if (
-            typeof value !==
-            "object"
-        ) {
-            return null;
-        }
-
-        const ignoredKeys = [
-            "status",
-            "success",
-            "ok",
-            "code",
-            "error",
-            "id",
-            "created_at",
-            "updated_at"
-        ];
-
-        for (
-            const key of
-                Object.keys(value)
-        ) {
-            if (
-                ignoredKeys.includes(
-                    key
-                )
+            for (
+                const choice of
+                    data.choices
             ) {
-                continue;
-            }
+                const choiceText =
+                    extractTextFromResponse(
+                        choice
+                    );
 
-            const result =
-                findFirstUsefulString(
-                    value[key],
-                    depth + 1
-                );
-
-            if (result) {
-                return result;
+                if (
+                    choiceText
+                ) {
+                    return choiceText;
+                }
             }
         }
 
-        return null;
+        if (
+            data.data
+        ) {
+            const nested =
+                extractTextFromResponse(
+                    data.data
+                );
+
+            if (nested) {
+                return nested;
+            }
+        }
+
+        return "";
     }
 
     // =========================================================
@@ -1322,18 +1155,26 @@
                 "button"
             );
 
-        closeButton.className =
-            "unimind-close";
-
         closeButton.type =
             "button";
 
-        closeButton.innerHTML =
-            "×";
+        closeButton.className =
+            "unimind-close";
 
         closeButton.setAttribute(
             "aria-label",
             "إغلاق"
+        );
+
+        closeButton.innerHTML =
+            "×";
+
+        header.appendChild(
+            title
+        );
+
+        header.appendChild(
+            closeButton
         );
 
         const body =
@@ -1344,13 +1185,21 @@
         body.className =
             "unimind-modal-body";
 
-        header.appendChild(
-            title
-        );
-
-        header.appendChild(
-            closeButton
-        );
+        if (
+            options.content
+        ) {
+            if (
+                typeof options.content ===
+                "string"
+            ) {
+                body.innerHTML =
+                    options.content;
+            } else {
+                body.appendChild(
+                    options.content
+                );
+            }
+        }
 
         modal.appendChild(
             header
@@ -1649,33 +1498,41 @@
             );
         }
     }
+        // =========================================================
+    // USER ACCOUNT
+    // =========================================================
 
-    async function handleLogin(
-        email,
-        password,
-        statusElement,
-        modal
-    ) {
-        if (
-            !email ||
-            !password
-        ) {
-            statusElement.innerHTML = `
-                <div class="unimind-error">
-                    الرجاء إدخال البريد الإلكتروني وكلمة المرور.
-                </div>
-            `;
+    async function getCurrentSession() {
+        try {
+            const client = await getSupabase();
 
-            return;
+            const {
+                data,
+                error
+            } = await client.auth.getSession();
+
+            if (error) {
+                console.error(
+                    "Session error:",
+                    error
+                );
+
+                return null;
+            }
+
+            return data?.session || null;
+
+        } catch (error) {
+            console.error(
+                "Failed to get session:",
+                error
+            );
+
+            return null;
         }
+    }
 
-        statusElement.innerHTML = `
-            <div class="unimind-loading">
-                <span class="unimind-dot"></span>
-                جاري تسجيل الدخول...
-            </div>
-        `;
-
+    async function refreshCurrentUser() {
         try {
             const client =
                 await getSupabase();
@@ -1684,246 +1541,851 @@
                 data,
                 error
             } =
-                await client.auth
-                    .signInWithPassword({
-                        email,
-                        password
-                    });
+                await client.auth.getUser();
 
             if (error) {
-                throw error;
+                console.error(
+                    "Get user error:",
+                    error
+                );
+
+                currentUser = null;
+
+                return null;
             }
 
             currentUser =
-                data.user;
+                data?.user || null;
 
-            await ensureUserProfile(
-                currentUser
-            );
+            return currentUser;
 
-            await loadUserPreferences(
-                currentUser
-            );
-
-            statusElement.innerHTML = `
-                <div class="unimind-success">
-                    ✅ تم تسجيل الدخول بنجاح.
-                </div>
-            `;
-
-            refreshAuthUI();
-
-            setTimeout(
-                () => {
-                    modal.close();
-                },
-                700
-            );
-        } catch (
-            error
-        ) {
+        } catch (error) {
             console.error(
-                "Login error:",
+                "Refresh user error:",
                 error
             );
 
-            let message =
-                "تعذر تسجيل الدخول.";
+            currentUser = null;
 
-            if (
-                error.message
-                    ?.toLowerCase()
-                    .includes(
-                        "invalid login credentials"
-                    )
-            ) {
-                message =
-                    "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
-            } else if (
-                error.message
-                    ?.toLowerCase()
-                    .includes(
-                        "email not confirmed"
-                    )
-            ) {
-                message =
-                    "يجب تأكيد البريد الإلكتروني أولاً.";
-            } else if (
-                error.message
-            ) {
-                message =
-                    error.message;
-            }
-
-            statusElement.innerHTML = `
-                <div class="unimind-error">
-                    ❌ ${escapeHTML(
-                        message
-                    )}
-                </div>
-            `;
+            return null;
         }
     }
 
-    async function handleSignup(
-        fullName,
-        email,
-        password,
-        confirmPassword,
-        statusElement,
-        modal
+    function getUserName(user) {
+        if (!user) {
+            return "مستخدم UniMind";
+        }
+
+        return (
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.email?.split("@")[0] ||
+            "مستخدم UniMind"
+        );
+    }
+
+    function getUserInitial(user) {
+        const name =
+            getUserName(user).trim();
+
+        return (
+            name.charAt(0) ||
+            "U"
+        ).toUpperCase();
+    }
+
+    // =========================================================
+    // AUTH UI
+    // =========================================================
+
+    function updateAuthUI() {
+        const loginButtons =
+            document.querySelectorAll(
+                "[data-unimind-login]"
+            );
+
+        const accountButtons =
+            document.querySelectorAll(
+                "[data-unimind-account]"
+            );
+
+        const logoutButtons =
+            document.querySelectorAll(
+                "[data-unimind-logout]"
+            );
+
+        if (currentUser) {
+
+            loginButtons.forEach(
+                button => {
+                    button.style.display =
+                        "none";
+                }
+            );
+
+            accountButtons.forEach(
+                button => {
+                    button.style.display =
+                        "";
+                }
+            );
+
+            logoutButtons.forEach(
+                button => {
+                    button.style.display =
+                        "";
+                }
+            );
+
+        } else {
+
+            loginButtons.forEach(
+                button => {
+                    button.style.display =
+                        "";
+                }
+            );
+
+            accountButtons.forEach(
+                button => {
+                    button.style.display =
+                        "none";
+                }
+            );
+
+            logoutButtons.forEach(
+                button => {
+                    button.style.display =
+                        "none";
+                }
+            );
+        }
+    }
+
+    // =========================================================
+    // LOGIN / REGISTER MODAL
+    // =========================================================
+
+    function openAuthModal(
+        defaultTab = "login"
     ) {
-        if (
-            !fullName ||
-            !email ||
-            !password ||
-            !confirmPassword
-        ) {
-            statusElement.innerHTML = `
-                <div class="unimind-error">
-                    الرجاء تعبئة جميع الحقول.
-                </div>
-            `;
 
-            return;
-        }
+        const modal =
+            createModal({
+                title:
+                    "حساب UniMind AI"
+            });
 
-        if (
-            password !==
-            confirmPassword
-        ) {
-            statusElement.innerHTML = `
-                <div class="unimind-error">
-                    كلمتا المرور غير متطابقتين.
-                </div>
-            `;
+        const body =
+            modal.body;
 
-            return;
-        }
+        body.innerHTML = `
+            <div class="unimind-auth-tabs">
 
-        if (
-            password.length < 6
-        ) {
-            statusElement.innerHTML = `
-                <div class="unimind-error">
-                    كلمة المرور يجب أن تحتوي على 6 أحرف على الأقل.
-                </div>
-            `;
+                <button
+                    type="button"
+                    class="unimind-auth-tab ${
+                        defaultTab === "login"
+                            ? "active"
+                            : ""
+                    }"
+                    id="unimindLoginTab"
+                >
+                    تسجيل الدخول
+                </button>
 
-            return;
-        }
+                <button
+                    type="button"
+                    class="unimind-auth-tab ${
+                        defaultTab === "register"
+                            ? "active"
+                            : ""
+                    }"
+                    id="unimindRegisterTab"
+                >
+                    إنشاء حساب
+                </button>
 
-        statusElement.innerHTML = `
-            <div class="unimind-loading">
-                <span class="unimind-dot"></span>
-                جاري إنشاء الحساب...
             </div>
+
+            <div id="unimindAuthContent"></div>
+
+            <div
+                id="unimindAuthStatus"
+                class="unimind-auth-status"
+            ></div>
         `;
 
-        try {
-            const client =
-                await getSupabase();
-
-            const {
-                data,
-                error
-            } =
-                await client.auth
-                    .signUp({
-                        email,
-                        password,
-
-                        options: {
-                            data: {
-                                full_name:
-                                    fullName
-                            }
-                        }
-                    });
-
-            if (error) {
-                throw error;
-            }
-
-            if (data.user) {
-                currentUser =
-                    data.user;
-
-                if (
-                    data.session
-                ) {
-                    await ensureUserProfile(
-                        data.user
-                    );
-
-                    await loadUserPreferences(
-                        data.user
-                    );
-
-                    refreshAuthUI();
-
-                    statusElement.innerHTML = `
-                        <div class="unimind-success">
-                            ✅ تم إنشاء الحساب وتسجيل الدخول بنجاح.
-                        </div>
-                    `;
-
-                    setTimeout(
-                        () => {
-                            modal.close();
-                        },
-                        900
-                    );
-                } else {
-                    statusElement.innerHTML = `
-                        <div class="unimind-success">
-                            ✅ تم إنشاء الحساب بنجاح.
-                            <br><br>
-                            إذا كان تأكيد البريد الإلكتروني مفعلاً في Supabase،
-                            تحقق من بريدك الإلكتروني ثم سجل الدخول.
-                        </div>
-                    `;
-                }
-            }
-        } catch (
-            error
-        ) {
-            console.error(
-                "Signup error:",
-                error
+        const loginTab =
+            body.querySelector(
+                "#unimindLoginTab"
             );
 
-            let message =
-                "تعذر إنشاء الحساب.";
+        const registerTab =
+            body.querySelector(
+                "#unimindRegisterTab"
+            );
 
-            if (
-                error.message
-                    ?.toLowerCase()
-                    .includes(
-                        "user already registered"
-                    )
-            ) {
-                message =
-                    "هذا البريد الإلكتروني مسجل مسبقاً.";
-            } else if (
-                error.message
-            ) {
-                message =
-                    error.message;
+        const content =
+            body.querySelector(
+                "#unimindAuthContent"
+            );
+
+        const status =
+            body.querySelector(
+                "#unimindAuthStatus"
+            );
+
+        function showStatus(
+            message,
+            type = "error"
+        ) {
+
+            status.className =
+                `unimind-auth-status ${
+                    type === "success"
+                        ? "unimind-success"
+                        : "unimind-error"
+                }`;
+
+            status.textContent =
+                message;
+        }
+
+        function clearStatus() {
+            status.className =
+                "unimind-auth-status";
+
+            status.textContent =
+                "";
+        }
+
+        function setActiveTab(
+            tab
+        ) {
+
+            const isLogin =
+                tab === "login";
+
+            loginTab.classList.toggle(
+                "active",
+                isLogin
+            );
+
+            registerTab.classList.toggle(
+                "active",
+                !isLogin
+            );
+
+            clearStatus();
+
+            if (isLogin) {
+                renderLogin();
+            } else {
+                renderRegister();
             }
+        }
 
-            statusElement.innerHTML = `
-                <div class="unimind-error">
-                    ❌ ${escapeHTML(
-                        message
-                    )}
+        function renderLogin() {
+
+            content.innerHTML = `
+                <form
+                    id="unimindLoginForm"
+                >
+
+                    <div
+                        style="
+                            margin-bottom:14px;
+                        "
+                    >
+                        <label>
+                            البريد الإلكتروني
+                        </label>
+
+                        <input
+                            type="email"
+                            id="unimindLoginEmail"
+                            class="unimind-input"
+                            placeholder="example@email.com"
+                            required
+                        >
+                    </div>
+
+                    <div
+                        style="
+                            margin-bottom:18px;
+                        "
+                    >
+                        <label>
+                            كلمة المرور
+                        </label>
+
+                        <input
+                            type="password"
+                            id="unimindLoginPassword"
+                            class="unimind-input"
+                            placeholder="كلمة المرور"
+                            required
+                        >
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="unimind-btn unimind-btn-primary"
+                        style="width:100%;"
+                        id="unimindLoginSubmit"
+                    >
+                        تسجيل الدخول
+                    </button>
+
+                </form>
+
+                <div
+                    style="
+                        margin-top:18px;
+                        text-align:center;
+                    "
+                    class="unimind-muted"
+                >
+                    ليس لديك حساب؟
+                    <button
+                        type="button"
+                        id="unimindGoRegister"
+                        style="
+                            border:0;
+                            background:none;
+                            color:#4f46e5;
+                            font-weight:800;
+                            cursor:pointer;
+                            font-family:inherit;
+                        "
+                    >
+                        إنشاء حساب جديد
+                    </button>
                 </div>
             `;
+
+            const form =
+                content.querySelector(
+                    "#unimindLoginForm"
+                );
+
+            const submit =
+                content.querySelector(
+                    "#unimindLoginSubmit"
+                );
+
+            const goRegister =
+                content.querySelector(
+                    "#unimindGoRegister"
+                );
+
+            goRegister.addEventListener(
+                "click",
+                () => {
+                    setActiveTab(
+                        "register"
+                    );
+                }
+            );
+
+            form.addEventListener(
+                "submit",
+                async event => {
+
+                    event.preventDefault();
+
+                    clearStatus();
+
+                    submit.disabled =
+                        true;
+
+                    submit.textContent =
+                        "جارٍ تسجيل الدخول...";
+
+                    try {
+
+                        const email =
+                            content.querySelector(
+                                "#unimindLoginEmail"
+                            ).value.trim();
+
+                        const password =
+                            content.querySelector(
+                                "#unimindLoginPassword"
+                            ).value;
+
+                        const client =
+                            await getSupabase();
+
+                        const {
+                            data,
+                            error
+                        } =
+                            await client.auth.signInWithPassword({
+                                email,
+                                password
+                            });
+
+                        if (error) {
+                            throw error;
+                        }
+
+                        currentUser =
+                            data?.user || null;
+
+                        if (currentUser) {
+
+                            await ensureUserProfile(
+                                currentUser
+                            );
+
+                            await loadUserPreferences(
+                                currentUser
+                            );
+
+                        }
+
+                        updateAuthUI();
+
+                        showStatus(
+                            "تم تسجيل الدخول بنجاح.",
+                            "success"
+                        );
+
+                        await sleep(
+                            700
+                        );
+
+                        modal.close();
+
+                        window.dispatchEvent(
+                            new CustomEvent(
+                                "unimind-auth-changed"
+                            )
+                        );
+
+                    } catch (error) {
+
+                        console.error(
+                            "Login error:",
+                            error
+                        );
+
+                        showStatus(
+                            getAuthErrorMessage(
+                                error
+                            )
+                        );
+
+                    } finally {
+
+                        submit.disabled =
+                            false;
+
+                        submit.textContent =
+                            "تسجيل الدخول";
+                    }
+                }
+            );
         }
+
+        function renderRegister() {
+
+            content.innerHTML = `
+                <form
+                    id="unimindRegisterForm"
+                >
+
+                    <div
+                        style="
+                            margin-bottom:14px;
+                        "
+                    >
+                        <label>
+                            الاسم الكامل
+                        </label>
+
+                        <input
+                            type="text"
+                            id="unimindRegisterName"
+                            class="unimind-input"
+                            placeholder="اكتب اسمك الكامل"
+                            required
+                        >
+                    </div>
+
+                    <div
+                        style="
+                            margin-bottom:14px;
+                        "
+                    >
+                        <label>
+                            البريد الإلكتروني
+                        </label>
+
+                        <input
+                            type="email"
+                            id="unimindRegisterEmail"
+                            class="unimind-input"
+                            placeholder="example@email.com"
+                            required
+                        >
+                    </div>
+
+                    <div
+                        style="
+                            margin-bottom:14px;
+                        "
+                    >
+                        <label>
+                            كلمة المرور
+                        </label>
+
+                        <input
+                            type="password"
+                            id="unimindRegisterPassword"
+                            class="unimind-input"
+                            placeholder="6 أحرف على الأقل"
+                            minlength="6"
+                            required
+                        >
+                    </div>
+
+                    <div
+                        style="
+                            margin-bottom:18px;
+                        "
+                    >
+                        <label>
+                            تأكيد كلمة المرور
+                        </label>
+
+                        <input
+                            type="password"
+                            id="unimindRegisterConfirm"
+                            class="unimind-input"
+                            placeholder="أعد كتابة كلمة المرور"
+                            minlength="6"
+                            required
+                        >
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="unimind-btn unimind-btn-primary"
+                        style="width:100%;"
+                        id="unimindRegisterSubmit"
+                    >
+                        إنشاء الحساب
+                    </button>
+
+                </form>
+
+                <div
+                    style="
+                        margin-top:18px;
+                        text-align:center;
+                    "
+                    class="unimind-muted"
+                >
+                    لديك حساب بالفعل؟
+
+                    <button
+                        type="button"
+                        id="unimindGoLogin"
+                        style="
+                            border:0;
+                            background:none;
+                            color:#4f46e5;
+                            font-weight:800;
+                            cursor:pointer;
+                            font-family:inherit;
+                        "
+                    >
+                        تسجيل الدخول
+                    </button>
+                </div>
+            `;
+
+            const form =
+                content.querySelector(
+                    "#unimindRegisterForm"
+                );
+
+            const submit =
+                content.querySelector(
+                    "#unimindRegisterSubmit"
+                );
+
+            const goLogin =
+                content.querySelector(
+                    "#unimindGoLogin"
+                );
+
+            goLogin.addEventListener(
+                "click",
+                () => {
+                    setActiveTab(
+                        "login"
+                    );
+                }
+            );
+
+            form.addEventListener(
+                "submit",
+                async event => {
+
+                    event.preventDefault();
+
+                    clearStatus();
+
+                    const name =
+                        content.querySelector(
+                            "#unimindRegisterName"
+                        ).value.trim();
+
+                    const email =
+                        content.querySelector(
+                            "#unimindRegisterEmail"
+                        ).value.trim();
+
+                    const password =
+                        content.querySelector(
+                            "#unimindRegisterPassword"
+                        ).value;
+
+                    const confirm =
+                        content.querySelector(
+                            "#unimindRegisterConfirm"
+                        ).value;
+
+                    if (
+                        password.length < 6
+                    ) {
+                        showStatus(
+                            "كلمة المرور يجب أن تكون 6 أحرف على الأقل."
+                        );
+
+                        return;
+                    }
+
+                    if (
+                        password !==
+                        confirm
+                    ) {
+                        showStatus(
+                            "كلمتا المرور غير متطابقتين."
+                        );
+
+                        return;
+                    }
+
+                    submit.disabled =
+                        true;
+
+                    submit.textContent =
+                        "جارٍ إنشاء الحساب...";
+
+                    try {
+
+                        const client =
+                            await getSupabase();
+
+                        const {
+                            data,
+                            error
+                        } =
+                            await client.auth.signUp({
+                                email,
+                                password,
+                                options: {
+                                    data: {
+                                        full_name:
+                                            name
+                                    }
+                                }
+                            });
+
+                        if (error) {
+                            throw error;
+                        }
+
+                        currentUser =
+                            data?.user || null;
+
+                        if (
+                            currentUser &&
+                            data?.session
+                        ) {
+
+                            await ensureUserProfile(
+                                currentUser
+                            );
+
+                            await loadUserPreferences(
+                                currentUser
+                            );
+
+                            updateAuthUI();
+
+                            showStatus(
+                                "تم إنشاء الحساب وتسجيل الدخول بنجاح.",
+                                "success"
+                            );
+
+                            await sleep(
+                                700
+                            );
+
+                            modal.close();
+
+                            window.dispatchEvent(
+                                new CustomEvent(
+                                    "unimind-auth-changed"
+                                )
+                            );
+
+                        } else {
+
+                            showStatus(
+                                "تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتفعيل الحساب.",
+                                "success"
+                            );
+
+                            submit.disabled =
+                                false;
+
+                            submit.textContent =
+                                "إنشاء الحساب";
+                        }
+
+                    } catch (error) {
+
+                        console.error(
+                            "Register error:",
+                            error
+                        );
+
+                        showStatus(
+                            getAuthErrorMessage(
+                                error
+                            )
+                        );
+
+                        submit.disabled =
+                            false;
+
+                        submit.textContent =
+                            "إنشاء الحساب";
+                    }
+                }
+            );
+        }
+
+        loginTab.addEventListener(
+            "click",
+            () => {
+                setActiveTab(
+                    "login"
+                );
+            }
+        );
+
+        registerTab.addEventListener(
+            "click",
+            () => {
+                setActiveTab(
+                    "register"
+                );
+            }
+        );
+
+        setActiveTab(
+            defaultTab
+        );
     }
 
-    async function handleLogout() {
+    // =========================================================
+    // AUTH ERROR TRANSLATION
+    // =========================================================
+
+    function getAuthErrorMessage(
+        error
+    ) {
+
+        const message =
+            error?.message ||
+            "";
+
+        const normalized =
+            message.toLowerCase();
+
+        if (
+            normalized.includes(
+                "invalid login credentials"
+            )
+        ) {
+            return "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+        }
+
+        if (
+            normalized.includes(
+                "email not confirmed"
+            )
+        ) {
+            return "يرجى تأكيد بريدك الإلكتروني أولاً.";
+        }
+
+        if (
+            normalized.includes(
+                "user already registered"
+            )
+        ) {
+            return "هذا البريد الإلكتروني مسجل بالفعل.";
+        }
+
+        if (
+            normalized.includes(
+                "password"
+            ) &&
+            normalized.includes(
+                "6"
+            )
+        ) {
+            return "كلمة المرور يجب أن تكون 6 أحرف على الأقل.";
+        }
+
+        if (
+            normalized.includes(
+                "rate limit"
+            )
+        ) {
+            return "تم تجاوز عدد المحاولات المسموح بها. حاول لاحقاً.";
+        }
+
+        if (
+            normalized.includes(
+                "network"
+            )
+        ) {
+            return "تعذر الاتصال بالخادم. تحقق من الإنترنت.";
+        }
+
+        return (
+            message ||
+            "حدث خطأ غير متوقع. حاول مرة أخرى."
+        );
+    }
+
+    // =========================================================
+    // LOGOUT
+    // =========================================================
+
+    async function logoutUser() {
+
         try {
+
             const client =
                 await getSupabase();
 
@@ -1939,404 +2401,72 @@
             currentUser =
                 null;
 
-            refreshAuthUI();
+            updateAuthUI();
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "unimind-auth-changed"
+                )
+            );
 
             alert(
                 "تم تسجيل الخروج بنجاح."
             );
-        } catch (
-            error
-        ) {
+
+        } catch (error) {
+
             console.error(
                 "Logout error:",
                 error
             );
 
             alert(
-                "تعذر تسجيل الخروج."
+                "تعذر تسجيل الخروج. حاول مرة أخرى."
             );
         }
     }
 
-    function getUserDisplayName() {
+    // =========================================================
+    // ACCOUNT MODAL
+    // =========================================================
+
+    async function openAccountModal() {
+
         if (!currentUser) {
-            return "المستخدم";
+
+            openAuthModal(
+                "login"
+            );
+
+            return;
         }
 
-        const metadata =
-            currentUser.user_metadata ||
-            {};
+        const modal =
+            createModal({
+                title:
+                    "حسابي"
+            });
 
-        return (
-            metadata.full_name ||
-            currentUser.email ||
-            "المستخدم"
-        );
-    }
+        const body =
+            modal.body;
 
-    function getInitials() {
         const name =
-            getUserDisplayName();
-
-        if (!name) {
-            return "U";
-        }
-
-        const parts =
-            name
-                .trim()
-                .split(/\s+/)
-                .filter(Boolean);
-
-        if (
-            parts.length >= 2
-        ) {
-            return (
-                parts[0][0] +
-                parts[1][0]
-            ).toUpperCase();
-        }
-
-        return name[0].toUpperCase();
-    }
-
-    function showAuthModal(
-        initialMode = "login"
-    ) {
-        const modal =
-            createModal({
-                title:
-                    initialMode ===
-                    "signup"
-                        ? "👤 إنشاء حساب"
-                        : "🔐 تسجيل الدخول"
-            });
-
-        renderAuthForm(
-            modal,
-            initialMode
-        );
-
-        return modal;
-    }
-
-    function renderAuthForm(
-        modal,
-        mode = "login"
-    ) {
-        const isSignup =
-            mode === "signup";
-
-        modal.title.textContent =
-            isSignup
-                ? "👤 إنشاء حساب"
-                : "🔐 تسجيل الدخول";
-
-        modal.body.innerHTML = `
-            <div
-                style="
-                    max-width:480px;
-                    margin:0 auto;
-                "
-            >
-
-                <div
-                    style="
-                        text-align:center;
-                        margin-bottom:20px;
-                    "
-                >
-                    <div
-                        class="unimind-account-avatar"
-                    >
-                        ${isSignup ? "👤" : "🔐"}
-                    </div>
-
-                    <h3 style="margin:0 0 6px;">
-                        ${
-                            isSignup
-                                ? "انضم إلى UniMind AI"
-                                : "مرحباً بعودتك"
-                        }
-                    </h3>
-
-                    <div class="unimind-muted">
-                        ${
-                            isSignup
-                                ? "أنشئ حسابك واحفظ إعداداتك وبياناتك."
-                                : "سجل الدخول للوصول إلى حسابك."
-                        }
-                    </div>
-                </div>
-
-                <div
-                    class="unimind-auth-tabs"
-                >
-                    <button
-                        type="button"
-                        id="unimindLoginTab"
-                        class="unimind-auth-tab ${
-                            !isSignup
-                                ? "active"
-                                : ""
-                        }"
-                    >
-                        تسجيل الدخول
-                    </button>
-
-                    <button
-                        type="button"
-                        id="unimindSignupTab"
-                        class="unimind-auth-tab ${
-                            isSignup
-                                ? "active"
-                                : ""
-                        }"
-                    >
-                        إنشاء حساب
-                    </button>
-                </div>
-
-                ${
-                    isSignup
-                        ? `
-                            <label>
-                                <strong>
-                                    الاسم الكامل
-                                </strong>
-                            </label>
-
-                            <input
-                                id="unimindAuthName"
-                                class="unimind-input"
-                                type="text"
-                                placeholder="اكتب اسمك الكامل"
-                                autocomplete="name"
-                            />
-
-                            <div style="height:12px;"></div>
-                        `
-                        : ""
-                }
-
-                <label>
-                    <strong>
-                        البريد الإلكتروني
-                    </strong>
-                </label>
-
-                <input
-                    id="unimindAuthEmail"
-                    class="unimind-input"
-                    type="email"
-                    placeholder="example@email.com"
-                    autocomplete="email"
-                />
-
-                <div style="height:12px;"></div>
-
-                <label>
-                    <strong>
-                        كلمة المرور
-                    </strong>
-                </label>
-
-                <input
-                    id="unimindAuthPassword"
-                    class="unimind-input"
-                    type="password"
-                    placeholder="••••••••"
-                    autocomplete="${
-                        isSignup
-                            ? "new-password"
-                            : "current-password"
-                    }"
-                />
-
-                ${
-                    isSignup
-                        ? `
-                            <div style="height:12px;"></div>
-
-                            <label>
-                                <strong>
-                                    تأكيد كلمة المرور
-                                </strong>
-                            </label>
-
-                            <input
-                                id="unimindAuthConfirmPassword"
-                                class="unimind-input"
-                                type="password"
-                                placeholder="••••••••"
-                                autocomplete="new-password"
-                            />
-                        `
-                        : ""
-                }
-
-                <button
-                    id="unimindAuthSubmit"
-                    type="button"
-                    class="unimind-btn unimind-btn-primary"
-                    style="
-                        width:100%;
-                        margin-top:18px;
-                    "
-                >
-                    ${
-                        isSignup
-                            ? "إنشاء الحساب"
-                            : "تسجيل الدخول"
-                    }
-                </button>
-
-                <div
-                    id="unimindAuthStatus"
-                    class="unimind-auth-status"
-                ></div>
-
-            </div>
-        `;
-
-        const loginTab =
-            document.getElementById(
-                "unimindLoginTab"
+            getUserName(
+                currentUser
             );
-
-        const signupTab =
-            document.getElementById(
-                "unimindSignupTab"
-            );
-
-        const submit =
-            document.getElementById(
-                "unimindAuthSubmit"
-            );
-
-        const status =
-            document.getElementById(
-                "unimindAuthStatus"
-            );
-
-        if (loginTab) {
-            loginTab.addEventListener(
-                "click",
-                () => {
-                    renderAuthForm(
-                        modal,
-                        "login"
-                    );
-                }
-            );
-        }
-
-        if (signupTab) {
-            signupTab.addEventListener(
-                "click",
-                () => {
-                    renderAuthForm(
-                        modal,
-                        "signup"
-                    );
-                }
-            );
-        }
-
-        submit.addEventListener(
-            "click",
-            async () => {
-                submit.disabled =
-                    true;
-
-                if (isSignup) {
-                    const name =
-                        document
-                            .getElementById(
-                                "unimindAuthName"
-                            )
-                            ?.value
-                            .trim();
-
-                    const email =
-                        document
-                            .getElementById(
-                                "unimindAuthEmail"
-                            )
-                            ?.value
-                            .trim();
-
-                    const password =
-                        document
-                            .getElementById(
-                                "unimindAuthPassword"
-                            )
-                            ?.value || "";
-
-                    const confirm =
-                        document
-                            .getElementById(
-                                "unimindAuthConfirmPassword"
-                            )
-                            ?.value || "";
-
-                    await handleSignup(
-                        name,
-                        email,
-                        password,
-                        confirm,
-                        status,
-                        modal
-                    );
-                } else {
-                    const email =
-                        document
-                            .getElementById(
-                                "unimindAuthEmail"
-                            )
-                            ?.value
-                            .trim();
-
-                    const password =
-                        document
-                            .getElementById(
-                                "unimindAuthPassword"
-                            )
-                            ?.value || "";
-
-                    await handleLogin(
-                        email,
-                        password,
-                        status,
-                        modal
-                    );
-                }
-
-                submit.disabled =
-                    false;
-            }
-        );
-    }
-
-    function showAccountModal() {
-        const modal =
-            createModal({
-                title:
-                    "👤 حسابي"
-            });
-
-        const displayName =
-            getUserDisplayName();
 
         const email =
-            currentUser?.email ||
+            currentUser.email ||
             "";
 
-        modal.body.innerHTML = `
+        const initial =
+            getUserInitial(
+                currentUser
+            );
+
+        body.innerHTML = `
             <div
                 style="
-                    max-width:480px;
-                    margin:0 auto;
                     text-align:center;
                 "
             >
@@ -2345,111 +2475,569 @@
                     class="unimind-account-avatar"
                 >
                     ${escapeHTML(
-                        getInitials()
+                        initial
                     )}
                 </div>
 
-                <h2 style="margin-bottom:6px;">
+                <h3
+                    style="
+                        margin:0 0 5px;
+                    "
+                >
                     ${escapeHTML(
-                        displayName
+                        name
                     )}
-                </h2>
+                </h3>
 
                 <div
                     class="unimind-muted"
-                    style="margin-bottom:20px;"
                 >
                     ${escapeHTML(
                         email
                     )}
                 </div>
 
-                <div class="unimind-card">
-                    <div>
-                        <strong>
-                            حالة الحساب
-                        </strong>
-                    </div>
+            </div>
 
-                    <div
-                        style="
-                            margin-top:8px;
-                            color:#166534;
-                        "
-                    >
-                        ● مسجل الدخول
-                    </div>
-                </div>
+            <div
+                style="
+                    margin-top:25px;
+                    display:grid;
+                    gap:12px;
+                "
+            >
 
                 <button
-                    id="unimindLogoutButton"
+                    type="button"
+                    class="unimind-btn unimind-btn-secondary"
+                    id="unimindEditProfile"
+                >
+                    ✏️ تعديل الاسم
+                </button>
+
+                <button
+                    type="button"
+                    class="unimind-btn unimind-btn-secondary"
+                    id="unimindChangePassword"
+                >
+                    🔐 تغيير كلمة المرور
+                </button>
+
+                <button
                     type="button"
                     class="unimind-btn unimind-btn-danger"
-                    style="
-                        width:100%;
-                        margin-top:10px;
-                    "
+                    id="unimindLogout"
                 >
                     🚪 تسجيل الخروج
                 </button>
 
             </div>
+
+            <div
+                class="unimind-muted"
+                style="
+                    text-align:center;
+                    margin-top:22px;
+                "
+            >
+                UniMind AI
+                <br>
+                مساعدك الجامعي الذكي
+            </div>
         `;
 
-        document
-            .getElementById(
-                "unimindLogoutButton"
-            )
-            .addEventListener(
-                "click",
-                async () => {
-                    await handleLogout();
+        body.querySelector(
+            "#unimindLogout"
+        ).addEventListener(
+            "click",
+            async () => {
 
-                    modal.close();
-                }
-            );
+                modal.close();
+
+                await logoutUser();
+            }
+        );
+
+        body.querySelector(
+            "#unimindEditProfile"
+        ).addEventListener(
+            "click",
+            () => {
+
+                modal.close();
+
+                openEditProfileModal();
+            }
+        );
+
+        body.querySelector(
+            "#unimindChangePassword"
+        ).addEventListener(
+            "click",
+            () => {
+
+                modal.close();
+
+                openChangePasswordModal();
+            }
+        );
     }
 
-    async function initializeAuth() {
-        try {
-            const client =
-                await getSupabase();
+    // =========================================================
+    // EDIT PROFILE
+    // =========================================================
 
-            const {
-                data
-            } =
-                await client.auth.getSession();
+    async function openEditProfileModal() {
 
-            currentUser =
-                data?.session?.user ||
-                null;
+        if (!currentUser) {
+            return;
+        }
 
-            if (currentUser) {
+        const modal =
+            createModal({
+                title:
+                    "تعديل الملف الشخصي"
+            });
+
+        const body =
+            modal.body;
+
+        const currentName =
+            getUserName(
+                currentUser
+            );
+
+        body.innerHTML = `
+            <form
+                id="unimindEditProfileForm"
+            >
+
+                <div
+                    style="
+                        margin-bottom:18px;
+                    "
+                >
+                    <label>
+                        الاسم الكامل
+                    </label>
+
+                    <input
+                        type="text"
+                        id="unimindProfileName"
+                        class="unimind-input"
+                        value="${escapeHTML(
+                            currentName
+                        )}"
+                        required
+                    >
+                </div>
+
+                <button
+                    type="submit"
+                    class="unimind-btn unimind-btn-primary"
+                    style="width:100%;"
+                    id="unimindSaveProfile"
+                >
+                    حفظ التغييرات
+                </button>
+
+                <div
+                    id="unimindProfileStatus"
+                    style="
+                        margin-top:15px;
+                    "
+                ></div>
+
+            </form>
+        `;
+
+        const form =
+            body.querySelector(
+                "#unimindEditProfileForm"
+            );
+
+        const submit =
+            body.querySelector(
+                "#unimindSaveProfile"
+            );
+
+        const status =
+            body.querySelector(
+                "#unimindProfileStatus"
+            );
+
+        form.addEventListener(
+            "submit",
+            async event => {
+
+                event.preventDefault();
+
+                const newName =
+                    body.querySelector(
+                        "#unimindProfileName"
+                    ).value.trim();
+
+                if (!newName) {
+                    status.innerHTML = `
+                        <div class="unimind-error">
+                            الرجاء كتابة الاسم.
+                        </div>
+                    `;
+
+                    return;
+                }
+
+                submit.disabled =
+                    true;
+
+                submit.textContent =
+                    "جارٍ الحفظ...";
+
                 try {
+
+                    const client =
+                        await getSupabase();
+
+                    const {
+                        data,
+                        error
+                    } =
+                        await client.auth.updateUser({
+                            data: {
+                                full_name:
+                                    newName
+                            }
+                        });
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    currentUser =
+                        data?.user ||
+                        currentUser;
+
                     await ensureUserProfile(
                         currentUser
                     );
 
-                    await loadUserPreferences(
-                        currentUser
+                    const {
+                        error:
+                            profileError
+                    } =
+                        await client
+                            .from("profiles")
+                            .update({
+                                full_name:
+                                    newName
+                            })
+                            .eq(
+                                "id",
+                                currentUser.id
+                            );
+
+                    if (profileError) {
+                        throw profileError;
+                    }
+
+                    status.innerHTML = `
+                        <div class="unimind-success">
+                            تم تحديث الاسم بنجاح.
+                        </div>
+                    `;
+
+                    updateAuthUI();
+
+                    window.dispatchEvent(
+                        new CustomEvent(
+                            "unimind-profile-updated"
+                        )
                     );
-                } catch (
-                    profileError
-                ) {
+
+                    await sleep(
+                        700
+                    );
+
+                    modal.close();
+
+                    openAccountModal();
+
+                } catch (error) {
+
                     console.error(
-                        "Profile initialization error:",
-                        profileError
+                        "Profile update error:",
+                        error
                     );
+
+                    status.innerHTML = `
+                        <div class="unimind-error">
+                            تعذر تحديث الملف الشخصي.
+                        </div>
+                    `;
+
+                } finally {
+
+                    submit.disabled =
+                        false;
+
+                    submit.textContent =
+                        "حفظ التغييرات";
                 }
             }
+        );
+    }
 
-            refreshAuthUI();
+    // =========================================================
+    // CHANGE PASSWORD
+    // =========================================================
+
+    async function openChangePasswordModal() {
+
+        if (!currentUser) {
+            return;
+        }
+
+        const modal =
+            createModal({
+                title:
+                    "تغيير كلمة المرور"
+            });
+
+        const body =
+            modal.body;
+
+        body.innerHTML = `
+            <form
+                id="unimindPasswordForm"
+            >
+
+                <div
+                    style="
+                        margin-bottom:14px;
+                    "
+                >
+                    <label>
+                        كلمة المرور الجديدة
+                    </label>
+
+                    <input
+                        type="password"
+                        id="unimindNewPassword"
+                        class="unimind-input"
+                        minlength="6"
+                        required
+                    >
+                </div>
+
+                <div
+                    style="
+                        margin-bottom:18px;
+                    "
+                >
+                    <label>
+                        تأكيد كلمة المرور
+                    </label>
+
+                    <input
+                        type="password"
+                        id="unimindConfirmPassword"
+                        class="unimind-input"
+                        minlength="6"
+                        required
+                    >
+                </div>
+
+                <button
+                    type="submit"
+                    class="unimind-btn unimind-btn-primary"
+                    style="width:100%;"
+                    id="unimindChangePasswordSubmit"
+                >
+                    تغيير كلمة المرور
+                </button>
+
+                <div
+                    id="unimindPasswordStatus"
+                    style="
+                        margin-top:15px;
+                    "
+                ></div>
+
+            </form>
+        `;
+
+        const form =
+            body.querySelector(
+                "#unimindPasswordForm"
+            );
+
+        const submit =
+            body.querySelector(
+                "#unimindChangePasswordSubmit"
+            );
+
+        const status =
+            body.querySelector(
+                "#unimindPasswordStatus"
+            );
+
+        form.addEventListener(
+            "submit",
+            async event => {
+
+                event.preventDefault();
+
+                const password =
+                    body.querySelector(
+                        "#unimindNewPassword"
+                    ).value;
+
+                const confirm =
+                    body.querySelector(
+                        "#unimindConfirmPassword"
+                    ).value;
+
+                if (
+                    password.length < 6
+                ) {
+
+                    status.innerHTML = `
+                        <div class="unimind-error">
+                            كلمة المرور يجب أن تكون 6 أحرف على الأقل.
+                        </div>
+                    `;
+
+                    return;
+                }
+
+                if (
+                    password !==
+                    confirm
+                ) {
+
+                    status.innerHTML = `
+                        <div class="unimind-error">
+                            كلمتا المرور غير متطابقتين.
+                        </div>
+                    `;
+
+                    return;
+                }
+
+                submit.disabled =
+                    true;
+
+                submit.textContent =
+                    "جارٍ التحديث...";
+
+                try {
+
+                    const client =
+                        await getSupabase();
+
+                    const {
+                        error
+                    } =
+                        await client.auth.updateUser({
+                            password
+                        });
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    status.innerHTML = `
+                        <div class="unimind-success">
+                            تم تغيير كلمة المرور بنجاح.
+                        </div>
+                    `;
+
+                    await sleep(
+                        900
+                    );
+
+                    modal.close();
+
+                } catch (error) {
+
+                    console.error(
+                        "Password update error:",
+                        error
+                    );
+
+                    status.innerHTML = `
+                        <div class="unimind-error">
+                            ${
+                                escapeHTML(
+                                    getAuthErrorMessage(
+                                        error
+                                    )
+                                )
+                            }
+                        </div>
+                    `;
+
+                } finally {
+
+                    submit.disabled =
+                        false;
+
+                    submit.textContent =
+                        "تغيير كلمة المرور";
+                }
+            }
+        );
+    }
+
+    // =========================================================
+    // AUTH INITIALIZATION
+    // =========================================================
+
+    async function initializeAuth() {
+
+        try {
+
+            const client =
+                await getSupabase();
+
+            const session =
+                await getCurrentSession();
+
+            if (
+                session &&
+                session.user
+            ) {
+
+                currentUser =
+                    session.user;
+
+                await ensureUserProfile(
+                    currentUser
+                );
+
+                await loadUserPreferences(
+                    currentUser
+                );
+
+            } else {
+
+                currentUser =
+                    null;
+            }
+
+            updateAuthUI();
 
             client.auth.onAuthStateChange(
                 async (
                     event,
                     session
                 ) => {
+
+                    console.log(
+                        "UniMind Auth Event:",
+                        event
+                    );
+
                     currentUser =
                         session?.user ||
                         null;
@@ -2457,7 +3045,9 @@
                     if (
                         currentUser
                     ) {
+
                         try {
+
                             await ensureUserProfile(
                                 currentUser
                             );
@@ -2465,2951 +3055,289 @@
                             await loadUserPreferences(
                                 currentUser
                             );
+
                         } catch (
-                            error
+                            profileError
                         ) {
+
                             console.error(
-                                "Auth profile error:",
-                                error
+                                "Profile initialization error:",
+                                profileError
                             );
                         }
                     }
 
-                    refreshAuthUI();
+                    updateAuthUI();
+
+                    window.dispatchEvent(
+                        new CustomEvent(
+                            "unimind-auth-changed"
+                        )
+                    );
                 }
             );
 
-            console.log(
-                "🔐 Supabase Authentication initialized."
-            );
-        } catch (
-            error
-        ) {
+        } catch (error) {
+
             console.error(
-                "❌ Supabase initialization error:",
+                "UniMind authentication initialization failed:",
                 error
             );
 
-            refreshAuthUI();
+            currentUser =
+                null;
+
+            updateAuthUI();
         }
     }
 
-    function refreshAuthUI() {
-        const buttons =
-            document.querySelectorAll(
-                "#loginButton, #studentLoginButton, [data-action='login']"
-            );
+    // =========================================================
+    // CONNECT EXISTING HTML BUTTONS
+    // =========================================================
 
-        buttons.forEach(
-            button => {
+    function bindExistingButtons() {
+
+        document.addEventListener(
+            "click",
+            event => {
+
+                const loginButton =
+                    event.target.closest(
+                        "[data-unimind-login]"
+                    );
+
                 if (
-                    currentUser
+                    loginButton
                 ) {
-                    button.textContent =
-                        "👤 حسابي";
 
-                    button.setAttribute(
-                        "aria-label",
-                        "فتح حسابي"
+                    event.preventDefault();
+
+                    openAuthModal(
+                        "login"
                     );
 
-                    button.dataset.unimindAuthMode =
-                        "account";
-                } else {
-                    button.textContent =
-                        "تسجيل الدخول";
+                    return;
+                }
 
-                    button.setAttribute(
-                        "aria-label",
-                        "تسجيل الدخول"
+                const accountButton =
+                    event.target.closest(
+                        "[data-unimind-account]"
                     );
 
-                    button.dataset.unimindAuthMode =
-                        "login";
+                if (
+                    accountButton
+                ) {
+
+                    event.preventDefault();
+
+                    openAccountModal();
+
+                    return;
+                }
+
+                const logoutButton =
+                    event.target.closest(
+                        "[data-unimind-logout]"
+                    );
+
+                if (
+                    logoutButton
+                ) {
+
+                    event.preventDefault();
+
+                    logoutUser();
+
+                    return;
                 }
             }
         );
     }
 
-    function setupLogin() {
-        const buttons =
+    // =========================================================
+    // AUTO DETECT COMMON BUTTONS
+    // =========================================================
+
+    function bindCommonAuthButtons() {
+
+        const allButtons =
             document.querySelectorAll(
-                "#loginButton, #studentLoginButton, [data-action='login']"
+                "button, a"
             );
 
-        buttons.forEach(
+        allButtons.forEach(
             button => {
-                bindOnce(
-                    button,
-                    () => {
-                        if (
-                            currentUser
-                        ) {
-                            showAccountModal();
-                        } else {
-                            showAuthModal(
+
+                const text =
+                    (
+                        button.textContent ||
+                        ""
+                    )
+                        .trim()
+                        .toLowerCase();
+
+                if (
+                    !text
+                ) {
+                    return;
+                }
+
+                if (
+                    (
+                        text.includes(
+                            "تسجيل الدخول"
+                        ) ||
+                        text.includes(
+                            "login"
+                        )
+                    ) &&
+                    !button.dataset
+                        .unimindLoginBound
+                ) {
+
+                    button.dataset
+                        .unimindLoginBound =
+                        "true";
+
+                    button.addEventListener(
+                        "click",
+                        event => {
+
+                            event.preventDefault();
+
+                            openAuthModal(
                                 "login"
                             );
                         }
-                    }
-                );
-            }
-        );
-    }
-
-    // =========================================================
-    // CHAT
-    // =========================================================
-
-    function createChatModal() {
-        const modal =
-            createModal({
-                title:
-                    "🤖 مساعد الدراسة الذكي"
-            });
-
-        const chat =
-            document.createElement(
-                "div"
-            );
-
-        chat.className =
-            "unimind-chat";
-
-        chat.id =
-            "unimindChatMessages";
-
-        const welcome =
-            document.createElement(
-                "div"
-            );
-
-        welcome.className =
-            "unimind-message unimind-message-ai";
-
-        welcome.textContent =
-            "مرحباً بك 👋\nأنا مساعد الدراسة الذكي في UniMind AI.\nاسألني عن أي موضوع دراسي وسأساعدك في فهمه.";
-
-        chat.appendChild(
-            welcome
-        );
-
-        const form =
-            document.createElement(
-                "form"
-            );
-
-        form.className =
-            "unimind-chat-form";
-
-        const input =
-            document.createElement(
-                "input"
-            );
-
-        input.className =
-            "unimind-input";
-
-        input.placeholder =
-            "اكتب سؤالك هنا...";
-
-        input.autocomplete =
-            "off";
-
-        const button =
-            document.createElement(
-                "button"
-            );
-
-        button.type =
-            "submit";
-
-        button.className =
-            "unimind-btn unimind-btn-primary";
-
-        button.textContent =
-            "إرسال";
-
-        form.appendChild(
-            input
-        );
-
-        form.appendChild(
-            button
-        );
-
-        modal.body.appendChild(
-            chat
-        );
-
-        modal.body.appendChild(
-            form
-        );
-
-        form.addEventListener(
-            "submit",
-            async event => {
-                event.preventDefault();
-
-                const message =
-                    input.value.trim();
-
-                if (!message) {
-                    return;
-                }
-
-                addChatMessage(
-                    chat,
-                    message,
-                    "user"
-                );
-
-                input.value = "";
-
-                input.disabled =
-                    true;
-
-                button.disabled =
-                    true;
-
-                const loading =
-                    addLoadingMessage(
-                        chat
-                    );
-
-                try {
-                    const answer =
-                        await askAI(
-                            message
-                        );
-
-                    loading.remove();
-
-                    addChatMessage(
-                        chat,
-                        answer,
-                        "ai"
-                    );
-                } catch (
-                    error
-                ) {
-                    loading.remove();
-
-                    addChatMessage(
-                        chat,
-                        "حدث خطأ أثناء الاتصال بالمساعد:\n" +
-                            (
-                                error.message ||
-                                "خطأ غير معروف"
-                            ),
-                        "ai"
-                    );
-                } finally {
-                    input.disabled =
-                        false;
-
-                    button.disabled =
-                        false;
-
-                    input.focus();
-                }
-            }
-        );
-
-        setTimeout(
-            () =>
-                input.focus(),
-            100
-        );
-
-        return modal;
-    }
-
-    function addChatMessage(
-        container,
-        text,
-        type
-    ) {
-        const message =
-            document.createElement(
-                "div"
-            );
-
-        message.className =
-            "unimind-message " +
-            (
-                type === "user"
-                    ? "unimind-message-user"
-                    : "unimind-message-ai"
-            );
-
-        message.textContent =
-            text;
-
-        container.appendChild(
-            message
-        );
-
-        container.scrollTop =
-            container.scrollHeight;
-
-        return message;
-    }
-
-    function addLoadingMessage(
-        container
-    ) {
-        const message =
-            document.createElement(
-                "div"
-            );
-
-        message.className =
-            "unimind-message unimind-message-ai";
-
-        message.innerHTML = `
-            <span class="unimind-loading">
-                <span class="unimind-dot"></span>
-                <span class="unimind-dot"></span>
-                <span class="unimind-dot"></span>
-                جاري التفكير...
-            </span>
-        `;
-
-        container.appendChild(
-            message
-        );
-
-        container.scrollTop =
-            container.scrollHeight;
-
-        return message;
-    }
-
-    function openChat() {
-        createChatModal();
-    }
-
-    // =========================================================
-    // PDF.JS LOADER
-    // =========================================================
-
-    async function loadPDFJS() {
-        if (window.pdfjsLib) {
-            return window.pdfjsLib;
-        }
-
-        if (
-            window.__unimindPDFLoading
-        ) {
-            return window.__unimindPDFLoading;
-        }
-
-        window.__unimindPDFLoading =
-            new Promise(
-                (
-                    resolve,
-                    reject
-                ) => {
-                    const script =
-                        document.createElement(
-                            "script"
-                        );
-
-                    script.src =
-                        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-
-                    script.async =
-                        true;
-
-                    script.onload =
-                        () => {
-                            if (
-                                !window.pdfjsLib
-                            ) {
-                                reject(
-                                    new Error(
-                                        "تم تحميل PDF.js ولكن المكتبة غير متاحة."
-                                    )
-                                );
-
-                                return;
-                            }
-
-                            try {
-                                window
-                                    .pdfjsLib
-                                    .GlobalWorkerOptions
-                                    .workerSrc =
-                                    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-                            } catch (_) {}
-
-                            resolve(
-                                window.pdfjsLib
-                            );
-                        };
-
-                    script.onerror =
-                        () => {
-                            reject(
-                                new Error(
-                                    "تعذر تحميل مكتبة قراءة ملفات PDF."
-                                )
-                            );
-                        };
-
-                    document.head.appendChild(
-                        script
                     );
                 }
-            );
 
-        return window.__unimindPDFLoading;
-    }
-
-    // =========================================================
-    // MAMMOTH LOADER
-    // =========================================================
-
-    async function loadMammoth() {
-        if (window.mammoth) {
-            return window.mammoth;
-        }
-
-        if (
-            window.__unimindMammothLoading
-        ) {
-            return window.__unimindMammothLoading;
-        }
-
-        window.__unimindMammothLoading =
-            new Promise(
-                (
-                    resolve,
-                    reject
-                ) => {
-                    const script =
-                        document.createElement(
-                            "script"
-                        );
-
-                    script.src =
-                        "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js";
-
-                    script.async =
-                        true;
-
-                    script.onload =
-                        () => {
-                            if (
-                                window.mammoth
-                            ) {
-                                resolve(
-                                    window.mammoth
-                                );
-                            } else {
-                                reject(
-                                    new Error(
-                                        "تعذر تشغيل مكتبة Mammoth."
-                                    )
-                                );
-                            }
-                        };
-
-                    script.onerror =
-                        () => {
-                            reject(
-                                new Error(
-                                    "تعذر تحميل مكتبة Word."
-                                )
-                            );
-                        };
-
-                    document.head.appendChild(
-                        script
-                    );
-                }
-            );
-
-        return window.__unimindMammothLoading;
-    }
-
-    // =========================================================
-    // FILE TEXT EXTRACTION
-    // =========================================================
-
-    async function extractLectureText(
-        file
-    ) {
-        if (!file) {
-            throw new Error(
-                "لم يتم اختيار ملف."
-            );
-        }
-
-        const name =
-            file.name.toLowerCase();
-
-        if (
-            name.endsWith(".txt") ||
-            name.endsWith(".md")
-        ) {
-            return await file.text();
-        }
-
-        if (
-            name.endsWith(".pdf")
-        ) {
-            const pdfjs =
-                await loadPDFJS();
-
-            const arrayBuffer =
-                await file.arrayBuffer();
-
-            const typedArray =
-                new Uint8Array(
-                    arrayBuffer
-                );
-
-            const pdf =
-                await pdfjs.getDocument({
-                    data: typedArray
-                }).promise;
-
-            let fullText = "";
-
-            for (
-                let pageNumber = 1;
-                pageNumber <=
-                pdf.numPages;
-                pageNumber++
-            ) {
-                const page =
-                    await pdf.getPage(
-                        pageNumber
-                    );
-
-                const content =
-                    await page.getTextContent();
-
-                const pageText =
-                    content.items
-                        .map(
-                            item =>
-                                item.str ||
-                                ""
-                        )
-                        .join(" ");
-
-                fullText +=
-                    `\n\n--- الصفحة ${pageNumber} ---\n\n` +
-                    pageText;
-            }
-
-            return fullText.trim();
-        }
-
-        if (
-            name.endsWith(".doc") ||
-            name.endsWith(".docx")
-        ) {
-            const mammoth =
-                await loadMammoth();
-
-            const arrayBuffer =
-                await file.arrayBuffer();
-
-            const result =
-                await mammoth.extractRawText({
-                    arrayBuffer
-                });
-
-            return result.value || "";
-        }
-
-        throw new Error(
-            "نوع الملف غير مدعوم.\n\n" +
-            "الأنواع المدعومة:\n" +
-            "PDF, TXT, MD, DOC, DOCX"
-        );
-    }
-
-    // =========================================================
-    // LECTURE SUMMARIZER
-    // =========================================================
-
-    function openLectureSummarizer() {
-        const modal =
-            createModal({
-                title:
-                    "📄 تلخيص المحاضرات"
-            });
-
-        const wrapper =
-            document.createElement(
-                "div"
-            );
-
-        wrapper.innerHTML = `
-            <div class="unimind-card">
-                <h3>📚 ارفع المحاضرة</h3>
-
-                <p class="unimind-muted">
-                    اختر ملف المحاضرة وسأقوم باستخراج النص
-                    وتحليله وإنشاء ملخص دراسي واضح.
-                </p>
-
-                <div
-                    id="unimindLectureDropzone"
-                    class="unimind-dropzone"
-                >
-                    <div style="font-size:42px;">📄</div>
-
-                    <strong>
-                        اضغط هنا لاختيار ملف
-                    </strong>
-
-                    <div class="unimind-muted">
-                        PDF أو TXT أو MD أو DOC أو DOCX
-                    </div>
-
-                    <input
-                        id="unimindLectureFile"
-                        type="file"
-                        accept=".pdf,.txt,.md,.doc,.docx"
-                        style="display:none;"
-                    />
-
-                    <div
-                        id="unimindLectureFileName"
-                        class="unimind-file-name"
-                    >
-                        لم يتم اختيار ملف
-                    </div>
-                </div>
-            </div>
-
-            <div class="unimind-card">
-                <label>
-                    <strong>
-                        أو الصق نص المحاضرة مباشرة
-                    </strong>
-                </label>
-
-                <textarea
-                    id="unimindLectureText"
-                    class="unimind-textarea"
-                    placeholder="الصق نص المحاضرة هنا..."
-                ></textarea>
-            </div>
-
-            <div class="unimind-row-wrap">
-                <button
-                    id="unimindSummarizeBtn"
-                    type="button"
-                    class="unimind-btn unimind-btn-primary"
-                >
-                    ✨ تلخيص المحاضرة
-                </button>
-
-                <button
-                    id="unimindKeyPointsBtn"
-                    type="button"
-                    class="unimind-btn unimind-btn-secondary"
-                >
-                    🎯 استخراج النقاط المهمة
-                </button>
-            </div>
-
-            <div
-                id="unimindLectureStatus"
-                style="margin-top:15px;"
-            ></div>
-
-            <div
-                id="unimindLectureResult"
-                style="margin-top:15px;"
-            ></div>
-        `;
-
-        modal.body.appendChild(
-            wrapper
-        );
-
-        const dropzone =
-            document.getElementById(
-                "unimindLectureDropzone"
-            );
-
-        const fileInput =
-            document.getElementById(
-                "unimindLectureFile"
-            );
-
-        const fileName =
-            document.getElementById(
-                "unimindLectureFileName"
-            );
-
-        const textInput =
-            document.getElementById(
-                "unimindLectureText"
-            );
-
-        const summarizeBtn =
-            document.getElementById(
-                "unimindSummarizeBtn"
-            );
-
-        const keyPointsBtn =
-            document.getElementById(
-                "unimindKeyPointsBtn"
-            );
-
-        const status =
-            document.getElementById(
-                "unimindLectureStatus"
-            );
-
-        const result =
-            document.getElementById(
-                "unimindLectureResult"
-            );
-
-        dropzone.addEventListener(
-            "click",
-            () => {
-                fileInput.click();
-            }
-        );
-
-        fileInput.addEventListener(
-            "change",
-            () => {
                 if (
-                    fileInput.files &&
-                    fileInput.files[0]
-                ) {
-                    handleLectureFile(
-                        fileInput.files[0],
-                        fileName,
-                        status
-                    );
-                }
-            }
-        );
-
-        dropzone.addEventListener(
-            "dragover",
-            event => {
-                event.preventDefault();
-
-                dropzone.style.borderColor =
-                    "#6366f1";
-            }
-        );
-
-        dropzone.addEventListener(
-            "dragleave",
-            () => {
-                dropzone.style.borderColor =
-                    "";
-            }
-        );
-
-        dropzone.addEventListener(
-            "drop",
-            event => {
-                event.preventDefault();
-
-                dropzone.style.borderColor =
-                    "";
-
-                const file =
-                    event.dataTransfer
-                        .files?.[0];
-
-                if (file) {
-                    selectedLectureFile =
-                        file;
-
-                    handleLectureFile(
-                        file,
-                        fileName,
-                        status
-                    );
-                }
-            }
-        );
-
-        summarizeBtn.addEventListener(
-            "click",
-            async () => {
-                await processLecture(
-                    "summary",
-                    textInput,
-                    result,
-                    status,
-                    summarizeBtn,
-                    keyPointsBtn
-                );
-            }
-        );
-
-        keyPointsBtn.addEventListener(
-            "click",
-            async () => {
-                await processLecture(
-                    "keypoints",
-                    textInput,
-                    result,
-                    status,
-                    summarizeBtn,
-                    keyPointsBtn
-                );
-            }
-        );
-    }
-
-    function handleLectureFile(
-        file,
-        fileNameElement,
-        statusElement
-    ) {
-        selectedLectureFile =
-            file;
-
-        const extension =
-            file.name
-                .split(".")
-                .pop()
-                .toLowerCase();
-
-        let icon = "📄";
-
-        if (
-            extension === "pdf"
-        ) {
-            icon = "📕";
-        }
-
-        if (
-            extension === "doc" ||
-            extension === "docx"
-        ) {
-            icon = "📘";
-        }
-
-        if (
-            extension === "txt" ||
-            extension === "md"
-        ) {
-            icon = "📝";
-        }
-
-        fileNameElement.textContent =
-            `${icon} ${file.name}`;
-
-        statusElement.innerHTML = `
-            <div class="unimind-success">
-                تم اختيار الملف بنجاح. يمكنك الآن الضغط على
-                <strong>تلخيص المحاضرة</strong>.
-            </div>
-        `;
-    }
-
-    async function processLecture(
-        mode,
-        textInput,
-        result,
-        status,
-        summarizeBtn,
-        keyPointsBtn
-    ) {
-        result.innerHTML = "";
-
-        let text =
-            textInput.value.trim();
-
-        summarizeBtn.disabled =
-            true;
-
-        keyPointsBtn.disabled =
-            true;
-
-        status.innerHTML = `
-            <div class="unimind-loading">
-                <span class="unimind-dot"></span>
-                جاري قراءة المحاضرة وتحليلها...
-            </div>
-        `;
-
-        try {
-            if (
-                !text &&
-                selectedLectureFile
-            ) {
-                text =
-                    await extractLectureText(
-                        selectedLectureFile
-                    );
-            }
-
-            if (
-                !text ||
-                !text.trim()
-            ) {
-                throw new Error(
-                    "لم يتم العثور على نص.\n" +
-                    "اختر ملفاً أو الصق نص المحاضرة."
-                );
-            }
-
-            text =
-                text.trim();
-
-            if (
-                text.length >
-                30000
-            ) {
-                text =
-                    text.slice(
-                        0,
-                        30000
-                    );
-
-                status.innerHTML = `
-                    <div class="unimind-success">
-                        تم استخراج نص طويل، لذلك سيتم تحليل أول
-                        30,000 حرف فقط.
-                    </div>
-                `;
-            }
-
-            let prompt = "";
-
-            if (
-                mode === "summary"
-            ) {
-                prompt = `
-أنت مساعد دراسي جامعي.
-
-أريد منك تلخيص المحاضرة التالية باللغة العربية بشكل منظم وواضح.
-
-استخدم فقط المعلومات الموجودة في النص.
-لا تضف معلومات غير موجودة في المحاضرة.
-
-رتب الإجابة بهذا الشكل:
-
-1. عنوان المحاضرة
-2. ملخص عام
-3. أهم المفاهيم
-4. أهم النقاط
-5. المصطلحات والتعريفات
-6. الأشياء التي يجب على الطالب حفظها
-7. أسئلة مراجعة في النهاية
-
-نص المحاضرة:
-
-${text}
-                `;
-            } else {
-                prompt = `
-أنت مساعد دراسي جامعي.
-
-استخرج من المحاضرة التالية أهم النقاط التي يجب على الطالب التركيز عليها.
-
-استخدم فقط المعلومات الموجودة في النص.
-لا تضف معلومات خارج المحاضرة.
-
-رتب الإجابة بهذا الشكل:
-
-- أهم الأفكار
-- أهم التعريفات
-- القوانين أو القواعد إن وجدت
-- المصطلحات المهمة
-- النقاط التي قد تأتي في الاختبار
-- 10 أسئلة مراجعة
-
-نص المحاضرة:
-
-${text}
-                `;
-            }
-
-            const answer =
-                await askAI(
-                    prompt
-                );
-
-            result.innerHTML = `
-                <div class="unimind-result">
-                    ${escapeHTML(
-                        answer
-                    )}
-                </div>
-            `;
-
-            status.innerHTML = `
-                <div class="unimind-success">
-                    ✅ اكتمل تحليل المحاضرة بنجاح.
-                </div>
-            `;
-        } catch (
-            error
-        ) {
-            status.innerHTML = `
-                <div class="unimind-error">
-                    ❌ ${escapeHTML(
-                        error.message ||
-                        "حدث خطأ غير معروف."
-                    )}
-                </div>
-            `;
-        } finally {
-            summarizeBtn.disabled =
-                false;
-
-            keyPointsBtn.disabled =
-                false;
-        }
-    }
-
-    // =========================================================
-    // QUIZ
-    // =========================================================
-
-    function openQuiz() {
-        const modal =
-            createModal({
-                title:
-                    "🧠 الاختبار الذكي"
-            });
-
-        const body =
-            modal.body;
-
-        body.innerHTML = `
-            <div class="unimind-card">
-                <h3>
-                    أنشئ اختباراً من موضوعك
-                </h3>
-
-                <textarea
-                    id="unimindQuizTopic"
-                    class="unimind-textarea"
-                    placeholder="مثال: أساسيات أمن المعلومات..."
-                ></textarea>
-
-                <div style="margin-top:15px;">
-                    <label>
-                        عدد الأسئلة
-                    </label>
-
-                    <select
-                        id="unimindQuizCount"
-                        class="unimind-select"
-                    >
-                        <option value="5">
-                            5 أسئلة
-                        </option>
-
-                        <option
-                            value="10"
-                            selected
-                        >
-                            10 أسئلة
-                        </option>
-
-                        <option value="15">
-                            15 سؤالاً
-                        </option>
-                    </select>
-                </div>
-
-                <button
-                    id="unimindGenerateQuiz"
-                    class="unimind-btn unimind-btn-primary"
-                    style="margin-top:15px;"
-                    type="button"
-                >
-                    ✨ إنشاء الاختبار
-                </button>
-            </div>
-
-            <div id="unimindQuizArea"></div>
-        `;
-
-        const topic =
-            document.getElementById(
-                "unimindQuizTopic"
-            );
-
-        const count =
-            document.getElementById(
-                "unimindQuizCount"
-            );
-
-        const generate =
-            document.getElementById(
-                "unimindGenerateQuiz"
-            );
-
-        const area =
-            document.getElementById(
-                "unimindQuizArea"
-            );
-
-        generate.addEventListener(
-            "click",
-            async () => {
-                const topicText =
-                    topic.value.trim();
-
-                if (!topicText) {
-                    area.innerHTML = `
-                        <div class="unimind-error">
-                            اكتب موضوع الاختبار أولاً.
-                        </div>
-                    `;
-
-                    return;
-                }
-
-                generate.disabled =
-                    true;
-
-                area.innerHTML = `
-                    <div class="unimind-card">
-                        ⏳ جاري إنشاء الاختبار...
-                    </div>
-                `;
-
-                try {
-                    const prompt = `
-أنشئ اختباراً تعليمياً باللغة العربية عن الموضوع التالي:
-
-${topicText}
-
-عدد الأسئلة: ${count.value}
-
-أريد JSON فقط بدون أي نص إضافي، بالشكل التالي:
-
-{
-  "questions": [
-    {
-      "question": "السؤال",
-      "options": [
-        "الخيار الأول",
-        "الخيار الثاني",
-        "الخيار الثالث",
-        "الخيار الرابع"
-      ],
-      "answer": 0,
-      "explanation": "شرح مختصر"
-    }
-  ]
-}
-
-مهم:
-answer يجب أن يكون رقم الخيار الصحيح من 0 إلى 3.
-                    `;
-
-                    const answer =
-                        await askAI(
-                            prompt
-                        );
-
-                    const questions =
-                        parseQuizResponse(
-                            answer
-                        );
-
-                    if (
-                        !questions.length
-                    ) {
-                        throw new Error(
-                            "تعذر استخراج أسئلة صحيحة من رد الذكاء الاصطناعي."
-                        );
-                    }
-
-                    quizState = {
-                        questions,
-                        current: 0,
-                        score: 0,
-                        answered: false
-                    };
-
-                    renderQuiz(
-                        area
-                    );
-                } catch (
-                    error
-                ) {
-                    area.innerHTML = `
-                        <div class="unimind-error">
-                            ❌ ${escapeHTML(
-                                error.message ||
-                                "حدث خطأ أثناء إنشاء الاختبار."
-                            )}
-                        </div>
-                    `;
-                } finally {
-                    generate.disabled =
-                        false;
-                }
-            }
-        );
-    }
-
-    function parseQuizResponse(
-        text
-    ) {
-        if (!text) {
-            return [];
-        }
-
-        let cleaned =
-            String(text)
-                .trim()
-                .replace(
-                    /^```json/i,
-                    ""
-                )
-                .replace(
-                    /^```/i,
-                    ""
-                )
-                .replace(
-                    /```$/i,
-                    ""
-                )
-                .trim();
-
-        try {
-            const data =
-                JSON.parse(
-                    cleaned
-                );
-
-            return normalizeQuestions(
-                data.questions ||
-                data
-            );
-        } catch (_) {}
-
-        const start =
-            cleaned.indexOf(
-                "{"
-            );
-
-        const end =
-            cleaned.lastIndexOf(
-                "}"
-            );
-
-        if (
-            start !== -1 &&
-            end !== -1
-        ) {
-            try {
-                const data =
-                    JSON.parse(
-                        cleaned.slice(
-                            start,
-                            end + 1
-                        )
-                    );
-
-                return normalizeQuestions(
-                    data.questions ||
-                    data
-                );
-            } catch (_) {}
-        }
-
-        const arrayStart =
-            cleaned.indexOf(
-                "["
-            );
-
-        const arrayEnd =
-            cleaned.lastIndexOf(
-                "]"
-            );
-
-        if (
-            arrayStart !== -1 &&
-            arrayEnd !== -1
-        ) {
-            try {
-                const data =
-                    JSON.parse(
-                        cleaned.slice(
-                            arrayStart,
-                            arrayEnd + 1
-                        )
-                    );
-
-                return normalizeQuestions(
-                    data
-                );
-            } catch (_) {}
-        }
-
-        return [];
-    }
-
-    function normalizeQuestions(
-        items
-    ) {
-        if (
-            !Array.isArray(items)
-        ) {
-            return [];
-        }
-
-        return items
-            .map(
-                item => {
-                    if (!item) {
-                        return null;
-                    }
-
-                    const question =
-                        item.question ||
-                        item.q ||
-                        item.text ||
-                        "";
-
-                    const options =
-                        item.options ||
-                        item.choices ||
-                        item.answers ||
-                        [];
-
-                    let answer =
-                        item.answer ??
-                        item.correctAnswer ??
-                        item.correct ??
-                        0;
-
-                    if (
-                        typeof answer ===
-                            "string" &&
-                        !/^\d+$/.test(
-                            answer
-                        )
-                    ) {
-                        const index =
-                            options.findIndex(
-                                option =>
-                                    String(
-                                        option
-                                    ).trim() ===
-                                    answer.trim()
-                            );
-
-                        answer =
-                            index >= 0
-                                ? index
-                                : 0;
-                    } else {
-                        answer =
-                            Number(
-                                answer
-                            );
-                    }
-
-                    if (
-                        !question ||
-                        !Array.isArray(
-                            options
+                    (
+                        text.includes(
+                            "حسابي"
                         ) ||
-                        options.length <
-                            2
-                    ) {
-                        return null;
-                    }
-
-                    return {
-                        question:
-                            String(
-                                question
-                            ),
-
-                        options:
-                            options.map(
-                                String
-                            ),
-
-                        answer:
-                            Math.max(
-                                0,
-                                Math.min(
-                                    answer,
-                                    options.length -
-                                        1
-                                )
-                            ),
-
-                        explanation:
-                            item.explanation ||
-                            item.explain ||
-                            ""
-                    };
-                }
-            )
-            .filter(Boolean);
-    }
-
-    function renderQuiz(
-        area
-    ) {
-        const question =
-            quizState.questions[
-                quizState.current
-            ];
-
-        if (!question) {
-            renderQuizResult(
-                area
-            );
-
-            return;
-        }
-
-        const total =
-            quizState.questions.length;
-
-        const current =
-            quizState.current +
-            1;
-
-        const progress =
-            ((current - 1) /
-                total) *
-            100;
-
-        area.innerHTML = `
-            <div class="unimind-card">
-                <div>
-                    السؤال ${current}
-                    من ${total}
-                </div>
-
-                <div class="unimind-progress">
-                    <div
-                        class="unimind-progress-bar"
-                        style="width:${progress}%"
-                    ></div>
-                </div>
-
-                <h3>
-                    ${escapeHTML(
-                        question.question
-                    )}
-                </h3>
-
-                <div
-                    id="unimindQuizOptions"
-                ></div>
-
-                <div
-                    id="unimindQuizExplanation"
-                    style="margin-top:15px;"
-                ></div>
-            </div>
-        `;
-
-        const options =
-            document.getElementById(
-                "unimindQuizOptions"
-            );
-
-        question.options.forEach(
-            (
-                option,
-                index
-            ) => {
-                const button =
-                    document.createElement(
-                        "button"
-                    );
-
-                button.type =
-                    "button";
-
-                button.className =
-                    "unimind-option";
-
-                button.textContent =
-                    option;
-
-                button.addEventListener(
-                    "click",
-                    () =>
-                        answerQuiz(
-                            index,
-                            area
+                        text.includes(
+                            "account"
                         )
-                );
-
-                options.appendChild(
-                    button
-                );
-            }
-        );
-    }
-
-    function answerQuiz(
-        index,
-        area
-    ) {
-        if (
-            quizState.answered
-        ) {
-            return;
-        }
-
-        quizState.answered =
-            true;
-
-        const question =
-            quizState.questions[
-                quizState.current
-            ];
-
-        const buttons =
-            document.querySelectorAll(
-                "#unimindQuizOptions .unimind-option"
-            );
-
-        buttons.forEach(
-            (
-                button,
-                buttonIndex
-            ) => {
-                if (
-                    buttonIndex ===
-                    question.answer
+                    ) &&
+                    !button.dataset
+                        .unimindAccountBound
                 ) {
-                    button.classList.add(
-                        "correct"
-                    );
-                }
 
-                if (
-                    buttonIndex ===
-                        index &&
-                    index !==
-                        question.answer
-                ) {
-                    button.classList.add(
-                        "wrong"
-                    );
-                }
+                    button.dataset
+                        .unimindAccountBound =
+                        "true";
 
-                button.disabled =
-                    true;
-            }
-        );
+                    button.addEventListener(
+                        "click",
+                        event => {
 
-        if (
-            index ===
-            question.answer
-        ) {
-            quizState.score++;
-        }
+                            event.preventDefault();
 
-        const explanation =
-            document.getElementById(
-                "unimindQuizExplanation"
-            );
-
-        explanation.innerHTML = `
-            <div class="${
-                index ===
-                question.answer
-                    ? "unimind-success"
-                    : "unimind-error"
-            }">
-                <strong>
-                    ${
-                        index ===
-                        question.answer
-                            ? "✅ إجابة صحيحة!"
-                            : "❌ إجابة غير صحيحة"
-                    }
-                </strong>
-
-                ${
-                    question.explanation
-                        ? `<br>${escapeHTML(
-                              question.explanation
-                          )}`
-                        : ""
-                }
-
-                <br><br>
-
-                <button
-                    id="unimindNextQuestion"
-                    class="unimind-btn unimind-btn-primary"
-                    type="button"
-                >
-                    ${
-                        quizState.current +
-                            1 <
-                        quizState.questions.length
-                            ? "السؤال التالي ←"
-                            : "عرض النتيجة"
-                    }
-                </button>
-            </div>
-        `;
-
-        document
-            .getElementById(
-                "unimindNextQuestion"
-            )
-            .addEventListener(
-                "click",
-                () => {
-                    quizState.current++;
-
-                    quizState.answered =
-                        false;
-
-                    renderQuiz(
-                        area
-                    );
-                }
-            );
-    }
-
-    function renderQuizResult(
-        area
-    ) {
-        const total =
-            quizState.questions.length;
-
-        const score =
-            quizState.score;
-
-        const percentage =
-            total
-                ? Math.round(
-                      (score /
-                          total) *
-                          100
-                  )
-                : 0;
-
-        area.innerHTML = `
-            <div class="unimind-card">
-                <h2>
-                    🎉 انتهى الاختبار
-                </h2>
-
-                <div class="unimind-success">
-                    النتيجة:
-                    <strong>
-                        ${score} / ${total}
-                    </strong>
-
-                    <br>
-
-                    النسبة:
-                    <strong>
-                        ${percentage}%
-                    </strong>
-                </div>
-
-                <button
-                    id="unimindRestartQuiz"
-                    class="unimind-btn unimind-btn-primary"
-                    style="margin-top:15px;"
-                    type="button"
-                >
-                    🔄 إعادة الاختبار
-                </button>
-            </div>
-        `;
-
-        document
-            .getElementById(
-                "unimindRestartQuiz"
-            )
-            .addEventListener(
-                "click",
-                () => {
-                    quizState.current =
-                        0;
-
-                    quizState.score =
-                        0;
-
-                    quizState.answered =
-                        false;
-
-                    renderQuiz(
-                        area
-                    );
-                }
-            );
-    }
-
-    // =========================================================
-    // FLASHCARDS
-    // =========================================================
-
-    function openFlashcards() {
-        const modal =
-            createModal({
-                title:
-                    "🗂️ البطاقات التعليمية"
-            });
-
-        modal.body.innerHTML = `
-            <div class="unimind-card">
-                <h3>
-                    أنشئ بطاقات تعليمية
-                </h3>
-
-                <textarea
-                    id="unimindFlashcardTopic"
-                    class="unimind-textarea"
-                    placeholder="مثال: الشبكات وأمن المعلومات..."
-                ></textarea>
-
-                <button
-                    id="unimindGenerateFlashcards"
-                    class="unimind-btn unimind-btn-primary"
-                    style="margin-top:15px;"
-                    type="button"
-                >
-                    ✨ إنشاء البطاقات
-                </button>
-            </div>
-
-            <div
-                id="unimindFlashcardArea"
-            ></div>
-        `;
-
-        const topic =
-            document.getElementById(
-                "unimindFlashcardTopic"
-            );
-
-        const button =
-            document.getElementById(
-                "unimindGenerateFlashcards"
-            );
-
-        const area =
-            document.getElementById(
-                "unimindFlashcardArea"
-            );
-
-        button.addEventListener(
-            "click",
-            async () => {
-                const value =
-                    topic.value.trim();
-
-                if (!value) {
-                    area.innerHTML = `
-                        <div class="unimind-error">
-                            اكتب موضوع البطاقات أولاً.
-                        </div>
-                    `;
-
-                    return;
-                }
-
-                button.disabled =
-                    true;
-
-                area.innerHTML = `
-                    <div class="unimind-card">
-                        ⏳ جاري إنشاء البطاقات...
-                    </div>
-                `;
-
-                try {
-                    const prompt = `
-أنشئ بطاقات تعليمية باللغة العربية عن:
-
-${value}
-
-أريد JSON فقط:
-
-{
-  "cards": [
-    {
-      "front": "السؤال أو المصطلح",
-      "back": "الإجابة أو التعريف"
-    }
-  ]
-}
-
-أنشئ 10 بطاقات.
-                    `;
-
-                    const answer =
-                        await askAI(
-                            prompt
-                        );
-
-                    const cards =
-                        parseFlashcards(
-                            answer
-                        );
-
-                    if (
-                        !cards.length
-                    ) {
-                        throw new Error(
-                            "تعذر إنشاء البطاقات."
-                        );
-                    }
-
-                    flashcardState = {
-                        cards,
-                        current: 0
-                    };
-
-                    renderFlashcards(
-                        area
-                    );
-                } catch (
-                    error
-                ) {
-                    area.innerHTML = `
-                        <div class="unimind-error">
-                            ❌ ${escapeHTML(
-                                error.message
-                            )}
-                        </div>
-                    `;
-                } finally {
-                    button.disabled =
-                        false;
-                }
-            }
-        );
-    }
-
-    function parseFlashcards(
-        text
-    ) {
-        if (!text) {
-            return [];
-        }
-
-        let cleaned =
-            String(text)
-                .replace(
-                    /^```json/i,
-                    ""
-                )
-                .replace(
-                    /^```/i,
-                    ""
-                )
-                .replace(
-                    /```$/i,
-                    ""
-                )
-                .trim();
-
-        try {
-            const data =
-                JSON.parse(
-                    cleaned
-                );
-
-            return normalizeFlashcards(
-                data.cards ||
-                data
-            );
-        } catch (_) {}
-
-        const start =
-            cleaned.indexOf(
-                "{"
-            );
-
-        const end =
-            cleaned.lastIndexOf(
-                "}"
-            );
-
-        if (
-            start !== -1 &&
-            end !== -1
-        ) {
-            try {
-                const data =
-                    JSON.parse(
-                        cleaned.slice(
-                            start,
-                            end + 1
-                        )
-                    );
-
-                return normalizeFlashcards(
-                    data.cards ||
-                    data
-                );
-            } catch (_) {}
-        }
-
-        const arrayStart =
-            cleaned.indexOf(
-                "["
-            );
-
-        const arrayEnd =
-            cleaned.lastIndexOf(
-                "]"
-            );
-
-        if (
-            arrayStart !== -1 &&
-            arrayEnd !== -1
-        ) {
-            try {
-                const data =
-                    JSON.parse(
-                        cleaned.slice(
-                            arrayStart,
-                            arrayEnd + 1
-                        )
-                    );
-
-                return normalizeFlashcards(
-                    data
-                );
-            } catch (_) {}
-        }
-
-        return [];
-    }
-
-    function normalizeFlashcards(
-        items
-    ) {
-        if (
-            !Array.isArray(items)
-        ) {
-            return [];
-        }
-
-        return items
-            .map(
-                item => ({
-                    front: String(
-                        item.front ||
-                        item.question ||
-                        item.term ||
-                        ""
-                    ),
-
-                    back: String(
-                        item.back ||
-                        item.answer ||
-                        item.definition ||
-                        ""
-                    )
-                })
-            )
-            .filter(
-                card =>
-                    card.front &&
-                    card.back
-            );
-    }
-
-    function renderFlashcards(
-        area
-    ) {
-        if (
-            !flashcardState.cards.length
-        ) {
-            return;
-        }
-
-        const card =
-            flashcardState.cards[
-                flashcardState.current
-            ];
-
-        let showingBack =
-            false;
-
-        area.innerHTML = `
-            <div class="unimind-muted">
-                البطاقة
-                ${
-                    flashcardState.current +
-                    1
-                }
-                من
-                ${flashcardState.cards.length}
-            </div>
-
-            <div
-                id="unimindFlashcard"
-                class="unimind-flashcard"
-                style="margin-top:10px;"
-            >
-                ${escapeHTML(
-                    card.front
-                )}
-            </div>
-
-            <p
-                class="unimind-muted"
-                style="text-align:center;"
-            >
-                اضغط على البطاقة لقلبها
-            </p>
-
-            <div class="unimind-row-wrap">
-                <button
-                    id="unimindPrevCard"
-                    class="unimind-btn unimind-btn-secondary"
-                    type="button"
-                >
-                    → السابقة
-                </button>
-
-                <button
-                    id="unimindNextCard"
-                    class="unimind-btn unimind-btn-primary"
-                    type="button"
-                >
-                    التالية ←
-                </button>
-            </div>
-        `;
-
-        const flashcard =
-            document.getElementById(
-                "unimindFlashcard"
-            );
-
-        flashcard.addEventListener(
-            "click",
-            () => {
-                showingBack =
-                    !showingBack;
-
-                flashcard.textContent =
-                    showingBack
-                        ? card.back
-                        : card.front;
-            }
-        );
-
-        document
-            .getElementById(
-                "unimindPrevCard"
-            )
-            .addEventListener(
-                "click",
-                () => {
-                    if (
-                        flashcardState.current >
-                        0
-                    ) {
-                        flashcardState.current--;
-
-                        renderFlashcards(
-                            area
-                        );
-                    }
-                }
-            );
-
-        document
-            .getElementById(
-                "unimindNextCard"
-            )
-            .addEventListener(
-                "click",
-                () => {
-                    if (
-                        flashcardState.current <
-                        flashcardState.cards.length -
-                            1
-                    ) {
-                        flashcardState.current++;
-
-                        renderFlashcards(
-                            area
-                        );
-                    }
-                }
-            );
-    }
-
-    // =========================================================
-    // STUDY PLANNER
-    // =========================================================
-
-    function openPlanner() {
-        const modal =
-            createModal({
-                title:
-                    "📅 مخطط الدراسة الذكي"
-            });
-
-        modal.body.innerHTML = `
-            <div class="unimind-card">
-                <h3>
-                    أنشئ خطة دراسية
-                </h3>
-
-                <input
-                    id="unimindPlanSubjects"
-                    class="unimind-input"
-                    placeholder="المواد: برمجة، شبكات، أمن معلومات..."
-                />
-
-                <input
-                    id="unimindPlanDays"
-                    class="unimind-input"
-                    type="number"
-                    min="1"
-                    max="30"
-                    value="7"
-                    style="margin-top:10px;"
-                />
-
-                <input
-                    id="unimindPlanHours"
-                    class="unimind-input"
-                    type="number"
-                    min="1"
-                    max="16"
-                    value="3"
-                    style="margin-top:10px;"
-                    placeholder="عدد ساعات الدراسة يومياً"
-                />
-
-                <button
-                    id="unimindGeneratePlan"
-                    class="unimind-btn unimind-btn-primary"
-                    style="margin-top:15px;"
-                    type="button"
-                >
-                    ✨ إنشاء الخطة
-                </button>
-            </div>
-
-            <div
-                id="unimindPlanResult"
-            ></div>
-        `;
-
-        const subjects =
-            document.getElementById(
-                "unimindPlanSubjects"
-            );
-
-        const days =
-            document.getElementById(
-                "unimindPlanDays"
-            );
-
-        const hours =
-            document.getElementById(
-                "unimindPlanHours"
-            );
-
-        const button =
-            document.getElementById(
-                "unimindGeneratePlan"
-            );
-
-        const result =
-            document.getElementById(
-                "unimindPlanResult"
-            );
-
-        button.addEventListener(
-            "click",
-            async () => {
-                const subjectText =
-                    subjects.value.trim();
-
-                if (!subjectText) {
-                    result.innerHTML = `
-                        <div class="unimind-error">
-                            اكتب المواد الدراسية أولاً.
-                        </div>
-                    `;
-
-                    return;
-                }
-
-                button.disabled =
-                    true;
-
-                result.innerHTML = `
-                    <div class="unimind-card">
-                        ⏳ جاري إعداد الخطة...
-                    </div>
-                `;
-
-                try {
-                    const prompt = `
-أنشئ خطة دراسية باللغة العربية.
-
-المواد:
-${subjectText}
-
-عدد الأيام:
-${days.value}
-
-عدد ساعات الدراسة يومياً:
-${hours.value}
-
-رتب الخطة يومياً مع:
-- المادة
-- الموضوع
-- الوقت المقترح
-- مهمة اليوم
-
-اجعلها عملية ومناسبة لطالب جامعي.
-                    `;
-
-                    const answer =
-                        await askAI(
-                            prompt
-                        );
-
-                    studyPlan =
-                        answer;
-
-                    result.innerHTML = `
-                        <div class="unimind-result">
-                            ${escapeHTML(
-                                answer
-                            )}
-                        </div>
-                    `;
-                } catch (
-                    error
-                ) {
-                    result.innerHTML = `
-                        <div class="unimind-error">
-                            ❌ ${escapeHTML(
-                                error.message
-                            )}
-                        </div>
-                    `;
-                } finally {
-                    button.disabled =
-                        false;
-                }
-            }
-        );
-    }
-
-    // =========================================================
-    // CV ASSISTANT
-    // =========================================================
-
-    function openCVAssistant() {
-        const modal =
-            createModal({
-                title:
-                    "📄 مساعد السيرة الذاتية"
-            });
-
-        modal.body.innerHTML = `
-            <div class="unimind-card">
-                <h3>
-                    أنشئ أو حسّن سيرتك الذاتية
-                </h3>
-
-                <textarea
-                    id="unimindCVInput"
-                    class="unimind-textarea"
-                    placeholder="اكتب معلوماتك هنا..."
-                ></textarea>
-
-                <select
-                    id="unimindCVLanguage"
-                    class="unimind-select"
-                    style="margin-top:10px;"
-                >
-                    <option value="العربية">
-                        العربية
-                    </option>
-
-                    <option value="English">
-                        English
-                    </option>
-                </select>
-
-                <button
-                    id="unimindGenerateCV"
-                    class="unimind-btn unimind-btn-primary"
-                    style="margin-top:15px;"
-                    type="button"
-                >
-                    ✨ تحسين السيرة الذاتية
-                </button>
-            </div>
-
-            <div
-                id="unimindCVResult"
-            ></div>
-        `;
-
-        const input =
-            document.getElementById(
-                "unimindCVInput"
-            );
-
-        const language =
-            document.getElementById(
-                "unimindCVLanguage"
-            );
-
-        const button =
-            document.getElementById(
-                "unimindGenerateCV"
-            );
-
-        const result =
-            document.getElementById(
-                "unimindCVResult"
-            );
-
-        button.addEventListener(
-            "click",
-            async () => {
-                const value =
-                    input.value.trim();
-
-                if (!value) {
-                    result.innerHTML = `
-                        <div class="unimind-error">
-                            اكتب بيانات سيرتك الذاتية أولاً.
-                        </div>
-                    `;
-
-                    return;
-                }
-
-                button.disabled =
-                    true;
-
-                result.innerHTML = `
-                    <div class="unimind-card">
-                        ⏳ جاري تحسين السيرة الذاتية...
-                    </div>
-                `;
-
-                try {
-                    const prompt = `
-أنت خبير في كتابة السير الذاتية.
-
-حسّن السيرة الذاتية التالية.
-
-اللغة المطلوبة:
-${language.value}
-
-اجعلها:
-- احترافية
-- واضحة
-- مناسبة للتوظيف
-- منظمة
-- بدون اختلاق معلومات غير موجودة
-
-البيانات:
-
-${value}
-                    `;
-
-                    const answer =
-                        await askAI(
-                            prompt
-                        );
-
-                    result.innerHTML = `
-                        <div class="unimind-result">
-                            ${escapeHTML(
-                                answer
-                            )}
-                        </div>
-                    `;
-                } catch (
-                    error
-                ) {
-                    result.innerHTML = `
-                        <div class="unimind-error">
-                            ❌ ${escapeHTML(
-                                error.message
-                            )}
-                        </div>
-                    `;
-                } finally {
-                    button.disabled =
-                        false;
-                }
-            }
-        );
-    }
-
-    // =========================================================
-    // BUTTON BINDING
-    // =========================================================
-
-    function bindOnce(
-        element,
-        handler
-    ) {
-        if (!element) {
-            return false;
-        }
-
-        if (
-            element.dataset &&
-            element.dataset.unimindBound ===
-                "true"
-        ) {
-            return false;
-        }
-
-        element.addEventListener(
-            "click",
-            function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-
-                try {
-                    handler(event);
-                } catch (
-                    error
-                ) {
-                    console.error(
-                        "UniMind button error:",
-                        error
-                    );
-                }
-            }
-        );
-
-        if (element.dataset) {
-            element.dataset.unimindBound =
-                "true";
-        }
-
-        return true;
-    }
-
-    function bindSelectors(
-        selectors,
-        handler
-    ) {
-        let found = false;
-
-        selectors.forEach(
-            selector => {
-                document
-                    .querySelectorAll(
-                        selector
-                    )
-                    .forEach(
-                        element => {
-                            if (
-                                bindOnce(
-                                    element,
-                                    handler
-                                )
-                            ) {
-                                found =
-                                    true;
-                            }
+                            openAccountModal();
                         }
                     );
-            }
-        );
-
-        return found;
-    }
-
-    function findClickableByText(
-        phrases
-    ) {
-        const elements =
-            document.querySelectorAll(
-                "button, a, [role='button'], .feature-card, .feature-item, .tool-card, .tool-item"
-            );
-
-        for (
-            const element of
-                elements
-        ) {
-            const text =
-                (
-                    element.innerText ||
-                    element.textContent ||
-                    ""
-                )
-                    .trim()
-                    .toLowerCase();
-
-            if (!text) {
-                continue;
-            }
-
-            for (
-                const phrase of
-                    phrases
-            ) {
-                if (
-                    text.includes(
-                        phrase.toLowerCase()
-                    )
-                ) {
-                    return element;
                 }
-            }
-        }
 
-        return null;
-    }
-
-    function setupButtons() {
-        bindSelectors(
-            [
-                "#studyAssistantButton",
-                "#studyAssistantBtn",
-                "#studyAssistant",
-                "#aiChatButton",
-                "#aiChatBtn",
-                "#chatButton",
-                "#chatBtn",
-                "#assistantButton",
-                "#assistantBtn",
-                "[data-action='chat']",
-                "[data-action='assistant']",
-                "[data-feature='chat']",
-                "[data-feature='assistant']"
-            ],
-            openChat
-        );
-
-        bindSelectors(
-            [
-                "#lectureSummarizerButton",
-                "#lectureSummarizerBtn",
-                "#lectureSummarizer",
-                "#summarizerButton",
-                "#summarizerBtn",
-                "#lectureButton",
-                "#lectureBtn",
-                "#lectureSummaryButton",
-                "#lectureSummaryBtn",
-                "[data-action='lecture']",
-                "[data-action='summarizer']",
-                "[data-action='summary']",
-                "[data-feature='lecture']",
-                "[data-feature='summarizer']"
-            ],
-            openLectureSummarizer
-        );
-
-        bindSelectors(
-            [
-                "#quizButton",
-                "#quizBtn",
-                "#smartQuizButton",
-                "#smartQuizBtn",
-                "#quiz",
-                "[data-action='quiz']",
-                "[data-feature='quiz']"
-            ],
-            openQuiz
-        );
-
-        bindSelectors(
-            [
-                "#flashcardsButton",
-                "#flashcardsBtn",
-                "#flashcardButton",
-                "#flashcardBtn",
-                "#flashcards",
-                "[data-action='flashcards']",
-                "[data-action='flashcard']",
-                "[data-feature='flashcards']"
-            ],
-            openFlashcards
-        );
-
-        bindSelectors(
-            [
-                "#plannerButton",
-                "#plannerBtn",
-                "#studyPlannerButton",
-                "#studyPlannerBtn",
-                "#planner",
-                "[data-action='planner']",
-                "[data-action='study-planner']",
-                "[data-feature='planner']"
-            ],
-            openPlanner
-        );
-
-        bindSelectors(
-            [
-                "#cvButton",
-                "#cvBtn",
-                "#cvAssistantButton",
-                "#cvAssistantBtn",
-                "#cvAssistant",
-                "[data-action='cv']",
-                "[data-action='cv-assistant']",
-                "[data-feature='cv']"
-            ],
-            openCVAssistant
-        );
-
-        bindSelectors(
-            [
-                "#ctaStartButton",
-                "#ctaBottomButton",
-                "#heroDemoButton",
-                "#heroChatButton",
-                "#startLearningButton",
-                "#tryDemoButton"
-            ],
-            openChat
-        );
-
-        const chatElement =
-            findClickableByText([
-                "مساعد الدراسة الذكي",
-                "مساعد الدراسة",
-                "مساعد ذكي",
-                "ai chat"
-            ]);
-
-        if (chatElement) {
-            bindOnce(
-                chatElement,
-                openChat
-            );
-        }
-
-        const lectureElement =
-            findClickableByText([
-                "تلخيص المحاضرات",
-                "تلخيص المحاضرة",
-                "تلخيص محاضرة",
-                "lecture summarizer",
-                "summarizer"
-            ]);
-
-        if (lectureElement) {
-            bindOnce(
-                lectureElement,
-                openLectureSummarizer
-            );
-        }
-
-        const quizElement =
-            findClickableByText([
-                "اختبار",
-                "اختبارات",
-                "quiz"
-            ]);
-
-        if (quizElement) {
-            bindOnce(
-                quizElement,
-                openQuiz
-            );
-        }
-
-        const flashElement =
-            findClickableByText([
-                "بطاقات",
-                "البطاقات التعليمية",
-                "flashcards"
-            ]);
-
-        if (flashElement) {
-            bindOnce(
-                flashElement,
-                openFlashcards
-            );
-        }
-
-        const plannerElement =
-            findClickableByText([
-                "مخطط الدراسة",
-                "خطة الدراسة",
-                "study planner"
-            ]);
-
-        if (plannerElement) {
-            bindOnce(
-                plannerElement,
-                openPlanner
-            );
-        }
-
-        const cvElement =
-            findClickableByText([
-                "السيرة الذاتية",
-                "مساعد السيرة",
-                "cv assistant"
-            ]);
-
-        if (cvElement) {
-            bindOnce(
-                cvElement,
-                openCVAssistant
-            );
-        }
-
-        console.log(
-            "UniMind AI buttons connected successfully."
-        );
-    }
-
-    // =========================================================
-    // THEME
-    // =========================================================
-
-    function setupTheme() {
-        const themeButtons =
-            document.querySelectorAll(
-                "[data-theme], #themeToggle, #themeButton"
-            );
-
-        themeButtons.forEach(
-            button => {
-                bindOnce(
-                    button,
-                    () => {
-                        document.body.classList.toggle(
-                            "dark-mode"
-                        );
-
-                        const isDark =
-                            document.body.classList.contains(
-                                "dark-mode"
-                            );
-
-                        const theme =
-                            isDark
-                                ? "dark"
-                                : "light";
-
-                        localStorage.setItem(
-                            "unimind-theme",
-                            theme
-                        );
-
-                        saveUserPreference(
-                            "theme",
-                            theme
-                        );
-                    }
-                );
-            }
-        );
-
-        const savedTheme =
-            localStorage.getItem(
-                "unimind-theme"
-            );
-
-        if (
-            savedTheme === "dark"
-        ) {
-            document.body.classList.add(
-                "dark-mode"
-            );
-        }
-    }
-
-    // =========================================================
-    // LANGUAGE
-    // =========================================================
-
-    function setupLanguage() {
-        const languageButtons =
-            document.querySelectorAll(
-                "[data-language], #languageToggle, #languageButton"
-            );
-
-        languageButtons.forEach(
-            button => {
-                bindOnce(
-                    button,
-                    () => {
-                        const current =
-                            document
-                                .documentElement
-                                .lang ||
-                            "ar";
-
-                        const next =
-                            current ===
-                            "ar"
-                                ? "en"
-                                : "ar";
-
-                        document
-                            .documentElement
-                            .lang =
-                            next;
-
-                        document
-                            .documentElement
-                            .dir =
-                            next ===
-                            "ar"
-                                ? "rtl"
-                                : "ltr";
-
-                        localStorage.setItem(
-                            "unimind-language",
-                            next
-                        );
-
-                        saveUserPreference(
-                            "language",
-                            next
-                        );
-                    }
-                );
-            }
-        );
-
-        const saved =
-            localStorage.getItem(
-                "unimind-language"
-            );
-
-        if (saved) {
-            document
-                .documentElement
-                .lang =
-                saved;
-
-            document
-                .documentElement
-                .dir =
-                saved === "ar"
-                    ? "rtl"
-                    : "ltr";
-        }
-    }
-
-    // =========================================================
-    // KEYBOARD SHORTCUTS
-    // =========================================================
-
-    function setupKeyboard() {
-        document.addEventListener(
-            "keydown",
-            event => {
                 if (
-                    event.ctrlKey &&
-                    event.shiftKey &&
-                    event.key.toLowerCase() ===
-                        "a"
+                    (
+                        text.includes(
+                            "تسجيل الخروج"
+                        ) ||
+                        text.includes(
+                            "logout"
+                        )
+                    ) &&
+                    !button.dataset
+                        .unimindLogoutBound
                 ) {
-                    event.preventDefault();
 
-                    openChat();
+                    button.dataset
+                        .unimindLogoutBound =
+                        "true";
+
+                    button.addEventListener(
+                        "click",
+                        event => {
+
+                            event.preventDefault();
+
+                            logoutUser();
+                        }
+                    );
                 }
             }
         );
     }
 
     // =========================================================
-    // GLOBAL FUNCTIONS
+    // GLOBAL API
     // =========================================================
 
-    window.UniMindAI = {
-        openChat,
-        openLectureSummarizer,
-        openQuiz,
-        openFlashcards,
-        openPlanner,
-        openCVAssistant,
-        askAI,
-        extractLectureText,
-        showAuthModal,
-        showAccountModal,
-        handleLogout
+    window.UniMindAuth = {
+
+        login: function () {
+            openAuthModal(
+                "login"
+            );
+        },
+
+        register: function () {
+            openAuthModal(
+                "register"
+            );
+        },
+
+        account: function () {
+            openAccountModal();
+        },
+
+        logout: function () {
+            return logoutUser();
+        },
+
+        getUser: function () {
+            return currentUser;
+        },
+
+        isLoggedIn: function () {
+            return !!currentUser;
+        }
     };
 
-    window.openChat =
-        openChat;
-
-    window.openLectureSummarizer =
-        openLectureSummarizer;
-
-    window.openQuiz =
-        openQuiz;
-
-    window.openFlashcards =
-        openFlashcards;
-
-    window.openPlanner =
-        openPlanner;
-
-    window.openCVAssistant =
-        openCVAssistant;
-
     // =========================================================
-    // STARTUP
+    // START UNI MIND
     // =========================================================
 
-    async function init() {
+    async function startUniMind() {
+
         injectStyles();
 
-        setupButtons();
+        bindExistingButtons();
 
-        setupTheme();
-
-        setupLanguage();
-
-        setupLogin();
-
-        setupKeyboard();
-
-        console.log(
-            "🚀 UniMind AI initialized successfully."
-        );
+        bindCommonAuthButtons();
 
         await initializeAuth();
+
+        console.log(
+            "✅ UniMind AI Phase 2 loaded successfully."
+        );
     }
 
     if (
         document.readyState ===
         "loading"
     ) {
+
         document.addEventListener(
             "DOMContentLoaded",
-            init
+            startUniMind
         );
+
     } else {
-        init();
+
+        startUniMind();
     }
+
 })();
