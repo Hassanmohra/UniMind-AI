@@ -1,4 +1,3 @@
-alert("Dashboard JS يعمل");
 (function () {
     "use strict";
 
