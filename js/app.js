@@ -40,6 +40,27 @@
     let appStarted = false;
 
     // =========================================================
+// DASHBOARD STATISTICS
+// =========================================================
+
+function incrementDashboardStat(key) {
+    try {
+        if (
+            window.UniMindDashboard &&
+            typeof window.UniMindDashboard.increment === "function"
+        ) {
+            window.UniMindDashboard.increment(key);
+        }
+    } catch (error) {
+        console.warn(
+            "UniMind Dashboard statistic failed:",
+            key,
+            error
+        );
+    }
+}
+
+    // =========================================================
     // BASIC HELPERS
     // =========================================================
 
