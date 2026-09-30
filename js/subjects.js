@@ -2,6 +2,7 @@
     "use strict";
 
     const STORAGE_KEY = "unimind_subjects";
+    let currentSubjectId = null;
 
     function getSubjects() {
         try {
@@ -56,6 +57,214 @@
         renderSubjects();
     }
 
+    function getLectures(subjectId) {
+    try {
+        const allLectures = JSON.parse(
+            localStorage.getItem("unimind_lectures") || "{}"
+        );
+
+        return allLectures[subjectId] || [];
+    } catch (error) {
+        console.warn(
+            "UniMind lectures load error:",
+            error
+        );
+
+        return [];
+    }
+}
+
+function saveLectures(subjectId, lectures) {
+    try {
+        const allLectures = JSON.parse(
+            localStorage.getItem("unimind_lectures") || "{}"
+        );
+
+        allLectures[subjectId] = lectures;
+
+        localStorage.setItem(
+            "unimind_lectures",
+            JSON.stringify(allLectures)
+        );
+    } catch (error) {
+        console.warn(
+            "UniMind lectures save error:",
+            error
+        );
+    }
+}
+
+function addLecture(subjectId, data) {
+    const lectures = getLectures(subjectId);
+
+    const lecture = {
+        id: Date.now().toString(),
+        name: data.name.trim(),
+        fileName: data.fileName,
+        fileType: data.fileType,
+        fileSize: data.fileSize,
+        createdAt: new Date().toISOString()
+    };
+
+    lectures.push(lecture);
+
+    saveLectures(
+        subjectId,
+        lectures
+    );
+
+    return lecture;
+}
+
+function deleteLecture(subjectId, lectureId) {
+    const lectures =
+        getLectures(subjectId).filter(
+            lecture =>
+                lecture.id !== lectureId
+        );
+
+    saveLectures(
+        subjectId,
+        lectures
+    );
+
+    renderLectures(subjectId);
+}
+
+function renderLectures(subjectId) {
+    const container =
+        document.getElementById(
+            "unimind-lectures-list"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    const lectures =
+        getLectures(subjectId);
+
+    if (lectures.length === 0) {
+        container.innerHTML = `
+            <div class="subject-empty-lectures">
+                <div>📄</div>
+
+                <h4>
+                    لا توجد محاضرات بعد
+                </h4>
+
+                <p>
+                    أضف أول محاضرة لهذه المادة للبدء.
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+    container.innerHTML =
+        lectures.map(lecture => `
+            <div
+                class="unimind-lecture-card"
+            >
+
+                <div
+                    class="lecture-card-icon"
+                >
+                    📄
+                </div>
+
+                <div
+                    class="lecture-card-content"
+                >
+
+                    <h4>
+                        ${escapeHTML(
+                            lecture.name
+                        )}
+                    </h4>
+
+                    <p>
+                        📎
+                        ${escapeHTML(
+                            lecture.fileName
+                        )}
+                    </p>
+
+                    <small>
+                        ${escapeHTML(
+                            lecture.fileType
+                        )}
+                        •
+                        ${formatFileSize(
+                            lecture.fileSize
+                        )}
+                    </small>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="lecture-delete-button"
+                    data-lecture-id="${lecture.id}"
+                >
+                    🗑️
+                </button>
+
+            </div>
+        `).join("");
+
+    container
+        .querySelectorAll(
+            ".lecture-delete-button"
+        )
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                function () {
+
+                    const lectureId =
+                        this.getAttribute(
+                            "data-lecture-id"
+                        );
+
+                    if (
+                        confirm(
+                            "هل تريد حذف هذه المحاضرة؟"
+                        )
+                    ) {
+                        deleteLecture(
+                            subjectId,
+                            lectureId
+                        );
+                    }
+                }
+            );
+        });
+}
+
+function formatFileSize(bytes) {
+
+    if (!bytes) {
+        return "0 KB";
+    }
+
+    const kb =
+        bytes / 1024;
+
+    if (kb < 1024) {
+        return (
+            Math.round(kb) +
+            " KB"
+        );
+    }
+
+    return (
+        (kb / 1024).toFixed(1) +
+        " MB"
+    );
+}
     function openSubjectDetails(id) {
         const subjects = getSubjects();
 
@@ -102,7 +311,8 @@
                 subject.description ||
                 "لا يوجد وصف لهذه المادة.";
         }
-
+        currentSubjectId = id;
+renderLectures(id);
         modal.classList.add("active");
     }
 
@@ -338,6 +548,67 @@
         renderSubjects();
     }
 
+    function openLectureUpload() {
+
+    if (!currentSubjectId) {
+        return;
+    }
+
+    const subject =
+        getSubjects().find(
+            item =>
+                item.id ===
+                currentSubjectId
+        );
+
+    if (!subject) {
+        return;
+    }
+
+    const lectureName =
+        prompt(
+            "اكتب اسم المحاضرة:"
+        );
+
+    if (
+        !lectureName ||
+        !lectureName.trim()
+    ) {
+        return;
+    }
+
+    const fileName =
+        prompt(
+            "اكتب اسم ملف المحاضرة، مثال: lecture1.pdf"
+        );
+
+    if (
+        !fileName ||
+        !fileName.trim()
+    ) {
+        return;
+    }
+
+    const extension =
+        fileName
+            .split(".")
+            .pop()
+            .toUpperCase();
+
+    addLecture(
+        currentSubjectId,
+        {
+            name: lectureName,
+            fileName: fileName,
+            fileType: extension,
+            fileSize: 0
+        }
+    );
+
+    renderLectures(
+        currentSubjectId
+    );
+}
     function init() {
 
         const subjectsButton =
@@ -404,6 +675,24 @@
             document.getElementById(
                 "unimind-subject-details-close"
             );
+        const addLectureButton =
+    document.getElementById(
+        "unimind-add-lecture-button"
+    );
+
+if (addLectureButton) {
+    addLectureButton.addEventListener(
+        "click",
+        function () {
+
+            if (!currentSubjectId) {
+                return;
+            }
+
+            openLectureUpload();
+        }
+    );
+}
 
         if (detailsCloseButton) {
             detailsCloseButton.addEventListener(
