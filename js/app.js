@@ -40,27 +40,6 @@
     let appStarted = false;
 
     // =========================================================
-// DASHBOARD STATISTICS
-// =========================================================
-
-function incrementDashboardStat(key) {
-    try {
-        if (
-            window.UniMindDashboard &&
-            typeof window.UniMindDashboard.increment === "function"
-        ) {
-            window.UniMindDashboard.increment(key);
-        }
-    } catch (error) {
-        console.warn(
-            "UniMind Dashboard statistic failed:",
-            key,
-            error
-        );
-    }
-}
-
-    // =========================================================
     // BASIC HELPERS
     // =========================================================
 
@@ -2080,7 +2059,7 @@ function incrementDashboardStat(key) {
                         await askAI(
                             question
                         );
-                    incrementDashboardStat("chats");
+
                     loading.remove();
 
                     addMessage(
@@ -2474,9 +2453,6 @@ answer هو رقم الخيار الصحيح ويبدأ من 0.
                         await askAI(
                             prompt
                         );
-                    
-                       incrementDashboardStat("summaries");
-                       result.innerHTML = `
 
                     let data =
                         extractJSONFromText(
@@ -2496,9 +2472,6 @@ answer هو رقم الخيار الصحيح ويبدأ من 0.
 
                     quizState.questions =
                         data.questions;
-
-                        incrementDashboardStat("quizzes");
-
 
                     quizState.current =
                         0;
@@ -2775,8 +2748,6 @@ ${topic}
                     flashcardState.cards =
                         data.cards;
 
-                    incrementDashboardStat("flashcards");
-
                     flashcardState.current =
                         0;
 
@@ -2999,7 +2970,6 @@ ${hours}
 - المهمة
 - استراحة قصيرة
                         `);
-                    incrementDashboardStat("planners");
 
                     result.innerHTML =
                         `<div
@@ -3102,7 +3072,6 @@ ${info}
 
 لا تخترع معلومات غير موجودة.
                         `);
-                    incrementDashboardStat("cv");
 
                     result.innerHTML =
                         `<div
@@ -3447,7 +3416,6 @@ ${text}
 4. نقاط المراجعة
 5. أسئلة للمراجعة
                             `);
-                        incrementDashboardStat("summaries");
 
                         if (result) {
                             result.style.display =
