@@ -12,11 +12,14 @@
     let currentSubjectId = null;
     let selectedFile = null;
 
+    let currentViewerUrl = null;
+
     // =========================================================
     // IndexedDB
     // =========================================================
 
     function openDatabase() {
+
         return new Promise((resolve, reject) => {
 
             const request = indexedDB.open(
@@ -28,7 +31,11 @@
 
                 const db = event.target.result;
 
-                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                if (
+                    !db.objectStoreNames.contains(
+                        STORE_NAME
+                    )
+                ) {
 
                     const store =
                         db.createObjectStore(
@@ -49,11 +56,17 @@
             };
 
             request.onsuccess = function () {
-                resolve(request.result);
+
+                resolve(
+                    request.result
+                );
             };
 
             request.onerror = function () {
-                reject(request.error);
+
+                reject(
+                    request.error
+                );
             };
         });
     }
@@ -86,11 +99,13 @@
 
                 request.onsuccess =
                     function () {
+
                         resolve();
                     };
 
                 request.onerror =
                     function () {
+
                         reject(
                             request.error
                         );
@@ -103,7 +118,9 @@
     // Get Lectures
     // =========================================================
 
-    async function getLectures(subjectId) {
+    async function getLectures(
+        subjectId
+    ) {
 
         const db =
             await openDatabase();
@@ -183,11 +200,13 @@
 
                 request.onsuccess =
                     function () {
+
                         resolve();
                     };
 
                 request.onerror =
                     function () {
+
                         reject(
                             request.error
                         );
@@ -277,7 +296,7 @@
     }
 
     // =========================================================
-    // Open Add Lecture Modal
+    // Add Lecture Modal
     // =========================================================
 
     function openAddLectureModal(
@@ -313,6 +332,7 @@
             );
 
         if (fileInfo) {
+
             fileInfo.style.display =
                 "none";
         }
@@ -358,12 +378,12 @@
             return;
         }
 
-        // Maximum 20 MB
-
         const maxSize =
             20 * 1024 * 1024;
 
-        if (file.size > maxSize) {
+        if (
+            file.size > maxSize
+        ) {
 
             alert(
                 "حجم الملف كبير جدًا.\n\nالحد الأقصى المسموح به هو 20 MB."
@@ -393,7 +413,8 @@
             return;
         }
 
-        selectedFile = file;
+        selectedFile =
+            file;
 
         const info =
             document.getElementById(
@@ -433,7 +454,7 @@
     }
 
     // =========================================================
-    // Save Form
+    // Save Lecture Form
     // =========================================================
 
     async function handleLectureSubmit(
@@ -531,10 +552,13 @@
                 lecture
             );
 
+            const savedSubjectId =
+                currentSubjectId;
+
             closeAddLectureModal();
 
             await renderLectureList(
-                currentSubjectId
+                savedSubjectId
             );
 
             alert(
@@ -562,6 +586,537 @@
                 saveButton.textContent =
                     "💾 حفظ المحاضرة";
             }
+        }
+    }
+
+    // =========================================================
+    // Create Lecture Viewer
+    // =========================================================
+
+    function createLectureViewer() {
+
+        let viewer =
+            document.getElementById(
+                "unimind-lecture-viewer"
+            );
+
+        if (viewer) {
+            return viewer;
+        }
+
+        viewer =
+            document.createElement(
+                "div"
+            );
+
+        viewer.id =
+            "unimind-lecture-viewer";
+
+        viewer.innerHTML = `
+
+            <div
+                class="unimind-lecture-viewer-overlay"
+            ></div>
+
+            <div
+                class="unimind-lecture-viewer-container"
+            >
+
+                <div
+                    class="unimind-lecture-viewer-header"
+                >
+
+                    <div>
+
+                        <span
+                            id="unimind-viewer-icon"
+                        >
+                            📄
+                        </span>
+
+                        <div>
+
+                            <h2
+                                id="unimind-viewer-title"
+                            >
+                                عرض المحاضرة
+                            </h2>
+
+                            <p
+                                id="unimind-viewer-file-name"
+                            ></p>
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        id="unimind-lecture-viewer-close"
+                        class="unimind-modal-close"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+                <div
+                    id="unimind-lecture-viewer-content"
+                    class="unimind-lecture-viewer-content"
+                >
+
+                    <div
+                        class="unimind-viewer-loading"
+                    >
+                        ⏳ جاري فتح المحاضرة...
+                    </div>
+
+                </div>
+
+            </div>
+        `;
+
+        document.body.appendChild(
+            viewer
+        );
+
+        // Close button
+
+        const closeButton =
+            viewer.querySelector(
+                "#unimind-lecture-viewer-close"
+            );
+
+        if (closeButton) {
+
+            closeButton.addEventListener(
+                "click",
+                closeLectureViewer
+            );
+        }
+
+        // Overlay
+
+        const overlay =
+            viewer.querySelector(
+                ".unimind-lecture-viewer-overlay"
+            );
+
+        if (overlay) {
+
+            overlay.addEventListener(
+                "click",
+                closeLectureViewer
+            );
+        }
+
+        return viewer;
+    }
+
+    // =========================================================
+    // Close Lecture Viewer
+    // =========================================================
+
+    function closeLectureViewer() {
+
+        const viewer =
+            document.getElementById(
+                "unimind-lecture-viewer"
+            );
+
+        if (viewer) {
+
+            viewer.classList.remove(
+                "active"
+            );
+        }
+
+        if (currentViewerUrl) {
+
+            try {
+
+                URL.revokeObjectURL(
+                    currentViewerUrl
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "UniMind viewer URL cleanup error:",
+                    error
+                );
+            }
+
+            currentViewerUrl =
+                null;
+        }
+
+        document.body.classList.remove(
+            "unimind-modal-open"
+        );
+    }
+
+    // =========================================================
+    // Read DOCX
+    // =========================================================
+
+    async function readDocxFile(
+        file
+    ) {
+
+        if (
+            typeof window.mammoth ===
+            "undefined"
+        ) {
+
+            throw new Error(
+                "Mammoth library is not available."
+            );
+        }
+
+        const arrayBuffer =
+            await file.arrayBuffer();
+
+        const result =
+            await window.mammoth.convertToHtml(
+                {
+                    arrayBuffer:
+                        arrayBuffer
+                }
+            );
+
+        return (
+            result.value ||
+            "<p>لم يتم العثور على محتوى داخل الملف.</p>"
+        );
+    }
+
+    // =========================================================
+    // Open Lecture
+    // =========================================================
+
+    async function openLecture(
+        lectureId
+    ) {
+
+        try {
+
+            const db =
+                await openDatabase();
+
+            const lecture =
+                await new Promise(
+                    (resolve, reject) => {
+
+                        const transaction =
+                            db.transaction(
+                                STORE_NAME,
+                                "readonly"
+                            );
+
+                        const store =
+                            transaction.objectStore(
+                                STORE_NAME
+                            );
+
+                        const request =
+                            store.get(
+                                lectureId
+                            );
+
+                        request.onsuccess =
+                            function () {
+
+                                resolve(
+                                    request.result
+                                );
+                            };
+
+                        request.onerror =
+                            function () {
+
+                                reject(
+                                    request.error
+                                );
+                            };
+                    }
+                );
+
+            if (!lecture) {
+
+                alert(
+                    "لم يتم العثور على المحاضرة."
+                );
+
+                return;
+            }
+
+            if (!lecture.file) {
+
+                alert(
+                    "ملف المحاضرة غير متوفر."
+                );
+
+                return;
+            }
+
+            const viewer =
+                createLectureViewer();
+
+            const title =
+                document.getElementById(
+                    "unimind-viewer-title"
+                );
+
+            const fileName =
+                document.getElementById(
+                    "unimind-viewer-file-name"
+                );
+
+            const content =
+                document.getElementById(
+                    "unimind-lecture-viewer-content"
+                );
+
+            if (title) {
+
+                title.textContent =
+                    lecture.name;
+            }
+
+            if (fileName) {
+
+                fileName.textContent =
+                    lecture.fileName;
+            }
+
+            if (content) {
+
+                content.innerHTML = `
+                    <div
+                        class="unimind-viewer-loading"
+                    >
+                        ⏳ جاري فتح المحاضرة...
+                    </div>
+                `;
+            }
+
+            viewer.classList.add(
+                "active"
+            );
+
+            document.body.classList.add(
+                "unimind-modal-open"
+            );
+
+            // Clean previous URL
+
+            if (currentViewerUrl) {
+
+                try {
+
+                    URL.revokeObjectURL(
+                        currentViewerUrl
+                    );
+
+                } catch (error) {}
+
+                currentViewerUrl =
+                    null;
+            }
+
+            const file =
+                lecture.file;
+
+            const lowerName =
+                lecture.fileName.toLowerCase();
+
+            // =================================================
+            // PDF
+            // =================================================
+
+            if (
+                lowerName.endsWith(
+                    ".pdf"
+                )
+            ) {
+
+                currentViewerUrl =
+                    URL.createObjectURL(
+                        file
+                    );
+
+                content.innerHTML = `
+
+                    <iframe
+                        src="${currentViewerUrl}"
+                        class="unimind-pdf-viewer"
+                        title="${escapeHTML(
+                            lecture.name
+                        )}"
+                    ></iframe>
+
+                `;
+
+                return;
+            }
+
+            // =================================================
+            // DOCX
+            // =================================================
+
+            if (
+                lowerName.endsWith(
+                    ".docx"
+                )
+            ) {
+
+                try {
+
+                    const html =
+                        await readDocxFile(
+                            file
+                        );
+
+                    content.innerHTML = `
+
+                        <div
+                            class="unimind-docx-viewer"
+                        >
+
+                            <div
+                                class="unimind-docx-toolbar"
+                            >
+                                📄 محتوى المحاضرة
+                            </div>
+
+                            <article
+                                class="unimind-docx-content"
+                            >
+                                ${html}
+                            </article>
+
+                        </div>
+
+                    `;
+
+                } catch (error) {
+
+                    console.error(
+                        "UniMind DOCX viewer error:",
+                        error
+                    );
+
+                    content.innerHTML = `
+
+                        <div
+                            class="unimind-viewer-error"
+                        >
+
+                            <div>
+                                ⚠️
+                            </div>
+
+                            <h3>
+                                تعذر قراءة ملف Word
+                            </h3>
+
+                            <p>
+                                تأكد من تحميل مكتبة Mammoth
+                                ثم حاول مرة أخرى.
+                            </p>
+
+                        </div>
+
+                    `;
+                }
+
+                return;
+            }
+
+            // =================================================
+            // DOC
+            // =================================================
+
+            if (
+                lowerName.endsWith(
+                    ".doc"
+                )
+            ) {
+
+                currentViewerUrl =
+                    URL.createObjectURL(
+                        file
+                    );
+
+                content.innerHTML = `
+
+                    <div
+                        class="unimind-viewer-error"
+                    >
+
+                        <div>
+                            📄
+                        </div>
+
+                        <h3>
+                            ملف Word قديم
+                        </h3>
+
+                        <p>
+                            صيغة DOC القديمة لا يمكن
+                            عرض محتواها مباشرة داخل المتصفح.
+                        </p>
+
+                        <a
+                            href="${currentViewerUrl}"
+                            download="${escapeHTML(
+                                lecture.fileName
+                            )}"
+                            class="unimind-primary-button"
+                        >
+                            ⬇️ فتح / تنزيل الملف
+                        </a>
+
+                    </div>
+
+                `;
+
+                return;
+            }
+
+            // =================================================
+            // Unknown
+            // =================================================
+
+            content.innerHTML = `
+
+                <div
+                    class="unimind-viewer-error"
+                >
+
+                    <div>
+                        ⚠️
+                    </div>
+
+                    <h3>
+                        نوع الملف غير مدعوم
+                    </h3>
+
+                </div>
+
+            `;
+
+        } catch (error) {
+
+            console.error(
+                "UniMind open lecture error:",
+                error
+            );
+
+            alert(
+                "حدث خطأ أثناء فتح المحاضرة."
+            );
         }
     }
 
@@ -595,9 +1150,14 @@
             ) {
 
                 container.innerHTML = `
-                    <div class="subject-empty-lectures">
 
-                        <div>📄</div>
+                    <div
+                        class="subject-empty-lectures"
+                    >
+
+                        <div>
+                            📄
+                        </div>
 
                         <h4>
                             لا توجد محاضرات بعد
@@ -608,6 +1168,7 @@
                         </p>
 
                     </div>
+
                 `;
 
                 return;
@@ -656,17 +1217,76 @@
 
                         </div>
 
-                        <button
-                            type="button"
-                            class="lecture-delete-button"
-                            data-lecture-id="${lecture.id}"
+                        <div
+                            class="lecture-card-actions"
                         >
-                            🗑️
-                        </button>
+
+                            <button
+                                type="button"
+                                class="lecture-open-button"
+                                data-lecture-id="${escapeHTML(
+                                    lecture.id
+                                )}"
+                            >
+                                👁️ فتح
+                            </button>
+
+                            <button
+                                type="button"
+                                class="lecture-delete-button"
+                                data-lecture-id="${escapeHTML(
+                                    lecture.id
+                                )}"
+                            >
+                                🗑️
+                            </button>
+
+                        </div>
 
                     </div>
+
                 `
                 ).join("");
+
+            // =================================================
+            // Open Buttons
+            // =================================================
+
+            container
+                .querySelectorAll(
+                    ".lecture-open-button"
+                )
+                .forEach(
+                    button => {
+
+                        button.addEventListener(
+                            "click",
+                            function (event) {
+
+                                event.preventDefault();
+
+                                event.stopPropagation();
+
+                                const id =
+                                    this.getAttribute(
+                                        "data-lecture-id"
+                                    );
+
+                                if (!id) {
+                                    return;
+                                }
+
+                                openLecture(
+                                    id
+                                );
+                            }
+                        );
+                    }
+                );
+
+            // =================================================
+            // Delete Buttons
+            // =================================================
 
             container
                 .querySelectorAll(
@@ -677,7 +1297,11 @@
 
                         button.addEventListener(
                             "click",
-                            async function () {
+                            async function (event) {
+
+                                event.preventDefault();
+
+                                event.stopPropagation();
 
                                 const id =
                                     this.getAttribute(
@@ -689,6 +1313,7 @@
                                         "هل تريد حذف هذه المحاضرة؟"
                                     )
                                 ) {
+
                                     return;
                                 }
 
@@ -725,9 +1350,14 @@
             );
 
             container.innerHTML = `
-                <div class="subject-empty-lectures">
 
-                    <div>⚠️</div>
+                <div
+                    class="subject-empty-lectures"
+                >
+
+                    <div>
+                        ⚠️
+                    </div>
 
                     <h4>
                         تعذر تحميل المحاضرات
@@ -738,6 +1368,7 @@
                     </p>
 
                 </div>
+
             `;
         }
     }
@@ -747,6 +1378,8 @@
     // =========================================================
 
     function init() {
+
+        // File input
 
         const fileInput =
             document.getElementById(
@@ -761,6 +1394,8 @@
             );
         }
 
+        // Form
+
         const form =
             document.getElementById(
                 "unimind-lecture-form"
@@ -773,6 +1408,8 @@
                 handleLectureSubmit
             );
         }
+
+        // Close add lecture
 
         const closeButton =
             document.getElementById(
@@ -787,6 +1424,8 @@
             );
         }
 
+        // Cancel add lecture
+
         const cancelButton =
             document.getElementById(
                 "unimind-add-lecture-cancel"
@@ -800,20 +1439,22 @@
             );
         }
 
-        // Listen for opening a subject
+        // =====================================================
+        // Global Click Handling
+        // =====================================================
 
         document.addEventListener(
             "click",
             function (event) {
+
+                // Subject opened
 
                 const subjectButton =
                     event.target.closest(
                         ".subject-open-button"
                     );
 
-                if (
-                    subjectButton
-                ) {
+                if (subjectButton) {
 
                     const id =
                         subjectButton.getAttribute(
@@ -852,6 +1493,30 @@
                     openAddLectureModal(
                         currentSubjectId
                     );
+
+                    return;
+                }
+
+                // Open lecture
+
+                const openButton =
+                    event.target.closest(
+                        ".lecture-open-button"
+                    );
+
+                if (openButton) {
+
+                    const id =
+                        openButton.getAttribute(
+                            "data-lecture-id"
+                        );
+
+                    if (id) {
+
+                        openLecture(
+                            id
+                        );
+                    }
                 }
             }
         );
@@ -876,8 +1541,18 @@
             renderLectureList,
 
         delete:
-            deleteLecture
+            deleteLecture,
+
+        openLecture:
+            openLecture,
+
+        closeViewer:
+            closeLectureViewer
     };
+
+    // =========================================================
+    // Start
+    // =========================================================
 
     if (
         document.readyState ===
