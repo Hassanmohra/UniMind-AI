@@ -1,17 +1,9 @@
 (function () {
     "use strict";
 
-    // =========================================================
-    // UniMind AI - Subjects Manager
-    // =========================================================
-
     const STORAGE_KEY = "unimind_subjects";
 
     let currentSubjectId = null;
-
-    // =========================================================
-    // Subjects Storage
-    // =========================================================
 
     function getSubjects() {
         try {
@@ -19,11 +11,7 @@
                 localStorage.getItem(STORAGE_KEY) || "[]"
             );
         } catch (error) {
-            console.warn(
-                "UniMind subjects load error:",
-                error
-            );
-
+            console.warn("UniMind subjects load error:", error);
             return [];
         }
     }
@@ -35,10 +23,6 @@
         );
     }
 
-    // =========================================================
-    // Security
-    // =========================================================
-
     function escapeHTML(value) {
         return String(value || "")
             .replace(/&/g, "&amp;")
@@ -49,36 +33,19 @@
     }
 
     // =========================================================
-    // Create Subject
+    // إضافة مادة
     // =========================================================
 
     function createSubject(data) {
 
-        const subjects =
-            getSubjects();
+        const subjects = getSubjects();
 
         const subject = {
-
-            id:
-                Date.now().toString(),
-
-            name:
-                String(
-                    data.name || ""
-                ).trim(),
-
-            professor:
-                String(
-                    data.professor || ""
-                ).trim(),
-
-            description:
-                String(
-                    data.description || ""
-                ).trim(),
-
-            createdAt:
-                new Date().toISOString()
+            id: Date.now().toString(),
+            name: String(data.name || "").trim(),
+            professor: String(data.professor || "").trim(),
+            description: String(data.description || "").trim(),
+            createdAt: new Date().toISOString()
         };
 
         subjects.push(subject);
@@ -89,16 +56,14 @@
     }
 
     // =========================================================
-    // Delete Subject
+    // حذف مادة
     // =========================================================
 
     function deleteSubject(id) {
 
-        const subjects =
-            getSubjects().filter(
-                subject =>
-                    subject.id !== id
-            );
+        const subjects = getSubjects().filter(
+            subject => subject.id !== id
+        );
 
         saveSubjects(subjects);
 
@@ -106,60 +71,61 @@
     }
 
     // =========================================================
-    // Open Subject Details
+    // فتح تفاصيل المادة
     // =========================================================
 
     function openSubjectDetails(id) {
 
-        const subjects =
-            getSubjects();
+        const subjects = getSubjects();
 
-        const subject =
-            subjects.find(
-                item =>
-                    item.id === id
-            );
+        const subject = subjects.find(
+            item => item.id === id
+        );
 
         if (!subject) {
-            console.warn(
-                "UniMind: subject not found:",
+            console.error(
+                "UniMind: لم يتم العثور على المادة",
                 id
             );
-
             return;
         }
 
-        const modal =
-            document.getElementById(
-                "unimind-subject-details-modal"
-            );
+        // نافذة إضافة المادة
+        const addModal = document.getElementById(
+            "unimind-add-subject-modal"
+        );
 
-        if (!modal) {
-            console.warn(
-                "UniMind: subject details modal not found."
-            );
+        // أغلقها إذا كانت مفتوحة
+        if (addModal) {
+            addModal.classList.remove("active");
+        }
 
+        // نافذة تفاصيل المادة
+        const detailsModal = document.getElementById(
+            "unimind-subject-details-modal"
+        );
+
+        if (!detailsModal) {
+            console.error(
+                "UniMind: نافذة تفاصيل المادة غير موجودة"
+            );
             return;
         }
 
-        const name =
-            document.getElementById(
-                "unimind-details-name"
-            );
+        const name = document.getElementById(
+            "unimind-details-name"
+        );
 
-        const professor =
-            document.getElementById(
-                "unimind-details-professor"
-            );
+        const professor = document.getElementById(
+            "unimind-details-professor"
+        );
 
-        const description =
-            document.getElementById(
-                "unimind-details-description"
-            );
+        const description = document.getElementById(
+            "unimind-details-description"
+        );
 
         if (name) {
-            name.textContent =
-                subject.name;
+            name.textContent = subject.name;
         }
 
         if (professor) {
@@ -174,86 +140,62 @@
                 "لا يوجد وصف لهذه المادة.";
         }
 
-        // حفظ المادة الحالية
-        currentSubjectId =
-            id;
+        currentSubjectId = id;
 
-        // فتح النافذة
-        modal.classList.add(
-            "active"
-        );
+        // افتح تفاصيل المادة
+        detailsModal.classList.add("active");
 
-        // السماح لـ lectures.js
-        // بعرض المحاضرات
-        setTimeout(
-            function () {
+        // تحميل المحاضرات
+        setTimeout(function () {
 
-                if (
-                    window.UniMindLectures &&
-                    typeof
-                        window.UniMindLectures.render ===
-                        "function"
-                ) {
+            if (
+                window.UniMindLectures &&
+                typeof window.UniMindLectures.render === "function"
+            ) {
+                window.UniMindLectures.render(id);
+            }
 
-                    window.UniMindLectures.render(
-                        id
-                    );
-                }
-
-            },
-            50
-        );
+        }, 50);
     }
 
     // =========================================================
-    // Close Subject Details
+    // إغلاق تفاصيل المادة
     // =========================================================
 
     function closeSubjectDetails() {
 
-        const modal =
-            document.getElementById(
-                "unimind-subject-details-modal"
-            );
+        const modal = document.getElementById(
+            "unimind-subject-details-modal"
+        );
 
         if (modal) {
-
-            modal.classList.remove(
-                "active"
-            );
+            modal.classList.remove("active");
         }
 
-        currentSubjectId =
-            null;
+        currentSubjectId = null;
     }
 
     // =========================================================
-    // Render Subjects
+    // عرض المواد
     // =========================================================
 
     function renderSubjects() {
 
-        const container =
-            document.getElementById(
-                "unimind-subjects-list"
-            );
+        const container = document.getElementById(
+            "unimind-subjects-list"
+        );
 
         if (!container) {
             return;
         }
 
-        const subjects =
-            getSubjects();
+        const subjects = getSubjects();
 
-        // No subjects
         if (subjects.length === 0) {
 
             container.innerHTML = `
                 <div class="unimind-empty-subjects">
-
-                    <div class="empty-icon">
-                        📚
-                    </div>
+                    <div class="empty-icon">📚</div>
 
                     <h3>
                         لا توجد مواد دراسية بعد
@@ -263,195 +205,147 @@
                         أضف أول مادة دراسية لتبدأ بتنظيم
                         محاضراتك ودراستك.
                     </p>
-
                 </div>
             `;
 
             return;
         }
 
-        // Subjects cards
-        container.innerHTML =
-            subjects
-                .map(
-                    subject => `
+        container.innerHTML = subjects.map(subject => `
+            <div class="unimind-subject-card">
 
-                    <div
-                        class="unimind-subject-card"
+                <div class="subject-card-icon">
+                    📘
+                </div>
+
+                <div class="subject-card-content">
+
+                    <h3>
+                        ${escapeHTML(subject.name)}
+                    </h3>
+
+                    ${
+                        subject.professor
+                            ? `
+                                <p>
+                                    👨‍🏫
+                                    ${escapeHTML(subject.professor)}
+                                </p>
+                            `
+                            : ""
+                    }
+
+                    ${
+                        subject.description
+                            ? `
+                                <p class="subject-description">
+                                    ${escapeHTML(subject.description)}
+                                </p>
+                            `
+                            : ""
+                    }
+
+                    <button
+                        type="button"
+                        class="subject-open-button"
+                        data-subject-id="${subject.id}"
                     >
+                        فتح المادة ←
+                    </button>
 
-                        <div
-                            class="subject-card-icon"
-                        >
-                            📘
-                        </div>
+                </div>
 
-                        <div
-                            class="subject-card-content"
-                        >
+                <button
+                    type="button"
+                    class="subject-delete-button"
+                    data-subject-id="${subject.id}"
+                >
+                    🗑️
+                </button>
 
-                            <h3>
-                                ${escapeHTML(
-                                    subject.name
-                                )}
-                            </h3>
-
-                            ${
-                                subject.professor
-                                    ? `
-                                        <p>
-                                            👨‍🏫
-                                            ${escapeHTML(
-                                                subject.professor
-                                            )}
-                                        </p>
-                                      `
-                                    : ""
-                            }
-
-                            ${
-                                subject.description
-                                    ? `
-                                        <p
-                                            class="subject-description"
-                                        >
-                                            ${escapeHTML(
-                                                subject.description
-                                            )}
-                                        </p>
-                                      `
-                                    : ""
-                            }
-
-                            <button
-                                type="button"
-                                class="subject-open-button"
-                                data-subject-id="${escapeHTML(
-                                    subject.id
-                                )}"
-                            >
-                                فتح المادة ←
-                            </button>
-
-                        </div>
-
-                        <button
-                            type="button"
-                            class="subject-delete-button"
-                            data-subject-id="${escapeHTML(
-                                subject.id
-                            )}"
-                            aria-label="حذف المادة"
-                        >
-                            🗑️
-                        </button>
-
-                    </div>
-                `
-                )
-                .join("");
+            </div>
+        `).join("");
 
         // =====================================================
-        // Delete Buttons
+        // زر حذف المادة
         // =====================================================
 
         container
-            .querySelectorAll(
-                ".subject-delete-button"
-            )
-            .forEach(
-                button => {
+            .querySelectorAll(".subject-delete-button")
+            .forEach(button => {
 
-                    button.addEventListener(
-                        "click",
-                        function (event) {
+                button.addEventListener(
+                    "click",
+                    function (event) {
 
-                            event.preventDefault();
-                            event.stopPropagation();
+                        event.preventDefault();
+                        event.stopPropagation();
 
-                            const id =
-                                this.getAttribute(
-                                    "data-subject-id"
-                                );
-
-                            if (!id) {
-                                return;
-                            }
-
-                            if (
-                                confirm(
-                                    "هل تريد حذف هذه المادة؟"
-                                )
-                            ) {
-
-                                deleteSubject(
-                                    id
-                                );
-                            }
-                        }
-                    );
-                }
-            );
-
-        // =====================================================
-        // Open Buttons
-        // =====================================================
-
-        container
-            .querySelectorAll(
-                ".subject-open-button"
-            )
-            .forEach(
-                button => {
-
-                    button.addEventListener(
-                        "click",
-                        function (event) {
-
-                            event.preventDefault();
-                            event.stopPropagation();
-
-                            const id =
-                                this.getAttribute(
-                                    "data-subject-id"
-                                );
-
-                            if (!id) {
-
-                                console.error(
-                                    "UniMind: subject ID missing."
-                                );
-
-                                return;
-                            }
-
-                            openSubjectDetails(
-                                id
+                        const id =
+                            this.getAttribute(
+                                "data-subject-id"
                             );
+
+                        if (!id) {
+                            return;
                         }
-                    );
-                }
-            );
+
+                        if (
+                            confirm(
+                                "هل تريد حذف هذه المادة؟"
+                            )
+                        ) {
+                            deleteSubject(id);
+                        }
+                    }
+                );
+            });
+
+        // =====================================================
+        // زر فتح المادة
+        // =====================================================
+
+        container
+            .querySelectorAll(".subject-open-button")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    function (event) {
+
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        const id =
+                            this.getAttribute(
+                                "data-subject-id"
+                            );
+
+                        if (!id) {
+                            return;
+                        }
+
+                        openSubjectDetails(id);
+                    }
+                );
+            });
     }
 
     // =========================================================
-    // Subjects Modal
+    // فتح نافذة المواد
     // =========================================================
 
     function openSubjectsModal() {
 
-        const modal =
-            document.getElementById(
-                "unimind-subjects-modal"
-            );
+        const modal = document.getElementById(
+            "unimind-subjects-modal"
+        );
 
         if (!modal) {
             return;
         }
 
-        modal.classList.add(
-            "active"
-        );
+        modal.classList.add("active");
 
         document.body.classList.add(
             "unimind-modal-open"
@@ -460,20 +354,19 @@
         renderSubjects();
     }
 
+    // =========================================================
+    // إغلاق نافذة المواد
+    // =========================================================
+
     function closeSubjectsModal() {
 
-        const modal =
-            document.getElementById(
-                "unimind-subjects-modal"
-            );
-
-        if (!modal) {
-            return;
-        }
-
-        modal.classList.remove(
-            "active"
+        const modal = document.getElementById(
+            "unimind-subjects-modal"
         );
+
+        if (modal) {
+            modal.classList.remove("active");
+        }
 
         document.body.classList.remove(
             "unimind-modal-open"
@@ -481,79 +374,66 @@
     }
 
     // =========================================================
-    // Add Subject Modal
+    // فتح إضافة مادة
     // =========================================================
 
     function openAddSubjectModal() {
 
-        const modal =
-            document.getElementById(
-                "unimind-add-subject-modal"
-            );
+        const modal = document.getElementById(
+            "unimind-add-subject-modal"
+        );
 
         if (!modal) {
             return;
         }
 
-        const form =
-            document.getElementById(
-                "unimind-subject-form"
-            );
+        const form = document.getElementById(
+            "unimind-subject-form"
+        );
 
         if (form) {
             form.reset();
         }
 
-        modal.classList.add(
-            "active"
-        );
+        modal.classList.add("active");
     }
+
+    // =========================================================
+    // إغلاق إضافة مادة
+    // =========================================================
 
     function closeAddSubjectModal() {
 
-        const modal =
-            document.getElementById(
-                "unimind-add-subject-modal"
-            );
-
-        if (!modal) {
-            return;
-        }
-
-        modal.classList.remove(
-            "active"
+        const modal = document.getElementById(
+            "unimind-add-subject-modal"
         );
+
+        if (modal) {
+            modal.classList.remove("active");
+        }
     }
 
     // =========================================================
-    // Subject Form
+    // حفظ المادة
     // =========================================================
 
-    function handleFormSubmit(
-        event
-    ) {
+    function handleFormSubmit(event) {
 
         event.preventDefault();
 
-        const name =
-            document.getElementById(
-                "unimind-subject-name"
-            );
+        const name = document.getElementById(
+            "unimind-subject-name"
+        );
 
-        const professor =
-            document.getElementById(
-                "unimind-subject-professor"
-            );
+        const professor = document.getElementById(
+            "unimind-subject-professor"
+        );
 
-        const description =
-            document.getElementById(
-                "unimind-subject-description"
-            );
+        const description = document.getElementById(
+            "unimind-subject-description"
+        );
 
-        if (
-            !name ||
-            !name.value.trim()
-        ) {
+        if (!name || !name.value.trim()) {
 
             alert(
                 "يرجى كتابة اسم المادة."
@@ -563,19 +443,13 @@
         }
 
         createSubject({
-
-            name:
-                name.value,
-
-            professor:
-                professor
-                    ? professor.value
-                    : "",
-
-            description:
-                description
-                    ? description.value
-                    : ""
+            name: name.value,
+            professor: professor
+                ? professor.value
+                : "",
+            description: description
+                ? description.value
+                : ""
         });
 
         closeAddSubjectModal();
@@ -584,12 +458,10 @@
     }
 
     // =========================================================
-    // Initialization
+    // تشغيل النظام
     // =========================================================
 
     function init() {
-
-        // Subjects button
 
         const subjectsButton =
             document.getElementById(
@@ -604,8 +476,6 @@
             );
         }
 
-        // Close subjects
-
         const closeButton =
             document.getElementById(
                 "unimind-subjects-close"
@@ -618,8 +488,6 @@
                 closeSubjectsModal
             );
         }
-
-        // Add subject
 
         const addButton =
             document.getElementById(
@@ -634,8 +502,6 @@
             );
         }
 
-        // Close add subject
-
         const addCloseButton =
             document.getElementById(
                 "unimind-add-subject-close"
@@ -648,8 +514,6 @@
                 closeAddSubjectModal
             );
         }
-
-        // Cancel add subject
 
         const cancelButton =
             document.getElementById(
@@ -664,8 +528,6 @@
             );
         }
 
-        // Close subject details
-
         const detailsCloseButton =
             document.getElementById(
                 "unimind-subject-details-close"
@@ -678,8 +540,6 @@
                 closeSubjectDetails
             );
         }
-
-        // Subject form
 
         const form =
             document.getElementById(
@@ -694,8 +554,6 @@
             );
         }
 
-        // Initial render
-
         renderSubjects();
     }
 
@@ -705,34 +563,25 @@
 
     window.UniMindSubjects = {
 
-        get:
-            getSubjects,
+        get: getSubjects,
 
-        add:
-            createSubject,
+        add: createSubject,
 
-        delete:
-            deleteSubject,
+        delete: deleteSubject,
 
-        render:
-            renderSubjects,
+        render: renderSubjects,
 
-        open:
-            openSubjectsModal,
+        open: openSubjectsModal,
 
-        close:
-            closeSubjectsModal,
+        close: closeSubjectsModal,
 
-        openDetails:
-            openSubjectDetails,
+        openDetails: openSubjectDetails,
 
-        closeDetails:
-            closeSubjectDetails,
+        closeDetails: closeSubjectDetails,
 
-        getCurrentSubjectId:
-            function () {
-                return currentSubjectId;
-            }
+        getCurrentSubjectId: function () {
+            return currentSubjectId;
+        }
     };
 
     // =========================================================
@@ -740,8 +589,7 @@
     // =========================================================
 
     if (
-        document.readyState ===
-        "loading"
+        document.readyState === "loading"
     ) {
 
         document.addEventListener(
