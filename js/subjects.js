@@ -93,11 +93,42 @@
                         📘
                     </div>
 
-                    <div class="subject-card-content">
+<div class="subject-card-content">
 
-                        <h3>
-                            ${escapeHTML(subject.name)}
-                        </h3>
+    <h3>
+        ${escapeHTML(subject.name)}
+    </h3>
+
+    ${
+        subject.professor
+            ? `
+                <p>
+                    👨‍🏫
+                    ${escapeHTML(subject.professor)}
+                </p>
+              `
+            : ""
+    }
+
+    ${
+        subject.description
+            ? `
+                <p class="subject-description">
+                    ${escapeHTML(subject.description)}
+                </p>
+              `
+            : ""
+    }
+
+    <button
+        type="button"
+        class="subject-open-button"
+        data-subject-id="${subject.id}"
+    >
+        فتح المادة ←
+    </button>
+
+</div>
 
                         ${
                             subject.professor
@@ -142,6 +173,10 @@
                 button.addEventListener("click", function () {
                     const id =
                         this.getAttribute("data-subject-id");
+                    openSubjectDetails(id);
+                     }
+        );
+    });
 
                     if (
                         confirm(
