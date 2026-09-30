@@ -188,6 +188,59 @@
                 });
             });
     }
+function openSubjectDetails(id) {
+    const subjects = getSubjects();
+
+    const subject = subjects.find(
+        item => item.id === id
+    );
+
+    if (!subject) {
+        return;
+    }
+
+    const modal =
+        document.getElementById(
+            "unimind-subject-details-modal"
+        );
+
+    if (!modal) {
+        return;
+    }
+
+    const name =
+        document.getElementById(
+            "unimind-details-name"
+        );
+
+    const professor =
+        document.getElementById(
+            "unimind-details-professor"
+        );
+
+    const description =
+        document.getElementById(
+            "unimind-details-description"
+        );
+
+    if (name) {
+        name.textContent = subject.name;
+    }
+
+    if (professor) {
+        professor.textContent =
+            subject.professor ||
+            "لم يتم تحديد الدكتور";
+    }
+
+    if (description) {
+        description.textContent =
+            subject.description ||
+            "لا يوجد وصف لهذه المادة.";
+    }
+
+    modal.classList.add("active");
+}
 
     function openSubjectsModal() {
         const modal =
