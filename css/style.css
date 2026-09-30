@@ -4004,3 +4004,311 @@ body.quiz-modal-open {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+/* =========================================================
+   UniMind AI - Lecture Manager
+   ========================================================= */
+
+.unimind-add-lecture-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10002;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+}
+
+.unimind-add-lecture-modal.active {
+    display: flex;
+}
+
+.unimind-add-lecture-container {
+    width: min(620px, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--card-bg, #ffffff);
+    border-radius: 26px;
+    padding: 30px;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.3);
+}
+
+.unimind-add-lecture-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 28px;
+}
+
+.unimind-add-lecture-header h2 {
+    margin: 0 0 7px;
+    font-size: 24px;
+}
+
+.unimind-add-lecture-header p {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.65;
+}
+
+.unimind-lecture-form {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.unimind-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.unimind-form-group label {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.unimind-form-group input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    border: 1px solid rgba(127, 127, 127, 0.2);
+    border-radius: 14px;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s ease;
+}
+
+.unimind-form-group input[type="text"]:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.unimind-lecture-upload-box {
+    min-height: 170px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 2px dashed rgba(99, 102, 241, 0.3);
+    border-radius: 20px;
+    background: rgba(99, 102, 241, 0.04);
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.unimind-lecture-upload-box:hover {
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.lecture-upload-icon {
+    font-size: 42px;
+    margin-bottom: 4px;
+}
+
+.unimind-lecture-upload-box strong {
+    font-size: 15px;
+}
+
+.unimind-lecture-upload-box span {
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+.unimind-lecture-file-info {
+    margin-top: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-radius: 12px;
+    background: rgba(99, 102, 241, 0.08);
+    font-size: 12px;
+}
+
+#unimind-lecture-file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#unimind-lecture-file-size {
+    flex-shrink: 0;
+    opacity: 0.65;
+}
+
+.unimind-lecture-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 5px;
+}
+
+.unimind-secondary-button,
+.unimind-primary-button {
+    min-height: 44px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.unimind-secondary-button {
+    border: 1px solid rgba(127, 127, 127, 0.2);
+    background: transparent;
+    color: inherit;
+}
+
+.unimind-secondary-button:hover {
+    background: rgba(127, 127, 127, 0.08);
+}
+
+.unimind-primary-button {
+    border: none;
+    background: #6366f1;
+    color: #ffffff;
+}
+
+.unimind-primary-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.25);
+}
+
+.unimind-primary-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* =========================================================
+   Lecture Cards
+   ========================================================= */
+
+.unimind-lectures-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.unimind-lecture-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid rgba(127, 127, 127, 0.15);
+    border-radius: 17px;
+    background: rgba(127, 127, 127, 0.035);
+    transition: 0.2s ease;
+}
+
+.unimind-lecture-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(99, 102, 241, 0.25);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+}
+
+.lecture-card-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: rgba(99, 102, 241, 0.1);
+    font-size: 25px;
+}
+
+.lecture-card-content {
+    min-width: 0;
+    flex: 1;
+}
+
+.lecture-card-content h4 {
+    margin: 0 0 6px;
+    font-size: 15px;
+}
+
+.lecture-card-content p {
+    margin: 0 0 5px;
+    font-size: 12px;
+    opacity: 0.7;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lecture-card-content small {
+    font-size: 11px;
+    opacity: 0.55;
+}
+
+.lecture-delete-button {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 10px;
+    background: rgba(239, 68, 68, 0.08);
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.lecture-delete-button:hover {
+    background: rgba(239, 68, 68, 0.16);
+    transform: scale(1.05);
+}
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .unimind-add-lecture-modal {
+        padding: 10px;
+    }
+
+    .unimind-add-lecture-container {
+        padding: 20px;
+        border-radius: 20px;
+    }
+
+    .unimind-add-lecture-header h2 {
+        font-size: 20px;
+    }
+
+    .unimind-lecture-upload-box {
+        min-height: 145px;
+    }
+
+    .unimind-lecture-form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .unimind-secondary-button,
+    .unimind-primary-button {
+        width: 100%;
+    }
+
+    .unimind-lecture-card {
+        padding: 12px;
+    }
+
+    .lecture-card-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 21px;
+    }
+}
