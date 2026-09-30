@@ -548,67 +548,6 @@ renderLectures(id);
         renderSubjects();
     }
 
-    function openLectureUpload() {
-
-    if (!currentSubjectId) {
-        return;
-    }
-
-    const subject =
-        getSubjects().find(
-            item =>
-                item.id ===
-                currentSubjectId
-        );
-
-    if (!subject) {
-        return;
-    }
-
-    const lectureName =
-        prompt(
-            "اكتب اسم المحاضرة:"
-        );
-
-    if (
-        !lectureName ||
-        !lectureName.trim()
-    ) {
-        return;
-    }
-
-    const fileName =
-        prompt(
-            "اكتب اسم ملف المحاضرة، مثال: lecture1.pdf"
-        );
-
-    if (
-        !fileName ||
-        !fileName.trim()
-    ) {
-        return;
-    }
-
-    const extension =
-        fileName
-            .split(".")
-            .pop()
-            .toUpperCase();
-
-    addLecture(
-        currentSubjectId,
-        {
-            name: lectureName,
-            fileName: fileName,
-            fileType: extension,
-            fileSize: 0
-        }
-    );
-
-    renderLectures(
-        currentSubjectId
-    );
-}
     function init() {
 
         const subjectsButton =
@@ -675,24 +614,7 @@ renderLectures(id);
             document.getElementById(
                 "unimind-subject-details-close"
             );
-        const addLectureButton =
-    document.getElementById(
-        "unimind-add-lecture-button"
-    );
 
-if (addLectureButton) {
-    addLectureButton.addEventListener(
-        "click",
-        function () {
-
-            if (!currentSubjectId) {
-                return;
-            }
-
-            openLectureUpload();
-        }
-    );
-}
 
         if (detailsCloseButton) {
             detailsCloseButton.addEventListener(
