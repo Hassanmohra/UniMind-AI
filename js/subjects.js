@@ -361,10 +361,26 @@ function openSubjectDetails(id) {
             );
         }
 
-        const closeButton =
-            document.getElementById(
-                "unimind-subjects-close"
-            );
+      const detailsCloseButton =
+    document.getElementById(
+        "unimind-subject-details-close"
+    );
+
+if (detailsCloseButton) {
+    detailsCloseButton.addEventListener(
+        "click",
+        function () {
+            const modal =
+                document.getElementById(
+                    "unimind-subject-details-modal"
+                );
+
+            if (modal) {
+                modal.classList.remove("active");
+            }
+        }
+    );
+}
 
         if (closeButton) {
             closeButton.addEventListener(
