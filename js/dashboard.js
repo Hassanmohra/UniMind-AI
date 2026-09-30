@@ -1265,6 +1265,53 @@
         }
     );
 
+        // =========================================================
+    // FEATURE TRACKING - STUDY ASSISTANT
+    // =========================================================
+
+    function bindStudyAssistantTracking() {
+        if (window.__unimindStudyTrackingBound) {
+            return;
+        }
+
+        window.__unimindStudyTrackingBound = true;
+
+        document.addEventListener(
+            "click",
+            function (event) {
+                const button = event.target.closest(
+                    "#studyAssistantButton"
+                );
+
+                if (!button) {
+                    return;
+                }
+
+                try {
+                    if (
+                        window.UniMindDashboard &&
+                        typeof window.UniMindDashboard.increment ===
+                            "function"
+                    ) {
+                        window.UniMindDashboard.increment(
+                            "chats"
+                        );
+
+                        console.log(
+                            "UniMind: study assistant usage recorded"
+                        );
+                    }
+                } catch (error) {
+                    console.warn(
+                        "UniMind: study assistant tracking failed.",
+                        error
+                    );
+                }
+            },
+            true
+        );
+    }
+
     // =========================================================
     // PUBLIC API
     // =========================================================
@@ -1294,6 +1341,8 @@
         ensureDashboardButton();
 
         observePageChanges();
+
+        bindStudyAssistantTracking();
 
         console.log(
             "UniMind Dashboard: enhanced version loaded successfully"
