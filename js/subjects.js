@@ -1,10 +1,6 @@
 (function () {
     "use strict";
 
-    // =========================================================
-    // UniMind AI - Subjects Manager
-    // =========================================================
-
     const STORAGE_KEY = "unimind_subjects";
 
     function getSubjects() {
@@ -13,7 +9,7 @@
                 localStorage.getItem(STORAGE_KEY) || "[]"
             );
         } catch (error) {
-            console.warn("UniMind: failed to load subjects", error);
+            console.warn("UniMind subjects load error:", error);
             return [];
         }
     }
@@ -23,6 +19,15 @@
             STORAGE_KEY,
             JSON.stringify(subjects)
         );
+    }
+
+    function escapeHTML(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     function createSubject(data) {
@@ -51,18 +56,70 @@
         renderSubjects();
     }
 
-    function escapeHTML(value) {
-        return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+    function openSubjectDetails(id) {
+        const subjects = getSubjects();
+
+        const subject = subjects.find(
+            item => item.id === id
+        );
+
+        if (!subject) {
+            return;
+        }
+
+        const modal = document.getElementById(
+            "unimind-subject-details-modal"
+        );
+
+        if (!modal) {
+            return;
+        }
+
+        const name = document.getElementById(
+            "unimind-details-name"
+        );
+
+        const professor = document.getElementById(
+            "unimind-details-professor"
+        );
+
+        const description = document.getElementById(
+            "unimind-details-description"
+        );
+
+        if (name) {
+            name.textContent = subject.name;
+        }
+
+        if (professor) {
+            professor.textContent =
+                subject.professor ||
+                "لم يتم تحديد الدكتور";
+        }
+
+        if (description) {
+            description.textContent =
+                subject.description ||
+                "لا يوجد وصف لهذه المادة.";
+        }
+
+        modal.classList.add("active");
+    }
+
+    function closeSubjectDetails() {
+        const modal = document.getElementById(
+            "unimind-subject-details-modal"
+        );
+
+        if (modal) {
+            modal.classList.remove("active");
+        }
     }
 
     function renderSubjects() {
-        const container =
-            document.getElementById("unimind-subjects-list");
+        const container = document.getElementById(
+            "unimind-subjects-list"
+        );
 
         if (!container) {
             return;
@@ -85,168 +142,108 @@
             return;
         }
 
-        container.innerHTML = subjects
-            .map(subject => `
-                <div class="unimind-subject-card">
+        container.innerHTML = subjects.map(subject => `
+            <div class="unimind-subject-card">
 
-                    <div class="subject-card-icon">
-                        📘
-                    </div>
+                <div class="subject-card-icon">
+                    📘
+                </div>
 
-<div class="subject-card-content">
+                <div class="subject-card-content">
 
-    <h3>
-        ${escapeHTML(subject.name)}
-    </h3>
+                    <h3>
+                        ${escapeHTML(subject.name)}
+                    </h3>
 
-    ${
-        subject.professor
-            ? `
-                <p>
-                    👨‍🏫
-                    ${escapeHTML(subject.professor)}
-                </p>
-              `
-            : ""
-    }
+                    ${
+                        subject.professor
+                            ? `
+                                <p>
+                                    👨‍🏫
+                                    ${escapeHTML(
+                                        subject.professor
+                                    )}
+                                </p>
+                              `
+                            : ""
+                    }
 
-    ${
-        subject.description
-            ? `
-                <p class="subject-description">
-                    ${escapeHTML(subject.description)}
-                </p>
-              `
-            : ""
-    }
-
-    <button
-        type="button"
-        class="subject-open-button"
-        data-subject-id="${subject.id}"
-    >
-        فتح المادة ←
-    </button>
-
-</div>
-
-                        ${
-                            subject.professor
-                                ? `
-                                    <p>
-                                        👨‍🏫
-                                        ${escapeHTML(subject.professor)}
-                                    </p>
-                                  `
-                                : ""
-                        }
-
-                        ${
-                            subject.description
-                                ? `
-                                    <p class="subject-description">
-                                        ${escapeHTML(
-                                            subject.description
-                                        )}
-                                    </p>
-                                  `
-                                : ""
-                        }
-
-                    </div>
+                    ${
+                        subject.description
+                            ? `
+                                <p class="subject-description">
+                                    ${escapeHTML(
+                                        subject.description
+                                    )}
+                                </p>
+                              `
+                            : ""
+                    }
 
                     <button
                         type="button"
-                        class="subject-delete-button"
+                        class="subject-open-button"
                         data-subject-id="${subject.id}"
                     >
-                        🗑️
+                        فتح المادة ←
                     </button>
 
                 </div>
-            `)
-            .join("");
+
+                <button
+                    type="button"
+                    class="subject-delete-button"
+                    data-subject-id="${subject.id}"
+                >
+                    🗑️
+                </button>
+
+            </div>
+        `).join("");
 
         container
             .querySelectorAll(".subject-delete-button")
             .forEach(button => {
-                button.addEventListener("click", function () {
-                    const id =
-                        this.getAttribute("data-subject-id");
-                    openSubjectDetails(id);
-                     }
-        );
-    });
+                button.addEventListener(
+                    "click",
+                    function () {
+                        const id =
+                            this.getAttribute(
+                                "data-subject-id"
+                            );
 
-                    if (
-                        confirm(
-                            "هل تريد حذف هذه المادة؟"
-                        )
-                    ) {
-                        deleteSubject(id);
+                        if (
+                            confirm(
+                                "هل تريد حذف هذه المادة؟"
+                            )
+                        ) {
+                            deleteSubject(id);
+                        }
                     }
-                });
+                );
+            });
+
+        container
+            .querySelectorAll(".subject-open-button")
+            .forEach(button => {
+                button.addEventListener(
+                    "click",
+                    function () {
+                        const id =
+                            this.getAttribute(
+                                "data-subject-id"
+                            );
+
+                        openSubjectDetails(id);
+                    }
+                );
             });
     }
-function openSubjectDetails(id) {
-    const subjects = getSubjects();
-
-    const subject = subjects.find(
-        item => item.id === id
-    );
-
-    if (!subject) {
-        return;
-    }
-
-    const modal =
-        document.getElementById(
-            "unimind-subject-details-modal"
-        );
-
-    if (!modal) {
-        return;
-    }
-
-    const name =
-        document.getElementById(
-            "unimind-details-name"
-        );
-
-    const professor =
-        document.getElementById(
-            "unimind-details-professor"
-        );
-
-    const description =
-        document.getElementById(
-            "unimind-details-description"
-        );
-
-    if (name) {
-        name.textContent = subject.name;
-    }
-
-    if (professor) {
-        professor.textContent =
-            subject.professor ||
-            "لم يتم تحديد الدكتور";
-    }
-
-    if (description) {
-        description.textContent =
-            subject.description ||
-            "لا يوجد وصف لهذه المادة.";
-    }
-
-    modal.classList.add("active");
-}
 
     function openSubjectsModal() {
-        const modal =
-            document.getElementById(
-                "unimind-subjects-modal"
-            );
+        const modal = document.getElementById(
+            "unimind-subjects-modal"
+        );
 
         if (!modal) {
             return;
@@ -261,10 +258,9 @@ function openSubjectDetails(id) {
     }
 
     function closeSubjectsModal() {
-        const modal =
-            document.getElementById(
-                "unimind-subjects-modal"
-            );
+        const modal = document.getElementById(
+            "unimind-subjects-modal"
+        );
 
         if (!modal) {
             return;
@@ -277,19 +273,17 @@ function openSubjectDetails(id) {
     }
 
     function openAddSubjectModal() {
-        const modal =
-            document.getElementById(
-                "unimind-add-subject-modal"
-            );
+        const modal = document.getElementById(
+            "unimind-add-subject-modal"
+        );
 
         if (!modal) {
             return;
         }
 
-        const form =
-            document.getElementById(
-                "unimind-subject-form"
-            );
+        const form = document.getElementById(
+            "unimind-subject-form"
+        );
 
         if (form) {
             form.reset();
@@ -299,10 +293,9 @@ function openSubjectDetails(id) {
     }
 
     function closeAddSubjectModal() {
-        const modal =
-            document.getElementById(
-                "unimind-add-subject-modal"
-            );
+        const modal = document.getElementById(
+            "unimind-add-subject-modal"
+        );
 
         if (!modal) {
             return;
@@ -314,20 +307,17 @@ function openSubjectDetails(id) {
     function handleFormSubmit(event) {
         event.preventDefault();
 
-        const name =
-            document.getElementById(
-                "unimind-subject-name"
-            );
+        const name = document.getElementById(
+            "unimind-subject-name"
+        );
 
-        const professor =
-            document.getElementById(
-                "unimind-subject-professor"
-            );
+        const professor = document.getElementById(
+            "unimind-subject-professor"
+        );
 
-        const description =
-            document.getElementById(
-                "unimind-subject-description"
-            );
+        const description = document.getElementById(
+            "unimind-subject-description"
+        );
 
         if (!name || !name.value.trim()) {
             alert("يرجى كتابة اسم المادة.");
@@ -349,6 +339,7 @@ function openSubjectDetails(id) {
     }
 
     function init() {
+
         const subjectsButton =
             document.getElementById(
                 "subjectsButton"
@@ -361,26 +352,10 @@ function openSubjectDetails(id) {
             );
         }
 
-      const detailsCloseButton =
-    document.getElementById(
-        "unimind-subject-details-close"
-    );
-
-if (detailsCloseButton) {
-    detailsCloseButton.addEventListener(
-        "click",
-        function () {
-            const modal =
-                document.getElementById(
-                    "unimind-subject-details-modal"
-                );
-
-            if (modal) {
-                modal.classList.remove("active");
-            }
-        }
-    );
-}
+        const closeButton =
+            document.getElementById(
+                "unimind-subjects-close"
+            );
 
         if (closeButton) {
             closeButton.addEventListener(
@@ -405,22 +380,35 @@ if (detailsCloseButton) {
             document.getElementById(
                 "unimind-add-subject-close"
             );
-        const cancelButton =
-    document.getElementById(
-        "unimind-add-subject-cancel"
-    );
-
-if (cancelButton) {
-    cancelButton.addEventListener(
-        "click",
-        closeAddSubjectModal
-    );
-}
 
         if (addCloseButton) {
             addCloseButton.addEventListener(
                 "click",
                 closeAddSubjectModal
+            );
+        }
+
+        const cancelButton =
+            document.getElementById(
+                "unimind-add-subject-cancel"
+            );
+
+        if (cancelButton) {
+            cancelButton.addEventListener(
+                "click",
+                closeAddSubjectModal
+            );
+        }
+
+        const detailsCloseButton =
+            document.getElementById(
+                "unimind-subject-details-close"
+            );
+
+        if (detailsCloseButton) {
+            detailsCloseButton.addEventListener(
+                "click",
+                closeSubjectDetails
             );
         }
 
@@ -445,10 +433,13 @@ if (cancelButton) {
         delete: deleteSubject,
         render: renderSubjects,
         open: openSubjectsModal,
-        close: closeSubjectsModal
+        close: closeSubjectsModal,
+        openDetails: openSubjectDetails
     };
 
-    if (document.readyState === "loading") {
+    if (
+        document.readyState === "loading"
+    ) {
         document.addEventListener(
             "DOMContentLoaded",
             init
