@@ -2029,6 +2029,146 @@
 </div>
 
 </div>
+    <!-- =========================================================
+     UniMind AI - Add Lecture Modal
+     ========================================================= -->
+
+<div
+    id="unimind-add-lecture-modal"
+    class="unimind-add-lecture-modal"
+>
+
+    <div
+        class="unimind-add-lecture-container"
+    >
+
+        <div
+            class="unimind-add-lecture-header"
+        >
+
+            <div>
+                <h2>📄 إضافة محاضرة</h2>
+
+                <p>
+                    أضف محاضرة جديدة إلى هذه المادة
+                </p>
+            </div>
+
+            <button
+                type="button"
+                id="unimind-add-lecture-close"
+                class="unimind-modal-close"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form
+            id="unimind-lecture-form"
+            class="unimind-lecture-form"
+        >
+
+            <!-- Lecture Name -->
+
+            <div class="unimind-form-group">
+
+                <label
+                    for="unimind-lecture-name"
+                >
+                    اسم المحاضرة
+                </label>
+
+                <input
+                    type="text"
+                    id="unimind-lecture-name"
+                    placeholder="مثال: المحاضرة الأولى - مقدمة"
+                    required
+                >
+
+            </div>
+
+
+            <!-- File -->
+
+            <div class="unimind-form-group">
+
+                <label>
+                    ملف المحاضرة
+                </label>
+
+                <label
+                    for="unimind-lecture-file-input"
+                    class="unimind-lecture-upload-box"
+                >
+
+                    <div class="lecture-upload-icon">
+                        📎
+                    </div>
+
+                    <strong>
+                        اختر ملف المحاضرة
+                    </strong>
+
+                    <span>
+                        PDF أو Word
+                    </span>
+
+                    <input
+                        type="file"
+                        id="unimind-lecture-file-input"
+                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        hidden
+                    >
+
+                </label>
+
+                <div
+                    id="unimind-lecture-file-info"
+                    class="unimind-lecture-file-info"
+                    style="display:none;"
+                >
+
+                    <span id="unimind-lecture-file-name">
+                    </span>
+
+                    <span id="unimind-lecture-file-size">
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- Buttons -->
+
+            <div
+                class="unimind-lecture-form-actions"
+            >
+
+                <button
+                    type="button"
+                    id="unimind-add-lecture-cancel"
+                    class="unimind-secondary-button"
+                >
+                    إلغاء
+                </button>
+
+                <button
+                    type="submit"
+                    class="unimind-primary-button"
+                >
+                    💾 حفظ المحاضرة
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
 </body>
 
 </html>
