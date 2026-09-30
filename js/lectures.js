@@ -1570,3 +1570,30 @@
     }
 
 })();
+// =========================================================
+// UniMind AI - Add Lecture Button Fix
+// =========================================================
+
+document.addEventListener("click", function (event) {
+
+    const button = event.target.closest("#unimind-add-lecture-button");
+
+    if (!button) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    console.log("UniMind: Add Lecture button clicked");
+
+    const modal = document.getElementById("unimind-add-lecture-modal");
+
+    if (!modal) {
+        console.error("UniMind: Add Lecture modal not found");
+        alert("تعذر فتح نافذة إضافة المحاضرة.");
+        return;
+    }
+
+    // فتح النافذة
+    modal.classList.add("active");
+
+});
