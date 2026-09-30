@@ -1696,6 +1696,177 @@
 </style>
 <script src="js/app.js?v=30"></script>
 <script src="js/dashboard.js?v=4"></script>
+<script src="js/subjects.js?v=1"></script>
+    <!-- =========================================================
+     UniMind AI - Subjects Modal
+     ========================================================= -->
+
+<div
+    id="unimind-subjects-modal"
+    class="unimind-subjects-modal"
+>
+
+    <div class="unimind-subjects-overlay"></div>
+
+    <div class="unimind-subjects-container">
+
+        <div class="unimind-subjects-header">
+
+            <div>
+                <span class="subjects-header-icon">📚</span>
+
+                <div>
+                    <h2>المواد الدراسية</h2>
+                    <p>
+                        نظم موادك ومحاضراتك في مكان واحد
+                    </p>
+                </div>
+            </div>
+
+            <button
+                type="button"
+                id="unimind-subjects-close"
+                class="unimind-modal-close"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div class="unimind-subjects-toolbar">
+
+            <button
+                type="button"
+                id="unimind-add-subject-button"
+                class="unimind-primary-button"
+            >
+                ➕ إضافة مادة
+            </button>
+
+        </div>
+
+
+        <div
+            id="unimind-subjects-list"
+            class="unimind-subjects-list"
+        ></div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     Add Subject Modal
+     ========================================================= -->
+
+<div
+    id="unimind-add-subject-modal"
+    class="unimind-add-subject-modal"
+>
+
+    <div class="unimind-add-subject-container">
+
+        <div class="unimind-add-subject-header">
+
+            <div>
+                <span>📘</span>
+
+                <div>
+                    <h2>إضافة مادة جديدة</h2>
+                    <p>
+                        أدخل معلومات المادة الدراسية
+                    </p>
+                </div>
+            </div>
+
+            <button
+                type="button"
+                id="unimind-add-subject-close"
+                class="unimind-modal-close"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form
+            id="unimind-subject-form"
+            class="unimind-subject-form"
+        >
+
+            <div class="unimind-form-group">
+
+                <label for="unimind-subject-name">
+                    اسم المادة
+                </label>
+
+                <input
+                    type="text"
+                    id="unimind-subject-name"
+                    placeholder="مثال: هندسة البرمجيات"
+                    required
+                >
+
+            </div>
+
+
+            <div class="unimind-form-group">
+
+                <label for="unimind-subject-professor">
+                    اسم الدكتور
+                </label>
+
+                <input
+                    type="text"
+                    id="unimind-subject-professor"
+                    placeholder="مثال: د. أحمد محمد"
+                >
+
+            </div>
+
+
+            <div class="unimind-form-group">
+
+                <label for="unimind-subject-description">
+                    وصف المادة
+                </label>
+
+                <textarea
+                    id="unimind-subject-description"
+                    rows="4"
+                    placeholder="اكتب وصفًا مختصرًا للمادة..."
+                ></textarea>
+
+            </div>
+
+
+            <div class="unimind-form-actions">
+
+                <button
+                    type="button"
+                    id="unimind-add-subject-cancel"
+                    class="unimind-secondary-button"
+                >
+                    إلغاء
+                </button>
+
+                <button
+                    type="submit"
+                    class="unimind-primary-button"
+                >
+                    💾 حفظ المادة
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
 </body>
 
 </html>
