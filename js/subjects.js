@@ -301,6 +301,17 @@
             document.getElementById(
                 "unimind-add-subject-close"
             );
+        const cancelButton =
+    document.getElementById(
+        "unimind-add-subject-cancel"
+    );
+
+if (cancelButton) {
+    cancelButton.addEventListener(
+        "click",
+        closeAddSubjectModal
+    );
+}
 
         if (addCloseButton) {
             addCloseButton.addEventListener(
